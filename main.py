@@ -51,11 +51,7 @@ async def on_ready():
 
 if __name__ == "__main__":
     logger = logging.getLogger()
-
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)-8s] %(name)s: %(message)s', "%Y-%m-%d %H:%M:%S"))
-    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
     if "BOT_TOKEN" not in os.environ.keys():
         logger.fatal(f"Please set an environment variable \"BOT_TOKEN\" with a Discord Bot's token.")
