@@ -6,6 +6,9 @@ from inspect import getmembers, iscoroutinefunction
 
 import discord
 from discord import app_commands
+from dotenv import load_dotenv
+
+load_dotenv()
 
 TEST_GUILD = discord.Object(id=1003140794217144413)
 
