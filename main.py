@@ -2,7 +2,7 @@ from importlib import import_module
 import logging
 import os
 import sys
-from inspect import getmembers, isfunction
+from inspect import getmembers, iscoroutinefunction
 
 import discord
 from discord import app_commands
@@ -26,9 +26,12 @@ class MyClient(discord.Client):
 
             module = import_module("." + module_name.removesuffix(".py"), package_name)
 
-            for fn_name, fn in getmembers(module, isfunction):
-                if fn_name == "setup":
-                    fn(self)
+            for fn_name, fn in getmembers(module, iscoroutinefunction):
+                if fn_name.startswith("_") or fn_name.startswith("__"):
+                    continue
+
+                decorator = app_commands.command()
+                self.tree.add_command(decorator(fn))
 
         for group_command_class in app_commands.Group.__subclasses__():
             self.tree.add_command(group_command_class())
@@ -52,7 +55,7 @@ if __name__ == "__main__":
 
     handler = logging.StreamHandler()
     handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)-8s] %(name)s: %(message)s', "%Y-%m-%d %H:%M:%S"))
     logger.addHandler(handler)
 
     if "BOT_TOKEN" not in os.environ.keys():
