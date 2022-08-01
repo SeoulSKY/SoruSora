@@ -1,8 +1,7 @@
-from importlib import import_module
 import logging
 import os
 import sys
-from inspect import getmembers, iscoroutinefunction
+from importlib import import_module
 
 import discord
 from discord import app_commands
@@ -29,12 +28,9 @@ class MyClient(discord.Client):
 
             module = import_module("." + module_name.removesuffix(".py"), package_name)
 
-            for fn_name, fn in getmembers(module, iscoroutinefunction):
-                if fn_name.startswith("_") or fn_name.startswith("__"):
-                    continue
-
-                decorator = app_commands.command()
-                self.tree.add_command(decorator(fn))
+            command = getattr(module, module_name.removesuffix(".py"), None)
+            if command is not None:
+                self.tree.add_command(command)
 
         for group_command_class in app_commands.Group.__subclasses__():
             self.tree.add_command(group_command_class())
