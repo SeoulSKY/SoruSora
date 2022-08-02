@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 from importlib import import_module
 
 import discord
@@ -9,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TEST_GUILD = discord.Object(id=1003140794217144413)
+TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 
 class MyClient(discord.Client):
@@ -53,9 +52,5 @@ async def on_ready():
 if __name__ == "__main__":
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-
-    if "BOT_TOKEN" not in os.environ.keys():
-        logger.fatal(f"Please set an environment variable \"BOT_TOKEN\" with a Discord Bot's token.")
-        sys.exit(1)
 
     client.run(os.environ.get("BOT_TOKEN"))
