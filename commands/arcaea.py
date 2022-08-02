@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord import ui, app_commands, Interaction
 
@@ -100,3 +102,7 @@ class Arcaea(app_commands.Group):
         embed.set_thumbnail(url="attachment://link_play.png")
 
         await interaction.response.send_message(file=file, embed=embed, view=LinkPlayView())
+        message = await interaction.original_message()
+
+        minutes = 30
+        await message.delete(delay=minutes * 60)
