@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 
 import discord
@@ -12,7 +13,14 @@ LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
 
 
 class LinkPlayView(ui.View):
-    @ui.button(label="Join", style=discord.ButtonStyle.primary)
+
+    def __init__(self):
+        super().__init__(timeout=False)
+
+    async def on_timeout(self) -> None:
+        raise RuntimeError("Buttons are timed out and their interactions will fail")
+
+    @ui.button(label="Join", custom_id="linkview-join-button", style=discord.ButtonStyle.primary)
     async def join(self, interaction: Interaction, button: ui.Button):
         embed = interaction.message.embeds[0]
         user = interaction.user
@@ -25,15 +33,18 @@ class LinkPlayView(ui.View):
             await interaction.response.send_message("There are no more slots available", ephemeral=True)
             return
 
-        await self._alert_others(interaction.guild, embed, user, f"{user.mention} has joined the Link Play!")
+        coroutines = [self._alert_others(interaction.guild, embed, user, f"{user.mention} has joined the Link Play!")]
 
         for i in range(0, len(embed.fields)):
             if embed.fields[i].value == EMPTY_TEXT:
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=user.mention)
-                await interaction.message.edit(embed=embed)
+                coroutines.append(interaction.message.edit(embed=embed))
 
-                await interaction.response.send_message("Joined!", ephemeral=True)
+                coroutines.append(interaction.response.send_message("Joined!", ephemeral=True))
                 return
+
+        tasks = [asyncio.ensure_future(coro()) for coro in coroutines]
+        await asyncio.wait(tasks)
 
     def _is_joined(self, embed: discord.Embed, user: discord.User) -> bool:
         for field in embed.fields:
@@ -59,8 +70,8 @@ class LinkPlayView(ui.View):
             user = guild.get_member(int(field.value.removeprefix("<@").removesuffix(">")))
             await user.send(message)
 
-    @ui.button(label="Leave")
-    async def leave(self, interaction: Interaction, button: ui.Button):
+    @ui.button(label="Leave", custom_id="linkview-leave-button")
+    async def leave(self, interaction: Interaction,button: ui.Button):
         embed = interaction.message.embeds[0]
         user = interaction.user
 
@@ -101,6 +112,7 @@ class Arcaea(app_commands.Group):
         """
         Create an embed to invite people to your Link Play. It will last for 30 minutes
         """
+
         user = interaction.user
 
         embed = discord.Embed(color=templates.color,

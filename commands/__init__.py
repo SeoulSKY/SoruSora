@@ -6,6 +6,7 @@ class Confirm(discord.ui.View):
         """
         View to get a confirmation from a user.
         :param confirmed_message: A message to send when the user confirmed
+        :param cancelled_message: A message to send when the user cancelled
         """
         super().__init__()
 
