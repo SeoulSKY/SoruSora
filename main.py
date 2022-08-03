@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 

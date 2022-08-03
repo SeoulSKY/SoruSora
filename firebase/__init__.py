@@ -4,7 +4,6 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
-
 firebase_admin.initialize_app(credentials.Certificate({
             "type": os.getenv("FIREBASE_TYPE"),
             "project_id": os.getenv("FIREBASE_PROJECT_ID"),
