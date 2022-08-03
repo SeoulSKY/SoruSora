@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 
 import discord
@@ -33,18 +32,15 @@ class LinkPlayView(ui.View):
             await interaction.response.send_message("There are no more slots available", ephemeral=True)
             return
 
-        coroutines = [self._alert_others(interaction.guild, embed, user, f"{user.mention} has joined the Link Play!")]
+        await self._alert_others(interaction.guild, embed, user, f"{user.mention} has joined the Link Play!")
 
         for i in range(0, len(embed.fields)):
             if embed.fields[i].value == EMPTY_TEXT:
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=user.mention)
-                coroutines.append(interaction.message.edit(embed=embed))
+                await interaction.message.edit(embed=embed)
 
-                coroutines.append(interaction.response.send_message("Joined!", ephemeral=True))
+                await interaction.response.send_message("Joined!", ephemeral=True)
                 return
-
-        tasks = [asyncio.ensure_future(coro()) for coro in coroutines]
-        await asyncio.wait(tasks)
 
     def _is_joined(self, embed: discord.Embed, user: discord.User) -> bool:
         for field in embed.fields:
