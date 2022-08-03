@@ -98,7 +98,7 @@ class Arcaea(app_commands.Group):
 
     @app_commands.command()
     async def linkplay(self, interaction: Interaction, roomcode: str):
-        f"""
+        """
         Create an embed to invite people to your Link Play. It will last for 30 minutes
         """
         user = interaction.user
