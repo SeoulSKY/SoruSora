@@ -1,3 +1,5 @@
+import datetime
+
 import discord
 from discord import ui, app_commands, Interaction
 
@@ -5,6 +7,8 @@ import templates
 from commands import Confirm
 
 EMPTY_TEXT = "Empty"
+
+LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
 
 
 class LinkPlayView(ui.View):
@@ -94,6 +98,9 @@ class Arcaea(app_commands.Group):
 
     @app_commands.command()
     async def linkplay(self, interaction: Interaction, roomcode: str):
+        f"""
+        Create an embed to invite people to your Link Play. It will last for 30 minutes
+        """
         user = interaction.user
 
         embed = discord.Embed(color=templates.color,
@@ -114,5 +121,4 @@ class Arcaea(app_commands.Group):
         await interaction.response.send_message(embed=embed, view=LinkPlayView())
         message = await interaction.original_message()
 
-        minutes = 30
-        await message.delete(delay=minutes * 60)
+        await message.delete(delay=LINK_PLAY_LIFESPAN.total_seconds())
