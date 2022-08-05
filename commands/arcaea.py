@@ -124,7 +124,7 @@ class Arcaea(app_commands.Group):
         embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
         embed.set_footer(text=f"Room code: {roomcode}")
 
-        embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/182501819-502dc5f2-c831-4ce4-8300-78ecc5797b89.png")
+        embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
 
         await interaction.response.send_message(embed=embed, view=LinkPlayView())
         message = await interaction.original_message()
