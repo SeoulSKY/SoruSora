@@ -4,6 +4,7 @@ from importlib import import_module
 
 import discord
 from discord import app_commands
+from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,11 +14,9 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 
-class MyClient(discord.Client):
-    def __init__(self, *, intents: discord.Intents):
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
-
+class MyBot(Bot):
+    def __init__(self):
+        super().__init__(command_prefix="s!", intents=discord.Intents.all())
         self._add_commands()
 
     def _add_commands(self):
@@ -34,7 +33,8 @@ class MyClient(discord.Client):
                 self.tree.add_command(command)
 
         for group_command_class in app_commands.Group.__subclasses__():
-            self.tree.add_command(group_command_class())
+            # noinspection PyArgumentList
+            self.tree.add_command(group_command_class(bot=self))
 
     async def setup_hook(self):
         self.tree.copy_global_to(guild=TEST_GUILD)
@@ -42,12 +42,12 @@ class MyClient(discord.Client):
         await self.tree.sync(guild=TEST_GUILD)
 
 
-client = MyClient(intents=discord.Intents.all())
+bot = MyBot()
 
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f'Logged in as {client.user} (ID: {client.user.id})')
+    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
 
 
@@ -55,4 +55,4 @@ if __name__ == "__main__":
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    client.run(os.environ.get("BOT_TOKEN"))
+    bot.run(os.getenv("BOT_TOKEN"))

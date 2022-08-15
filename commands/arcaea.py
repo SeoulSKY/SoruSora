@@ -2,6 +2,7 @@ import datetime
 
 import discord
 from discord import ui, app_commands, Interaction
+from discord.ext.commands import Bot
 
 import templates
 from commands import Confirm
@@ -42,21 +43,24 @@ class LinkPlayView(ui.View):
                 await interaction.response.send_message("Joined!", ephemeral=True)
                 return
 
-    def _is_joined(self, embed: discord.Embed, user: discord.User) -> bool:
+    @staticmethod
+    def _is_joined(embed: discord.Embed, user: discord.User) -> bool:
         for field in embed.fields:
             if field.value == user.mention:
                 return True
 
         return False
 
-    def _is_full(self, embed: discord.Embed) -> bool:
+    @staticmethod
+    def _is_full(embed: discord.Embed) -> bool:
         for field in embed.fields:
             if field.value == EMPTY_TEXT:
                 return False
 
         return True
 
-    async def _alert_others(self, guild: discord.Guild, embed: discord.Embed, interacted_user: discord.User,
+    @staticmethod
+    async def _alert_others(guild: discord.Guild, embed: discord.Embed, interacted_user: discord.User,
                             message: str) -> None:
 
         for field in embed.fields:
@@ -67,7 +71,7 @@ class LinkPlayView(ui.View):
             await user.send(message)
 
     @ui.button(label="Leave", custom_id="linkview-leave-button")
-    async def leave(self, interaction: Interaction,button: ui.Button):
+    async def leave(self, interaction: Interaction, button: ui.Button):
         embed = interaction.message.embeds[0]
         user = interaction.user
 
@@ -103,6 +107,10 @@ class Arcaea(app_commands.Group):
     Commands related to Arcaea
     """
 
+    def __init__(self, bot: Bot):
+        super().__init__()
+        self.bot = bot
+
     @app_commands.command()
     async def linkplay(self, interaction: Interaction, roomcode: str):
         """
@@ -123,7 +131,6 @@ class Arcaea(app_commands.Group):
 
         embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
         embed.set_footer(text=f"Room code: {roomcode}")
-
         embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
 
         await interaction.response.send_message(embed=embed, view=LinkPlayView())

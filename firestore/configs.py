@@ -1,0 +1,72 @@
+from google.cloud.firestore_v1 import CollectionReference
+
+from firestore import db
+from firestore.exceptions import UserNotFoundError
+
+
+class Config:
+    """
+    A wrapper class to represent user configs in the database
+    """
+
+    def __init__(self, user_id: int, is_translator_on: bool = False):
+        self.user_id = user_id
+        self.is_translator_on = is_translator_on
+
+    @staticmethod
+    def from_dict(source: dict):
+        """
+        Create a new user configs from the given source
+        :param source: The source to create a new user
+        :return: The new user config
+        """
+        return Config(source.get(u"user_id"), source.get(u"is_translator_on"))
+
+    def to_dict(self) -> dict:
+        """
+        Convert this user configs to dictionary
+        :return: The dictionary
+        """
+        return {
+            u"user_id": self.user_id,
+            u"is_translator_on": self.is_translator_on
+        }
+
+
+def get_collection() -> CollectionReference:
+    """
+    Get the collection of user configs from the database
+    :return: The collection of user configs
+    """
+    return db.collection("configs")
+
+
+def have(user_id: int) -> bool:
+    """
+    Check if a user has configs in the database
+    :param user_id: The user id to check
+    :return: True if it does, False otherwise
+    """
+    return get_collection().document(str(user_id)).get().exists
+
+
+def get(user_id: int) -> Config:
+    """
+    Get the user configs from the database
+    :param user_id: The user id
+    :return: The user configs
+    """
+    user_doc = get_collection().document(str(user_id)).get()
+
+    if not user_doc.exists:
+        raise UserNotFoundError(f"User not found with id: {user_id}")
+
+    return Config.from_dict(user_doc.to_dict())
+
+
+def set(config: Config) -> None:
+    """
+    Set the user configs in the database
+    :param config: The user configs to set
+    """
+    get_collection().document(str(config.user_id)).set(config.to_dict())
