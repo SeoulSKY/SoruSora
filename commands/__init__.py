@@ -1,5 +1,7 @@
 import discord
 
+from templates import success, info
+
 
 class Confirm(discord.ui.View):
     def __init__(self, *, confirmed_message: str = "Confirmed", cancelled_message: str = "Cancelled"):
@@ -10,8 +12,8 @@ class Confirm(discord.ui.View):
         """
         super().__init__()
 
-        self._confirmed_message = confirmed_message
-        self._cancelled_message = cancelled_message
+        self._confirmed_message = success(confirmed_message)
+        self._cancelled_message = info(cancelled_message)
 
         self.is_confirmed = None
         """

@@ -26,21 +26,24 @@ class LinkPlayView(ui.View):
         user = interaction.user
 
         if self._is_joined(embed, user):
-            await interaction.response.send_message("You've already joined the Link Play", ephemeral=True)
+            await interaction.response.send_message(templates.error("You've already joined the Link Play"),
+                                                    ephemeral=True)
             return
 
         if self._is_full(embed):
-            await interaction.response.send_message("There are no more slots available", ephemeral=True)
+            await interaction.response.send_message(templates.error("There are no more slots available"),
+                                                    ephemeral=True)
             return
 
-        await self._alert_others(interaction.guild, embed, user, f"{user.mention} has joined the Link Play!")
+        await self._alert_others(interaction.guild, embed, user,
+                                 templates.info(f"{user.mention} has joined the Link Play!"))
 
         for i in range(0, len(embed.fields)):
             if embed.fields[i].value == EMPTY_TEXT:
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=user.mention)
                 await interaction.message.edit(embed=embed)
 
-                await interaction.response.send_message("Joined!", ephemeral=True)
+                await interaction.response.send_message(templates.success("Joined!"), ephemeral=True)
                 return
 
     @staticmethod
@@ -76,7 +79,7 @@ class LinkPlayView(ui.View):
         user = interaction.user
 
         if not self._is_joined(embed, user):
-            await interaction.response.send_message("You haven't joined the Link Play", ephemeral=True)
+            await interaction.response.send_message(templates.error("You haven't joined the Link Play"), ephemeral=True)
             return
 
         for i in range(0, len(embed.fields)):
@@ -86,18 +89,20 @@ class LinkPlayView(ui.View):
             lead_user_mention = embed.fields[0].value
             if user.mention == lead_user_mention:
                 confirm_view = Confirm(confirmed_message="Deleted")
-                await interaction.response.send_message("You're about to delete the Link Play you created. Do you "
-                                                        "want to continue?", view=confirm_view, ephemeral=True)
+                await interaction.response.send_message(
+                    templates.warning("You're about to delete the Link Play you created. Do you want to continue?"),
+                    view=confirm_view, ephemeral=True)
                 await confirm_view.wait()
 
                 if confirm_view.is_confirmed:
                     await interaction.message.delete()
             else:
-                await self._alert_others(interaction.guild, embed, user, f"{user.mention} has left the Link Play")
+                await self._alert_others(interaction.guild, embed, user,
+                                         templates.info(f"{user.mention} has left the Link Play"))
 
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=EMPTY_TEXT)
                 await interaction.message.edit(embed=embed)
-                await interaction.response.send_message("You've left the Link Play", ephemeral=True)
+                await interaction.response.send_message(templates.success("You've left the Link Play"), ephemeral=True)
 
             return
 
@@ -112,6 +117,7 @@ class Arcaea(app_commands.Group):
         self.bot = bot
 
     @app_commands.command()
+    @app_commands.describe(roomcode="Room code of your Arcaea Link Play")
     async def linkplay(self, interaction: Interaction, roomcode: str):
         """
         Create an embed to invite people to your Link Play. It will last for 30 minutes

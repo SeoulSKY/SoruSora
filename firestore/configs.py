@@ -1,7 +1,6 @@
 from google.cloud.firestore_v1 import CollectionReference
 
 from firestore import db
-from firestore.exceptions import UserNotFoundError
 
 
 class Config:
@@ -9,9 +8,12 @@ class Config:
     A wrapper class to represent user configs in the database
     """
 
-    def __init__(self, user_id: int, is_translator_on: bool = False):
+    def __init__(self, user_id: int, is_translator_on: bool = False, translate_to: list[str] = None):
         self.user_id = user_id
         self.is_translator_on = is_translator_on
+        if translate_to is None:
+            translate_to = []
+        self.translate_to: list[str] = translate_to
 
     @staticmethod
     def from_dict(source: dict):
@@ -20,17 +22,19 @@ class Config:
         :param source: The source to create a new user
         :return: The new user config
         """
-        return Config(source.get(u"user_id"), source.get(u"is_translator_on"))
+        temp_id = 0
+        config = Config(temp_id)
+        for key, value in source.items():
+            setattr(config, key, value)
+
+        return config
 
     def to_dict(self) -> dict:
         """
         Convert this user configs to dictionary
         :return: The dictionary
         """
-        return {
-            u"user_id": self.user_id,
-            u"is_translator_on": self.is_translator_on
-        }
+        return vars(self)
 
 
 def get_collection() -> CollectionReference:
@@ -52,14 +56,14 @@ def have(user_id: int) -> bool:
 
 def get(user_id: int) -> Config:
     """
-    Get the user configs from the database
+    Get the user configs from the database. If the config is not present, get the default configs
     :param user_id: The user id
     :return: The user configs
     """
     user_doc = get_collection().document(str(user_id)).get()
 
     if not user_doc.exists:
-        raise UserNotFoundError(f"User not found with id: {user_id}")
+        return Config(user_id)
 
     return Config.from_dict(user_doc.to_dict())
 
