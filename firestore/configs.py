@@ -1,4 +1,4 @@
-from google.cloud.firestore_v1 import CollectionReference
+from google.cloud.firestore_v1 import AsyncCollectionReference
 
 from firestore import db
 
@@ -37,7 +37,7 @@ class Config:
         return vars(self)
 
 
-def get_collection() -> CollectionReference:
+def get_collection() -> AsyncCollectionReference:
     """
     Get the collection of user configs from the database
     :return: The collection of user configs
@@ -45,22 +45,22 @@ def get_collection() -> CollectionReference:
     return db.collection("configs")
 
 
-def have(user_id: int) -> bool:
+async def have(user_id: int) -> bool:
     """
     Check if a user has configs in the database
     :param user_id: The user id to check
     :return: True if it does, False otherwise
     """
-    return get_collection().document(str(user_id)).get().exists
+    return (await get_collection().document(str(user_id)).get()).exists
 
 
-def get(user_id: int) -> Config:
+async def get(user_id: int) -> Config:
     """
     Get the user configs from the database. If the config is not present, get the default configs
     :param user_id: The user id
     :return: The user configs
     """
-    user_doc = get_collection().document(str(user_id)).get()
+    user_doc = await get_collection().document(str(user_id)).get()
 
     if not user_doc.exists:
         return Config(user_id)
@@ -68,9 +68,9 @@ def get(user_id: int) -> Config:
     return Config.from_dict(user_doc.to_dict())
 
 
-def set(config: Config) -> None:
+async def set(config: Config) -> None:
     """
     Set the user configs in the database
     :param config: The user configs to set
     """
-    get_collection().document(str(config.user_id)).set(config.to_dict())
+    await get_collection().document(str(config.user_id)).set(config.to_dict())

@@ -37,9 +37,9 @@ class LanguageSelect(discord.ui.Select):
                          options=languages)
 
     async def callback(self, interaction: Interaction):
-        config = configs.get(interaction.user.id)
+        config = await configs.get(interaction.user.id)
         config.translate_to = self.values
-        configs.set(config)
+        await configs.set(config)
 
         await interaction.response.send_message(success("Your destination languages have been updated"), ephemeral=True)
 
@@ -60,10 +60,10 @@ class Translator(app_commands.Group):
         Toggle translator for your account
         """
 
-        if not configs.have(interaction.user.id):
+        if not await configs.have(interaction.user.id):
             config = configs.Config(interaction.user.id, True)
         else:
-            config = configs.get(interaction.user.id)
+            config = await configs.get(interaction.user.id)
             config.is_translator_on = not config.is_translator_on
 
         async def on_message(message: Message):
@@ -72,7 +72,7 @@ class Translator(app_commands.Group):
 
             translator = googletrans.Translator()
             results: list[str] = []
-            for dest in configs.get(message.author.id).translate_to:
+            for dest in (await configs.get(message.author.id)).translate_to:
                 result = translator.translate(message.content, dest=dest)
                 if result.src != result.dest:
                     results.append(result.text)
@@ -87,7 +87,7 @@ class Translator(app_commands.Group):
                 self.bot.remove_listener(self.message_listeners[interaction.user.id])
                 self.message_listeners.pop(interaction.user.id)
 
-        configs.set(config)
+        await configs.set(config)
         toggle_value = "on" if config.is_translator_on else "off"
         await interaction.response.send_message(success(f"Translator has been set to `{toggle_value}`"), ephemeral=True)
 

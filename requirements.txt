@@ -42,3 +42,6 @@ typing_extensions==4.3.0
 uritemplate==4.1.1
 urllib3==1.26.11
 yarl==1.8.1
+
+pytest~=7.1.2
+googletrans~=4.0.0rc1
