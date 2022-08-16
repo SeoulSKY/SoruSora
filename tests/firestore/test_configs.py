@@ -1,6 +1,20 @@
+import asyncio
 import pytest
 
 from firestore import configs
+
+
+@pytest.fixture
+def event_loop():
+    loop = asyncio.get_event_loop()
+
+    yield loop
+
+    pending = asyncio.tasks.all_tasks(loop)
+    loop.run_until_complete(asyncio.gather(*pending))
+    loop.run_until_complete(asyncio.sleep(1))
+
+    loop.close()
 
 
 class TestConfigs:
@@ -36,7 +50,7 @@ class TestConfigs:
         config = configs.Config(self.user_id, translate_to=["ko"])
 
         await configs.set(config)
-        assert await (self.collection.document(str(self.user_id)).get()).to_dict() == config.to_dict()
+        assert (await self.collection.document(str(self.user_id)).get()).to_dict() == config.to_dict()
 
 
 if __name__ == "__main__":
