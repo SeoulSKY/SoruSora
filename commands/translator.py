@@ -34,7 +34,7 @@ class LanguageSelect(discord.ui.Select):
             "vietnamese"
         ]
 
-        languages = [SelectOption(label=lang, value=googletrans.LANGCODES.get(lang)) for lang in languages]
+        languages = [SelectOption(label=lang) for lang in languages]
 
         max_value_possible = 25
         super().__init__(placeholder="Select languages that will be translated to",
@@ -79,8 +79,9 @@ class Translator(app_commands.Group):
 
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(dest_langs))
             translator = googletrans.Translator()
+            futures = [executor.submit(lambda: translator.translate(message.content, dest=dest_lang))
+                       for dest_lang in dest_langs]
 
-            futures = [executor.submit(lambda: translator.translate(message.content, dest=dest)) for dest in dest_langs]
             results: list[str] = []
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
