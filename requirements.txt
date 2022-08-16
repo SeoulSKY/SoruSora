@@ -10,14 +10,14 @@ chardet==5.0.0
 charset-normalizer==2.1.0
 discord.py @ git+https://github.com/Rapptz/discord.py@7d11e2a27c041cc0a60567c14ad21b3259817f3a
 firebase-admin==5.2.0
-frozenlist==1.3.0
+frozenlist==1.3.1
 google-api-core==2.8.2
-google-api-python-client==2.55.0
-google-auth==2.9.1
+google-api-python-client==2.56.0
+google-auth==2.10.0
 google-auth-httplib2==0.1.0
 google-cloud-core==2.3.2
 google-cloud-firestore==2.6.0
-google-cloud-storage==2.4.0
+google-cloud-storage==2.5.0
 google-crc32c==1.3.0
 google-resumable-media==2.3.3
 googleapis-common-protos==1.56.4
@@ -27,8 +27,8 @@ httplib2==0.20.4
 idna==3.3
 msgpack==1.0.4
 multidict==6.0.2
-proto-plus==1.20.6
-protobuf==3.20.1
+proto-plus==1.22.0
+protobuf==4.21.5
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
@@ -41,4 +41,7 @@ six==1.16.0
 typing_extensions==4.3.0
 uritemplate==4.1.1
 urllib3==1.26.11
-yarl==1.8.0
+yarl==1.8.1
+
+pytest~=7.1.2
+googletrans~=4.0.0rc1
