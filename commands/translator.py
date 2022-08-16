@@ -1,11 +1,14 @@
+import concurrent.futures
 from typing import Coroutine, Callable
 
 import discord.ui
 import googletrans
-from discord import app_commands, Interaction, Message, SelectOption
+from discord import app_commands, Interaction, Message, SelectOption, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
 
+import constants
+import templates
 from firestore import configs
 from templates import success
 
@@ -33,7 +36,9 @@ class LanguageSelect(discord.ui.Select):
 
         languages = [SelectOption(label=lang, value=googletrans.LANGCODES.get(lang)) for lang in languages]
 
-        super().__init__(placeholder="Select languages that will be translated to", max_values=min(25, len(languages)),
+        max_value_possible = 25
+        super().__init__(placeholder="Select languages that will be translated to",
+                         max_values=min(max_value_possible, len(languages)),
                          options=languages)
 
     async def callback(self, interaction: Interaction):
@@ -70,14 +75,33 @@ class Translator(app_commands.Group):
             if message.author != interaction.user:
                 return
 
-            translator = googletrans.Translator()
-            results: list[str] = []
-            for dest in (await configs.get(message.author.id)).translate_to:
-                result = translator.translate(message.content, dest=dest)
-                if result.src != result.dest:
-                    results.append(result.text)
+            dest_langs = (await configs.get(message.author.id)).translate_to
 
-            await message.reply("**Translated:**\n\n" + "\n\n".join(results))
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(dest_langs))
+            translator = googletrans.Translator()
+
+            futures = [executor.submit(lambda: translator.translate(message.content, dest=dest)) for dest in dest_langs]
+            results: list[str] = []
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result.src != result.dest:
+                    results.append(f"**__{googletrans.LANGUAGES.get(result.dest).capitalize()}__**\n{result.text}")
+
+            description = "\n\n".join(results)
+            embeds = []
+            for chunk in self._split(description, constants.EMBED_DESCRIPTION_MAX_LENGTH):
+                embed = Embed(color=templates.color, description=chunk)
+                embed.set_footer(text=message.author.display_name, icon_url=message.author.display_avatar.url)
+                embeds.append(embed)
+
+            try:
+                await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)])
+            except HTTPException as e:
+                if e.status == 400:
+                    await message.reply(templates.error("Failed to translate because the content is too long"))
+                    return
+
+                raise e
 
         if config.is_translator_on:
             self.bot.add_listener(on_message)
@@ -90,6 +114,11 @@ class Translator(app_commands.Group):
         await configs.set(config)
         toggle_value = "on" if config.is_translator_on else "off"
         await interaction.response.send_message(success(f"Translator has been set to `{toggle_value}`"), ephemeral=True)
+
+    @staticmethod
+    def _split(string: str, count: int):
+        for i in range(0, len(string), count):
+            yield string[i: i + count]
 
     @app_commands.command()
     async def select_languages(self, interaction: Interaction):
