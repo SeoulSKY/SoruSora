@@ -12,20 +12,6 @@ on:
 permissions:
   contents: read
 
-env:
-  BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-  FIREBASE_AUTH_PROVIDER_X509_CERT_URL: ${{ secrets.FIREBASE_AUTH_PROVIDER_X509_CERT_URL }}
-  FIREBASE_AUTH_URI: ${{ secrets.FIREBASE_AUTH_URI }}
-  FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-  FIREBASE_CLIENT_ID: ${{ secrets.FIREBASE_CLIENT_ID }}
-  FIREBASE_CLIENT_X509_CERT_URL: ${{ secrets.FIREBASE_CLIENT_X509_CERT_URL }}
-  FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-  FIREBASE_PRIVATE_KEY_ID: ${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
-  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-  FIREBASE_TOKEN_URI: ${{ secrets.FIREBASE_TOKEN_URI }}
-  FIREBASE_TYPE: ${{ secrets.FIREBASE_TYPE }}
-  TEST_GUILD_ID: ${{ secrets.TEST_GUILD_ID }}
-
 jobs:
   build:
 
@@ -37,9 +23,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-    - name: test env variables
-      run: |
-        echo "${{ env.FIREBASE_TYPE }}"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -54,3 +37,16 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        FIREBASE_AUTH_PROVIDER_X509_CERT_URL: ${{ secrets.FIREBASE_AUTH_PROVIDER_X509_CERT_URL }}
+        FIREBASE_AUTH_URI: ${{ secrets.FIREBASE_AUTH_URI }}
+        FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+        FIREBASE_CLIENT_ID: ${{ secrets.FIREBASE_CLIENT_ID }}
+        FIREBASE_CLIENT_X509_CERT_URL: ${{ secrets.FIREBASE_CLIENT_X509_CERT_URL }}
+        FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        FIREBASE_PRIVATE_KEY_ID: ${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
+        FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        FIREBASE_TOKEN_URI: ${{ secrets.FIREBASE_TOKEN_URI }}
+        FIREBASE_TYPE: ${{ secrets.FIREBASE_TYPE }}
+        TEST_GUILD_ID: ${{ secrets.TEST_GUILD_ID }}
