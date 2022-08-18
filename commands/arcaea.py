@@ -95,7 +95,7 @@ class LinkPlayView(ui.View):
             await interaction.response.send_message(templates.error("You haven't joined the Link Play"), ephemeral=True)
             return
 
-        for i, in enumerate(embed.fields):
+        for i, _ in enumerate(embed.fields):
             if embed.fields[i].value != user.mention:
                 continue
 
@@ -154,6 +154,5 @@ class Arcaea(app_commands.Group):
                                 "183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
 
         await interaction.response.send_message(embed=embed, view=LinkPlayView())
-        message = await interaction.original_message()
-
+        message = await interaction.original_response()
         await message.delete(delay=LINK_PLAY_LIFESPAN.total_seconds())
