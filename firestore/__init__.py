@@ -7,11 +7,8 @@ Instances:
 import os
 
 import firebase_admin
-from dotenv import load_dotenv
 from firebase_admin import credentials
 from google.cloud.firestore_v1 import AsyncClient
-
-load_dotenv()
 
 cred = credentials.Certificate({
             "type": os.getenv("FIREBASE_TYPE"),

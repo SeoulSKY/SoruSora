@@ -5,6 +5,9 @@ Setup for pytest
 import asyncio
 
 import pytest
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @pytest.fixture(scope="session")
