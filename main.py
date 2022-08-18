@@ -1,3 +1,7 @@
+"""
+Main script where the program starts
+"""
+
 import logging
 import os
 from importlib import import_module
@@ -15,6 +19,9 @@ TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 
 class MyBot(Bot):
+    """
+    Class to be used to run the Discord Bot
+    """
     def __init__(self):
         super().__init__(command_prefix="s!", intents=discord.Intents.all())
         self._add_commands()
@@ -47,6 +54,9 @@ bot = MyBot()
 
 @bot.event
 async def on_ready():
+    """
+    Executed when the bot becomes ready
+    """
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
 

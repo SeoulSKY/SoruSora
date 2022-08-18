@@ -1,3 +1,9 @@
+"""
+This module provides database instances for test_firestore
+
+Instances:
+    db
+"""
 import os
 
 import firebase_admin

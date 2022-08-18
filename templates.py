@@ -1,3 +1,16 @@
+"""
+Provides templates for the Discord bot
+
+Constants:
+    color
+
+Functions:
+    info()
+    success()
+    warning()
+    error()
+"""
+
 import discord
 
 color = discord.Color(0xffd0cf)

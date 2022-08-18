@@ -1,3 +1,7 @@
+"""
+This module implements arcaea command
+"""
+
 import datetime
 
 import discord
@@ -13,6 +17,9 @@ LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
 
 
 class LinkPlayView(ui.View):
+    """
+    Buttons for LinkPlay message
+    """
 
     def __init__(self):
         super().__init__(timeout=False)
@@ -21,7 +28,10 @@ class LinkPlayView(ui.View):
         raise RuntimeError("Buttons are timed out and their interactions will fail")
 
     @ui.button(label="Join", custom_id="linkview-join-button", style=discord.ButtonStyle.primary)
-    async def join(self, interaction: Interaction, button: ui.Button):
+    async def join(self, interaction: Interaction, _: ui.Button):
+        """
+        Add the username to the embed when pressed
+        """
         embed = interaction.message.embeds[0]
         user = interaction.user
 
@@ -38,7 +48,7 @@ class LinkPlayView(ui.View):
         await self._alert_others(interaction.guild, embed, user,
                                  templates.info(f"{user.mention} has joined the Link Play!"))
 
-        for i in range(0, len(embed.fields)):
+        for i, in enumerate(embed.fields):
             if embed.fields[i].value == EMPTY_TEXT:
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=user.mention)
                 await interaction.message.edit(embed=embed)
@@ -74,7 +84,10 @@ class LinkPlayView(ui.View):
             await user.send(message)
 
     @ui.button(label="Leave", custom_id="linkview-leave-button")
-    async def leave(self, interaction: Interaction, button: ui.Button):
+    async def leave(self, interaction: Interaction, _: ui.Button):
+        """
+        Remove the username from the embed when pressed
+        """
         embed = interaction.message.embeds[0]
         user = interaction.user
 
@@ -82,7 +95,7 @@ class LinkPlayView(ui.View):
             await interaction.response.send_message(templates.error("You haven't joined the Link Play"), ephemeral=True)
             return
 
-        for i in range(0, len(embed.fields)):
+        for i, in enumerate(embed.fields):
             if embed.fields[i].value != user.mention:
                 continue
 
@@ -132,12 +145,13 @@ class Arcaea(app_commands.Group):
         embed.add_field(name="Lead", value=user.mention)
 
         num_players = 3
-        for i in range(0, num_players):
+        for _ in range(0, num_players):
             embed.add_field(name="Player", value=EMPTY_TEXT)
 
         embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
         embed.set_footer(text=f"Room code: {roomcode}")
-        embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
+        embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/"
+                                "183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
 
         await interaction.response.send_message(embed=embed, view=LinkPlayView())
         message = await interaction.original_message()

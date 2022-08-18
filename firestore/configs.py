@@ -1,3 +1,16 @@
+"""
+Provides functions to interact with the user configs in the test_firestore
+
+Classes:
+    Config
+
+Functions:
+    get_collection()
+    has_config()
+    get_config()
+    set_config()
+"""
+
 from google.cloud.firestore_v1 import AsyncCollectionReference
 
 from firestore import db
@@ -45,7 +58,7 @@ def get_collection() -> AsyncCollectionReference:
     return db.collection("configs")
 
 
-async def have(user_id: int) -> bool:
+async def has_config(user_id: int) -> bool:
     """
     Check if a user has configs in the database
     :param user_id: The user id to check
@@ -54,7 +67,7 @@ async def have(user_id: int) -> bool:
     return (await get_collection().document(str(user_id)).get()).exists
 
 
-async def get(user_id: int) -> Config:
+async def get_config(user_id: int) -> Config:
     """
     Get the user configs from the database. If the config is not present, get the default configs
     :param user_id: The user id
@@ -68,7 +81,7 @@ async def get(user_id: int) -> Config:
     return Config.from_dict(user_doc.to_dict())
 
 
-async def set(config: Config) -> None:
+async def set_config(config: Config) -> None:
     """
     Set the user configs in the database
     :param config: The user configs to set

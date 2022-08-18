@@ -1,3 +1,7 @@
+"""
+This module implements translator command
+"""
+
 import concurrent.futures
 from typing import Coroutine, Callable
 
@@ -14,6 +18,9 @@ from templates import success
 
 
 class LanguageSelect(discord.ui.Select):
+    """
+    Select UI to select available languages
+    """
 
     def __init__(self):
         languages = [
@@ -42,9 +49,9 @@ class LanguageSelect(discord.ui.Select):
                          options=languages)
 
     async def callback(self, interaction: Interaction):
-        config = await configs.get(interaction.user.id)
+        config = await configs.get_config(interaction.user.id)
         config.translate_to = self.values
-        await configs.set(config)
+        await configs.set_config(config)
 
         await interaction.response.send_message(success("Your destination languages have been updated"), ephemeral=True)
 
@@ -65,21 +72,21 @@ class Translator(app_commands.Group):
         Toggle translator for your account
         """
 
-        if not await configs.have(interaction.user.id):
+        if not await configs.has_config(interaction.user.id):
             config = configs.Config(interaction.user.id, True)
         else:
-            config = await configs.get(interaction.user.id)
+            config = await configs.get_config(interaction.user.id)
             config.is_translator_on = not config.is_translator_on
 
         async def on_message(message: Message):
             if message.author != interaction.user:
                 return
 
-            dest_langs = (await configs.get(message.author.id)).translate_to
+            dest_langs = (await configs.get_config(message.author.id)).translate_to
 
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(dest_langs))
             translator = googletrans.Translator()
-            futures = [executor.submit(lambda: translator.translate(message.content, dest=dest_lang))
+            futures = [executor.submit(translator.translate, text=message.content, dest=dest_lang)
                        for dest_lang in dest_langs]
 
             results: list[str] = []
@@ -97,12 +104,13 @@ class Translator(app_commands.Group):
 
             try:
                 await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)])
-            except HTTPException as e:
-                if e.status == 400:
+            except HTTPException as ex:
+                invalid_body = 50035
+                if ex.code == invalid_body:
                     await message.reply(templates.error("Failed to translate because the content is too long"))
                     return
 
-                raise e
+                raise ex
 
         if config.is_translator_on:
             self.bot.add_listener(on_message)
@@ -112,7 +120,7 @@ class Translator(app_commands.Group):
                 self.bot.remove_listener(self.message_listeners[interaction.user.id])
                 self.message_listeners.pop(interaction.user.id)
 
-        await configs.set(config)
+        await configs.set_config(config)
         toggle_value = "on" if config.is_translator_on else "off"
         await interaction.response.send_message(success(f"Translator has been set to `{toggle_value}`"), ephemeral=True)
 
