@@ -18,6 +18,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pylint
+    - name: Configure pylint
+      run: |
+        mv pylintrc ~/.pylintrc
     - name: Analysing the code with pylintrc
       run: |
         pylint $(git ls-files '*.py')
