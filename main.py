@@ -14,10 +14,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-if sys.platform.startswith("win"):
-    os.environ["IMAGEIO_FFMPEG_EXE"] = "bin/ffmpeg.exe"
-else:
-    os.environ["IMAGEIO_FFMPEG_EXE"] = "bin/ffmpeg"
+is_dev_env = "DYNO" not in os.environ
+if is_dev_env:
+    if sys.platform.startswith("win"):
+        os.environ["IMAGEIO_FFMPEG_EXE"] = "bin/ffmpeg.exe"
+    else:
+        os.environ["IMAGEIO_FFMPEG_EXE"] = "bin/ffmpeg"
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
