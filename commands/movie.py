@@ -67,7 +67,6 @@ class Movie(app_commands.Group):
         is_on_mobile = interaction.guild.get_member(interaction.user.id).is_on_mobile()
         embed = Embed(color=templates.color, title=name.replace("_", " ").title())
         await interaction.response.send_message(embed=embed)
-        message = await interaction.original_response()
 
         file_name = f"assets/{name}.mp4"
         with VideoFileClip(file_name) as video_clip:
@@ -105,7 +104,7 @@ class Movie(app_commands.Group):
             embed.set_footer(text=f"Frame: {current_frame_num}")
 
             try:
-                await message.edit(embed=embed)
+                await interaction.edit_original_response(embed=embed)
             except NotFound:  # message deleted
                 executor.shutdown(wait=False, cancel_futures=True)
                 return

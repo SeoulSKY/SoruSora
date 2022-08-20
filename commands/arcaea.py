@@ -3,9 +3,10 @@ This module implements arcaea command
 """
 
 import datetime
+import logging
 
 import discord
-from discord import ui, app_commands, Interaction
+from discord import ui, app_commands, Interaction, Forbidden
 from discord.ext.commands import Bot
 
 import templates
@@ -14,6 +15,8 @@ from commands import Confirm
 EMPTY_TEXT = "Empty"
 
 LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
+
+logger = logging.getLogger(__name__)
 
 
 class LinkPlayView(ui.View):
@@ -48,7 +51,7 @@ class LinkPlayView(ui.View):
         await self._alert_others(interaction.guild, embed, user,
                                  templates.info(f"{user.mention} has joined the Link Play!"))
 
-        for i, in enumerate(embed.fields):
+        for i, _ in enumerate(embed.fields):
             if embed.fields[i].value == EMPTY_TEXT:
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=user.mention)
                 await interaction.message.edit(embed=embed)
@@ -81,7 +84,10 @@ class LinkPlayView(ui.View):
                 continue
 
             user = guild.get_member(int(field.value.removeprefix("<@").removesuffix(">")))
-            await user.send(message)
+            try:
+                await user.send(message)
+            except Forbidden:
+                logger.info("Couldn't alert %s (ID: %d) for Link Play", str(user), user.id)
 
     @ui.button(label="Leave", custom_id="linkview-leave-button")
     async def leave(self, interaction: Interaction, _: ui.Button):
@@ -114,7 +120,7 @@ class LinkPlayView(ui.View):
                                          templates.info(f"{user.mention} has left the Link Play"))
 
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=EMPTY_TEXT)
-                await interaction.message.edit(embed=embed)
+                await interaction.edit_original_response(embed=embed)
                 await interaction.response.send_message(templates.success("You've left the Link Play"), ephemeral=True)
 
             return
