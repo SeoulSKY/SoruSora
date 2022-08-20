@@ -87,7 +87,7 @@ class LinkPlayView(ui.View):
             try:
                 await user.send(message)
             except Forbidden:
-                logger.info("Couldn't alert %s (ID: %d) for Link Play", str(user), user.id)
+                pass
 
     @ui.button(label="Leave", custom_id="linkview-leave-button")
     async def leave(self, interaction: Interaction, _: ui.Button):

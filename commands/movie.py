@@ -1,15 +1,14 @@
 """
 Implements a command relate to movie
 """
+
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 from typing import Literal, Optional
 
-import imageio.v2
 import numpy as np
-from PIL import Image
 from discord import app_commands, Interaction, Embed, NotFound
 from discord.ext.commands import Bot
 from moviepy.editor import VideoFileClip
@@ -32,7 +31,18 @@ MOVIE_RESOLUTION = (28, 21)
 (width, height)
 """
 
+MOVIE_RESOLUTION_16_9 = (28, 17)
+"""
+(width, height)
+"""
+
+
 MOBILE_MOVIE_RESOLUTION = (11, 8)
+"""
+(width, height)
+"""
+
+MOBILE_MOVIE_RESOLUTION_16_9 = (11, 6)
 """
 (width, height)
 """
@@ -55,8 +65,10 @@ class Movie(app_commands.Group):
 
     @app_commands.command()
     @app_commands.describe(name="Name of the movie to play")
-    @app_commands.describe(original_speed="Play the movie at the original speed by skipping some frames")
-    @app_commands.describe(fps="Number of frames to display per second")
+    @app_commands.describe(original_speed="Play the movie at the original speed by skipping some frames. "
+                                          "Default value: True")
+    @app_commands.describe(fps="Number of frames to display per second. Range from 1 to 4 (inclusive). "
+                               "Default value: 4")
     async def play(self, interaction: Interaction,
                    name: Literal["bad_apple"],
                    original_speed: Optional[bool] = True,
@@ -68,36 +80,35 @@ class Movie(app_commands.Group):
         embed = Embed(color=templates.color, title=name.replace("_", " ").title())
         await interaction.response.send_message(embed=embed)
 
-        file_name = f"assets/{name}.mp4"
-        with VideoFileClip(file_name) as video_clip:
-            pass
+        movie = self._resize(VideoFileClip(f"assets/{name}.mp4", audio=False), is_on_mobile)
 
         text_frames = Queue(maxsize=60)
 
         def _create_frames():
-            movie = imageio.imiter(file_name, format_hint=".mp4")
-
-            for i, frame in enumerate(movie):
-                if original_speed and i % (video_clip.fps // fps) != 0:
+            for i, frame in enumerate(movie.iter_frames()):
+                if original_speed and i % (movie.fps // fps) != 0:
                     continue
 
-                movie_resolution = MOBILE_MOVIE_RESOLUTION if is_on_mobile else MOVIE_RESOLUTION
-                # noinspection PyTypeChecker
-                resized_frame = np.asarray(Image.fromarray(frame).resize(movie_resolution))
+                text_frames.put(Movie._create_text(frame, is_on_mobile), timeout=60)
 
-                text_frames.put(Movie._create_text(resized_frame, is_on_mobile), timeout=300)
-
-            text_frames.task_done()
+            text_frames.put(None)
+            movie.close()
 
         executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(_create_frames)
 
         current_frame_num = 1
-        while not executor.submit(_create_frames).done():
+        while not future.done():
             await self._delay_cycle(fps)
 
             try:
-                embed.description = f"```{text_frames.get(timeout=5)}```"
+                text_frame = text_frames.get(timeout=5)
+                if text_frame is None:
+                    return
+
+                embed.description = f"```{text_frame}```"
             except Exception as ex:
+                movie.close()
                 executor.shutdown(wait=False, cancel_futures=True)
                 raise ex
 
@@ -106,13 +117,30 @@ class Movie(app_commands.Group):
             try:
                 await interaction.edit_original_response(embed=embed)
             except NotFound:  # message deleted
+                movie.close()
                 executor.shutdown(wait=False, cancel_futures=True)
                 return
 
             if original_speed:
-                current_frame_num += int(video_clip.fps) // fps
+                current_frame_num += round(movie.fps) // fps
             else:
                 current_frame_num += 1
+
+    @staticmethod
+    def _resize(video: VideoFileClip, is_on_mobile: bool) -> VideoFileClip:
+        if abs(video.aspect_ratio - 4 / 3) < 0.0005:
+            if is_on_mobile:
+                new_resolution = MOBILE_MOVIE_RESOLUTION
+            else:
+                new_resolution = MOVIE_RESOLUTION
+        else:
+            if is_on_mobile:
+                new_resolution = MOBILE_MOVIE_RESOLUTION_16_9
+            else:
+                new_resolution = MOVIE_RESOLUTION_16_9
+
+        # noinspection PyUnresolvedReferences
+        return video.resize(new_resolution)  # pylint: disable=no-member
 
     @staticmethod
     async def _delay_cycle(fps):
