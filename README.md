@@ -10,7 +10,7 @@
 pip install virtualenv
 virtualenv venv
 
-# On
+# On Windows
 venv\Scripts\activate.bat
 
 # On Linux and macos
