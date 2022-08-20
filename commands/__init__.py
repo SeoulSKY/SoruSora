@@ -14,6 +14,7 @@ class Confirm(discord.ui.View):
     """
     Buttons for confirmation
     """
+
     def __init__(self, *, confirmed_message: str = "Confirmed", cancelled_message: str = "Cancelled"):
         """
         View to get a confirmation from a user. When the confirm button is pressed, set the is_confirmed to `True` and
