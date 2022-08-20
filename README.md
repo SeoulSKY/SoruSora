@@ -13,7 +13,7 @@ virtualenv venv
 # On Windows
 venv\Scripts\activate.bat
 
-# On Linux and macos
+# On Linux and macOS
 source venv/bin/activate
 ```
 
@@ -35,4 +35,4 @@ python3 main.py
 These are the documents that will be helpful to read to understand the codebase
 
 * [discord.py](https://discordpy.readthedocs.io/en/latest/)
-* [firestore](https://firebase.google.com/docs/firestore/)
+* [Firestore](https://firebase.google.com/docs/firestore/)
