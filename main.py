@@ -22,6 +22,7 @@ class MyBot(Bot):
     """
     Class to be used to run the Discord Bot
     """
+
     def __init__(self):
         super().__init__(command_prefix="s!", intents=discord.Intents.all())
         self._add_commands()
