@@ -9,7 +9,7 @@ from queue import Queue
 from typing import Literal, Optional
 
 import numpy as np
-from discord import app_commands, Interaction, Embed, NotFound
+from discord import app_commands, Interaction, Embed, NotFound, HTTPException
 from discord.ext.commands import Bot
 from moviepy.editor import VideoFileClip
 from numpy.core.records import ndarray
@@ -35,7 +35,6 @@ MOVIE_RESOLUTION_16_9 = (28, 17)
 """
 (width, height)
 """
-
 
 MOBILE_MOVIE_RESOLUTION = (11, 8)
 """
@@ -94,37 +93,47 @@ class Movie(app_commands.Group):
             text_frames.put(None)
             movie.close()
 
-        executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(_create_frames)
+        async def _display():
+            current_frame_num = 1
+            message = await interaction.original_response()
+            while not creating.done():
+                await self._delay_cycle(fps)
 
-        current_frame_num = 1
-        while not future.done():
-            await self._delay_cycle(fps)
+                try:
+                    text_frame = text_frames.get(timeout=5)
+                    if text_frame is None:
+                        return
 
-            try:
-                text_frame = text_frames.get(timeout=5)
-                if text_frame is None:
+                    embed.description = f"```{text_frame}```"
+                except Exception as ex:
+                    movie.close()
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    raise ex
+
+                embed.set_footer(text=f"Frame: {current_frame_num}")
+
+                try:
+                    await message.edit(embed=embed)
+                except NotFound:  # message deleted
+                    movie.close()
+                    executor.shutdown(wait=False, cancel_futures=True)
                     return
+                except HTTPException as ex:
+                    if ex.code == 50027:
+                        message = await message.channel.fetch_message(message.id)
+                        await message.edit(embed=embed)
+                    else:
+                        raise ex
 
-                embed.description = f"```{text_frame}```"
-            except Exception as ex:
-                movie.close()
-                executor.shutdown(wait=False, cancel_futures=True)
-                raise ex
+                if original_speed:
+                    current_frame_num += round(movie.fps) // fps
+                else:
+                    current_frame_num += 1
 
-            embed.set_footer(text=f"Frame: {current_frame_num}")
+        executor = ThreadPoolExecutor(max_workers=1)
+        creating = executor.submit(_create_frames)
 
-            try:
-                await interaction.edit_original_response(embed=embed)
-            except NotFound:  # message deleted
-                movie.close()
-                executor.shutdown(wait=False, cancel_futures=True)
-                return
-
-            if original_speed:
-                current_frame_num += round(movie.fps) // fps
-            else:
-                current_frame_num += 1
+        await _display()
 
     @staticmethod
     def _resize(video: VideoFileClip, is_on_mobile: bool) -> VideoFileClip:
