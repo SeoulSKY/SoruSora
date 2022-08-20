@@ -10,7 +10,7 @@ from typing import Literal, Optional
 import imageio.v2
 import numpy as np
 from PIL import Image
-from discord import app_commands, Interaction, Embed
+from discord import app_commands, Interaction, Embed, NotFound
 from discord.ext.commands import Bot
 from moviepy.editor import VideoFileClip
 from numpy.core.records import ndarray
@@ -27,12 +27,12 @@ MOBILE_CHARS = "┈░▒▓█"
 Characters to use for movies on mobile devices
 """
 
-MOVIE_RESOLUTION = (36, 27)
+MOVIE_RESOLUTION = (28, 21)
 """
 (width, height)
 """
 
-MOBILE_MOVIE_RESOLUTION = (15, 11)
+MOBILE_MOVIE_RESOLUTION = (11, 8)
 """
 (width, height)
 """
@@ -64,6 +64,7 @@ class Movie(app_commands.Group):
         """
         Play the movie
         """
+        is_on_mobile = interaction.guild.get_member(interaction.user.id).is_on_mobile()
         embed = Embed(color=templates.color, title=name.replace("_", " ").title())
         await interaction.response.send_message(embed=embed)
         message = await interaction.original_response()
@@ -81,11 +82,11 @@ class Movie(app_commands.Group):
                 if original_speed and i % (video_clip.fps // fps) != 0:
                     continue
 
-                movie_resolution = MOBILE_MOVIE_RESOLUTION if interaction.user.is_on_mobile() else MOVIE_RESOLUTION
+                movie_resolution = MOBILE_MOVIE_RESOLUTION if is_on_mobile else MOVIE_RESOLUTION
                 # noinspection PyTypeChecker
                 resized_frame = np.asarray(Image.fromarray(frame).resize(movie_resolution))
 
-                text_frames.put(Movie._create_text(resized_frame, interaction.user.is_on_mobile()), timeout=300)
+                text_frames.put(Movie._create_text(resized_frame, is_on_mobile), timeout=300)
 
             text_frames.task_done()
 
@@ -102,7 +103,12 @@ class Movie(app_commands.Group):
                 raise ex
 
             embed.set_footer(text=f"Frame: {current_frame_num}")
-            await message.edit(embed=embed)
+
+            try:
+                await message.edit(embed=embed)
+            except NotFound:  # message deleted
+                executor.shutdown(wait=False, cancel_futures=True)
+                return
 
             if original_speed:
                 current_frame_num += int(video_clip.fps) // fps
@@ -125,9 +131,8 @@ class Movie(app_commands.Group):
         normalized_frame = np.floor(normalized_frame).astype(int)
 
         text = ""
-        for i, _ in enumerate(normalized_frame):
-            for j, _ in enumerate(normalized_frame):
-                char_idx = normalized_frame[i][j]
+        for arr in normalized_frame:
+            for char_idx in arr:
                 text += (MOBILE_CHARS[char_idx] if is_on_mobile else CHARS[char_idx]) * 2
             text += "\n"
 
