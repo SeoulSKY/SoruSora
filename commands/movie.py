@@ -1,7 +1,6 @@
 """
 Implements a command relate to movie
 """
-
 import itertools
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
@@ -115,7 +114,7 @@ class Movie(app_commands.Group):
     @app_commands.describe(original_speed="Play the movie at the original speed by skipping some frames. "
                                           "Default value: True")
     async def play(self, interaction: Interaction,
-                   name: Literal["bad_apple"],
+                   name: Literal["bad_apple", "ultra_b+k"],
                    fps: Optional[Literal[1, 2]] = 2,
                    original_speed: Optional[bool] = True):
         """
@@ -134,6 +133,9 @@ class Movie(app_commands.Group):
         def _create_frames():
             try:
                 for i, frame in enumerate(movie.iter_frames()):
+                    # ignore some last frames to prevent reading an empty frame
+                    if i == movie.reader.nframes - 2:
+                        break
                     if original_speed and i % (movie.fps // fps) != 0:
                         continue
 
@@ -141,7 +143,6 @@ class Movie(app_commands.Group):
                                     timeout=timedelta(minutes=3).total_seconds())
             finally:
                 text_frames.put(None)
-                movie.close()
 
         @tasks.loop(seconds=1 / fps)
         async def _display():
@@ -149,24 +150,26 @@ class Movie(app_commands.Group):
             try:
                 text_frame = text_frames.get(timeout=5)
                 if text_frame is None:
+                    text_frames.put(None)
+                    _display.cancel()
                     return
 
                 embed.description = f"```{text_frame}```"
-            except Exception as ex:
-                movie.close()
-                executor.shutdown(wait=False, cancel_futures=True)
-                raise ex
 
-            try:
                 await screen.update()
             except NotFound:  # message deleted
-                movie.close()
-                executor.shutdown(wait=False, cancel_futures=True)
+                _display.cancel()
                 return
 
-        executor = ThreadPoolExecutor(max_workers=1)
+        @_display.after_loop
+        async def _clean_up():
+            text_frames.task_done()
+            movie.close()
+            executor.shutdown(wait=False, cancel_futures=True)
 
-        executor.submit(_create_frames).add_done_callback(lambda _: _display.stop())
+        executor = ThreadPoolExecutor(max_workers=1)
+        executor.submit(_create_frames)
+
         _display.start()
 
     @staticmethod

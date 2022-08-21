@@ -71,7 +71,4 @@ async def on_ready():
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
-    bot.run(os.getenv("BOT_TOKEN"))
+    bot.run(os.getenv("BOT_TOKEN"), log_handler=logging.StreamHandler(), log_level=logging.INFO)
