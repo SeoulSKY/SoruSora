@@ -2,14 +2,15 @@
 Implements a command relate to movie
 """
 
-import asyncio
-import time
+import itertools
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from queue import Queue
 from typing import Literal, Optional
 
 import numpy as np
-from discord import app_commands, Interaction, Embed, NotFound, HTTPException
+from discord import app_commands, Interaction, Embed, NotFound, HTTPException, Message
+from discord.ext import tasks
 from discord.ext.commands import Bot
 from moviepy.editor import VideoFileClip
 from numpy.core.records import ndarray
@@ -53,6 +54,51 @@ Maximum value of RGB for each pixel
 """
 
 
+class Screen:
+    """
+    Screen to display movie on Discord
+    """
+
+    def __init__(self, message: Message, embed: Embed):
+        self._message = message
+        self._embed = embed
+
+    @property
+    def message(self):
+        """
+        Get the message
+        """
+        return self._message
+
+    @message.setter
+    def message(self, message: Message):
+        self._message = message
+
+    @property
+    def embed(self):
+        """
+        Get the embed
+        """
+        return self._embed
+
+    @embed.setter
+    def embed(self, embed: Embed):
+        self._embed = embed
+
+    async def update(self):
+        """
+        Update the screen on Discord
+        """
+        try:
+            await self.message.edit(embed=self.embed)
+        except HTTPException as ex:
+            if ex.code == 50027:
+                self.message = await self._message.channel.fetch_message(self.message.id)
+                await self.message.edit(embed=self.embed)
+            else:
+                raise ex
+
+
 class Movie(app_commands.Group):
     """
     Commands related to Movie
@@ -64,14 +110,14 @@ class Movie(app_commands.Group):
 
     @app_commands.command()
     @app_commands.describe(name="Name of the movie to play")
+    @app_commands.describe(fps="Number of frames to display per second. Range from 1 to 2 (inclusive). "
+                               "Default value: 2")
     @app_commands.describe(original_speed="Play the movie at the original speed by skipping some frames. "
                                           "Default value: True")
-    @app_commands.describe(fps="Number of frames to display per second. Range from 1 to 4 (inclusive). "
-                               "Default value: 4")
     async def play(self, interaction: Interaction,
                    name: Literal["bad_apple"],
-                   original_speed: Optional[bool] = True,
-                   fps: Optional[app_commands.Range[int, 1, 4]] = 4):
+                   fps: Optional[Literal[1, 2]] = 2,
+                   original_speed: Optional[bool] = True):
         """
         Play the movie
         """
@@ -81,63 +127,51 @@ class Movie(app_commands.Group):
 
         movie = self._resize(VideoFileClip(f"assets/{name}.mp4", audio=False), is_on_mobile)
 
-        text_frames = Queue(maxsize=60)
+        text_frames = Queue(maxsize=movie.fps * fps)
+        counter = itertools.count(start=1, step=round(movie.fps) // fps if original_speed else 1)
+        screen = Screen(await interaction.original_response(), embed)
 
         def _create_frames():
-            for i, frame in enumerate(movie.iter_frames()):
-                if original_speed and i % (movie.fps // fps) != 0:
-                    continue
+            try:
+                for i, frame in enumerate(movie.iter_frames()):
+                    if original_speed and i % (movie.fps // fps) != 0:
+                        continue
 
-                text_frames.put(Movie._create_text(frame, is_on_mobile), timeout=60)
+                    text_frames.put(Movie._create_text(frame, is_on_mobile),
+                                    timeout=timedelta(minutes=3).total_seconds())
+            finally:
+                text_frames.put(None)
+                movie.close()
 
-            text_frames.put(None)
-            movie.close()
-
+        @tasks.loop(seconds=1 / fps)
         async def _display():
-            current_frame_num = 1
-            message = await interaction.original_response()
-            while not creating.done():
-                await self._delay_cycle(fps)
-
-                try:
-                    text_frame = text_frames.get(timeout=5)
-                    if text_frame is None:
-                        return
-
-                    embed.description = f"```{text_frame}```"
-                except Exception as ex:
-                    movie.close()
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    raise ex
-
-                embed.set_footer(text=f"Frame: {current_frame_num}")
-
-                try:
-                    await message.edit(embed=embed)
-                except NotFound:  # message deleted
-                    movie.close()
-                    executor.shutdown(wait=False, cancel_futures=True)
+            embed.set_footer(text=f"Frame: {next(counter)}")
+            try:
+                text_frame = text_frames.get(timeout=5)
+                if text_frame is None:
                     return
-                except HTTPException as ex:
-                    if ex.code == 50027:
-                        message = await message.channel.fetch_message(message.id)
-                        await message.edit(embed=embed)
-                    else:
-                        raise ex
 
-                if original_speed:
-                    current_frame_num += round(movie.fps) // fps
-                else:
-                    current_frame_num += 1
+                embed.description = f"```{text_frame}```"
+            except Exception as ex:
+                movie.close()
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise ex
+
+            try:
+                await screen.update()
+            except NotFound:  # message deleted
+                movie.close()
+                executor.shutdown(wait=False, cancel_futures=True)
+                return
 
         executor = ThreadPoolExecutor(max_workers=1)
-        creating = executor.submit(_create_frames)
 
-        await _display()
+        executor.submit(_create_frames).add_done_callback(lambda _: _display.stop())
+        _display.start()
 
     @staticmethod
     def _resize(video: VideoFileClip, is_on_mobile: bool) -> VideoFileClip:
-        if abs(video.aspect_ratio - 4 / 3) < 0.0005:
+        if abs(video.aspect_ratio - 4 / 3) < 0.05:
             if is_on_mobile:
                 new_resolution = MOBILE_MOVIE_RESOLUTION
             else:
@@ -150,12 +184,6 @@ class Movie(app_commands.Group):
 
         # noinspection PyUnresolvedReferences
         return video.resize(new_resolution)  # pylint: disable=no-member
-
-    @staticmethod
-    async def _delay_cycle(fps):
-        clock = time.perf_counter() * fps  # measure time in 1/fps seconds
-        sleep = int(clock) + 1 - clock  # time until the next 1/fps
-        await asyncio.sleep(sleep / fps + 1 / fps)
 
     @staticmethod
     def _create_text(frame: ndarray, is_on_mobile: bool) -> str:
