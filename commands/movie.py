@@ -92,7 +92,7 @@ class Screen:
             await self.message.edit(embed=self.embed)
         except HTTPException as ex:
             if ex.code == 50027:
-                self.message = await self._message.channel.fetch_message(self.message.id)
+                self.message = await self.message.channel.fetch_message(self.message.id)
                 await self.message.edit(embed=self.embed)
             else:
                 raise ex
@@ -193,7 +193,7 @@ class Movie(app_commands.Group):
         grayscale_frame = np.dot(frame, (0.2989, 0.5870, 0.1140))
         grayscale_frame = np.floor(grayscale_frame).astype(int)
 
-        char_length = len(CHARS) if is_on_mobile else len(MOBILE_CHARS)
+        char_length = len(MOBILE_CHARS) if is_on_mobile else len(CHARS)
         normalized_frame: ndarray = grayscale_frame * char_length / PIXEL_VALUE_RANGE
         normalized_frame = np.floor(normalized_frame).astype(int)
 
