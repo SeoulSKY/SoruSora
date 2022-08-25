@@ -1,5 +1,11 @@
 # SoruSora
 
+Demonstration of `/movie play` command
+
+https://user-images.githubusercontent.com/48105703/186544955-db959520-62d6-493c-8d87-38bd44389d64.mp4
+
+
+
 ## How to Set up and Run
 
 * Install [python 3.10](https://www.python.org/downloads/)
