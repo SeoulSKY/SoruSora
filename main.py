@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-IS_DEV_ENV = "AWS" not in os.environ
+IS_DEV_ENV = "PRODUCTION" not in os.environ
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
