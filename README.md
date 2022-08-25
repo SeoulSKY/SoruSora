@@ -11,7 +11,7 @@ https://user-images.githubusercontent.com/48105703/186544955-db959520-62d6-493c-
 
 * Install [python 3.10](https://www.python.org/downloads/)
 * Install [Git Large File Storage](https://git-lfs.github.com) if you haven't
-* Install [FFmpeg](https://ffmpeg.org)
+* Install [FFmpeg](https://ffmpeg.org/download.html)
 * Set up and activate virtual environment
 
 ```bash
