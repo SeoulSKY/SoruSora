@@ -4,7 +4,6 @@ Main script where the program starts
 
 import logging
 import os
-import sys
 from importlib import import_module
 
 import discord
@@ -14,12 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-is_dev_env = "DYNO" not in os.environ
-if is_dev_env:
-    if sys.platform.startswith("win"):
-        os.environ["IMAGEIO_FFMPEG_EXE"] = "bin/ffmpeg.exe"
-    else:
-        os.environ["IMAGEIO_FFMPEG_EXE"] = "bin/ffmpeg"
+IS_DEV_ENV = "AWS" not in os.environ
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
