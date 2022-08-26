@@ -4,7 +4,7 @@
 
 Demonstration of `/movie play` command
 
-![movie_play](https://user-images.githubusercontent.com/48105703/186945416-728905ae-562e-463d-92de-5cde435ac44c.gif)
+<img style="width: 500px; height: auto" src="https://user-images.githubusercontent.com/48105703/186945416-728905ae-562e-463d-92de-5cde435ac44c.gif">
 
 ## How to Set up and Run
 
