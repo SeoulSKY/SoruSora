@@ -50,7 +50,7 @@ Follow [PEP 8 Guidelines](https://peps.python.org/pep-0008/), which is standard 
 
 ## Documents
 
-These are the documents that will be helpful to read to understand the codebase
+These are the documents that will be helpful to understand the codebase
 
 * [discord.py](https://discordpy.readthedocs.io/en/latest/)
 * [Firestore](https://firebase.google.com/docs/firestore/)
