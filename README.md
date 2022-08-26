@@ -9,9 +9,7 @@ https://user-images.githubusercontent.com/48105703/186544955-db959520-62d6-493c-
 
 ## How to Set up and Run
 
-* Install [python 3.10](https://www.python.org/downloads/)
-* Install [Git Large File Storage](https://git-lfs.github.com) if you haven't
-* Install [FFmpeg](https://ffmpeg.org/download.html)
+* Install [python 3.10](https://www.python.org/downloads/), [Git Large File Storage](https://git-lfs.github.com), and [FFmpeg](https://ffmpeg.org/download.html)
 * Set up and activate virtual environment
 
 ```bash
@@ -38,9 +36,5 @@ pip install -r requirements.txt
 python3 main.py
 ```
 
-## Documents
-
-These are the documents that will be helpful to read to understand the codebase
-
-* [discord.py](https://discordpy.readthedocs.io/en/latest/)
-* [Firestore](https://firebase.google.com/docs/firestore/)
+## How to Contribute
+Read [CONTRIBUTING.md](https://github.com/SeoulSKY/SoruSora/blob/master/CONTRIBUTING.md) for details
