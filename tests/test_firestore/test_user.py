@@ -1,5 +1,5 @@
 """
-Test script for configs module
+Test script for user module
 """
 
 import pytest
@@ -27,9 +27,9 @@ def teardown_function():
 
 
 @pytest.mark.asyncio
-async def test_has():
+async def test_has_user():
     """
-    Test has() function
+    Test has_user() function
     """
     assert not await user.has_user(USER_ID)
 
@@ -39,9 +39,9 @@ async def test_has():
 
 
 @pytest.mark.asyncio
-async def test_get_config():
+async def test_get_user():
     """
-    Test get_config() function
+    Test get_user() function
     """
     config = user.User(USER_ID)
 
@@ -54,9 +54,9 @@ async def test_get_config():
 
 
 @pytest.mark.asyncio
-async def test_set_config():
+async def test_set_user():
     """
-    Test set_config function
+    Test set_user function
     """
     config = user.User(USER_ID, translate_to=["ko"])
 

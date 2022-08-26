@@ -1,8 +1,8 @@
 """
-Provides functions to interact with the user configs in the test_firestore
+Provides functions to interact with the user configs in the firestore
 
 Classes:
-    Config
+    User
 
 Functions:
     get_collection()
@@ -36,11 +36,11 @@ class User:
         :return: The new user config
         """
         temp_id = 0
-        config = User(temp_id)
+        user = User(temp_id)
         for key, value in source.items():
-            setattr(config, key, value)
+            setattr(user, key, value)
 
-        return config
+        return user
 
     def to_dict(self) -> dict:
         """
@@ -81,9 +81,9 @@ async def get_user(user_id: int) -> User:
     return User.from_dict(user_doc.to_dict())
 
 
-async def set_user(config: User) -> None:
+async def set_user(user: User) -> None:
     """
     Set the user configs in the database
-    :param config: The user configs to set
+    :param user: The user configs to set
     """
-    await get_collection().document(str(config.user_id)).set(config.to_dict())
+    await get_collection().document(str(user.user_id)).set(user.to_dict())
