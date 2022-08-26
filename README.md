@@ -3,9 +3,7 @@
 
 Demonstration of `/movie play` command
 
-https://user-images.githubusercontent.com/48105703/186544955-db959520-62d6-493c-8d87-38bd44389d64.mp4
-
-
+![movie_play](https://user-images.githubusercontent.com/48105703/186945416-728905ae-562e-463d-92de-5cde435ac44c.gif)
 
 ## How to Set up and Run
 
