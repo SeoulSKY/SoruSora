@@ -6,9 +6,9 @@ Classes:
 
 Functions:
     get_collection()
-    has_config()
-    get_config()
-    set_config()
+    has_user()
+    get_user()
+    set_user()
 """
 
 from google.cloud.firestore_v1 import AsyncCollectionReference
@@ -16,7 +16,7 @@ from google.cloud.firestore_v1 import AsyncCollectionReference
 from firestore import db
 
 
-class Config:
+class User:
     """
     A wrapper class to represent user configs in the database
     """
@@ -36,7 +36,7 @@ class Config:
         :return: The new user config
         """
         temp_id = 0
-        config = Config(temp_id)
+        config = User(temp_id)
         for key, value in source.items():
             setattr(config, key, value)
 
@@ -55,10 +55,10 @@ def get_collection() -> AsyncCollectionReference:
     Get the collection of user configs from the database
     :return: The collection of user configs
     """
-    return db.collection("configs")
+    return db.collection("user")
 
 
-async def has_config(user_id: int) -> bool:
+async def has_user(user_id: int) -> bool:
     """
     Check if a user has configs in the database
     :param user_id: The user id to check
@@ -67,7 +67,7 @@ async def has_config(user_id: int) -> bool:
     return (await get_collection().document(str(user_id)).get()).exists
 
 
-async def get_config(user_id: int) -> Config:
+async def get_user(user_id: int) -> User:
     """
     Get the user configs from the database. If the config is not present, get the default configs
     :param user_id: The user id
@@ -76,12 +76,12 @@ async def get_config(user_id: int) -> Config:
     user_doc = await get_collection().document(str(user_id)).get()
 
     if not user_doc.exists:
-        return Config(user_id)
+        return User(user_id)
 
-    return Config.from_dict(user_doc.to_dict())
+    return User.from_dict(user_doc.to_dict())
 
 
-async def set_config(config: Config) -> None:
+async def set_user(config: User) -> None:
     """
     Set the user configs in the database
     :param config: The user configs to set
