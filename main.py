@@ -82,6 +82,9 @@ async def on_app_command_error(interaction: Interaction, error: AppCommandError)
 
 
 if __name__ == "__main__":
+    if not os.path.exists(LOGS_DIR):
+        os.mkdir(LOGS_DIR)
+
     error_handler = logging.FileHandler(LOGS_DIR + "error.log")
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
