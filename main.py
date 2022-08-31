@@ -20,6 +20,8 @@ IS_DEV_ENV = "PRODUCTION" not in os.environ
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+LOGS_DIR = ROOT_DIR + "/logs/"
+
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 
@@ -80,4 +82,10 @@ async def on_app_command_error(interaction: Interaction, error: AppCommandError)
 
 
 if __name__ == "__main__":
-    bot.run(os.getenv("BOT_TOKEN"), log_handler=logging.StreamHandler(), log_level=logging.INFO)
+    error_handler = logging.FileHandler(LOGS_DIR + "error.log")
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+    logging.getLogger().addHandler(error_handler)
+
+    bot.run(os.getenv("BOT_TOKEN"), log_handler=logging.StreamHandler(), log_level=logging.INFO, root_logger=True)
