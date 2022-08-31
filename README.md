@@ -2,7 +2,7 @@
 
 ![python](https://img.shields.io/badge/python-v3.10-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
 
-Demonstration of `/movie play` command
+Introducing `/movie play` command
 
 <img style="width: 500px; height: auto" src="https://user-images.githubusercontent.com/48105703/186945416-728905ae-562e-463d-92de-5cde435ac44c.gif">
 
