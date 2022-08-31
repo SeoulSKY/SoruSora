@@ -135,7 +135,8 @@ class Translator(app_commands.Group):
                 text += "\n\n"
                 for embed in message.embeds:
                     text += embed.description
-                    futures.append(executor.submit(translator.translate, text=text, dest=dest_lang))
+
+            futures.append(executor.submit(translator.translate, text=text, dest=dest_lang))
 
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
