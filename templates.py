@@ -50,3 +50,12 @@ def error(message: str):
     :return: The converted message
     """
     return ":x: " + message
+
+
+def forbidden(message: str):
+    """
+    Convert the message as forbidden message
+    :param message: The message to convert
+    :return: The converted message
+    """
+    return ":no_entry: " + message

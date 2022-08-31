@@ -7,9 +7,12 @@ import os
 from importlib import import_module
 
 import discord
-from discord import app_commands
+from discord import app_commands, Interaction
+from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
+
+from templates import forbidden
 
 load_dotenv()
 
@@ -62,6 +65,18 @@ async def on_ready():
     """
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
+
+
+@bot.tree.error
+async def on_app_command_error(interaction: Interaction, error: AppCommandError):
+    """
+    Executed when an exception is raised while running app commands
+    """
+    if isinstance(error, MissingPermissions):
+        await interaction.response.send_message(forbidden(str(error)), ephemeral=True)
+        return
+
+    raise error
 
 
 if __name__ == "__main__":
