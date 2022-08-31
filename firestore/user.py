@@ -6,9 +6,9 @@ Classes:
 
 Functions:
     get_collection()
-    has_user()
-    get_user()
-    set_user()
+    has_channel()
+    get_channel()
+    set_channel()
 """
 
 from google.cloud.firestore_v1 import AsyncCollectionReference
@@ -21,9 +21,8 @@ class User:
     A wrapper class to represent user configs in the database
     """
 
-    def __init__(self, user_id: int, is_translator_on: bool = False, translate_to: list[str] = None):
+    def __init__(self, user_id: int, translate_to: list[str] = None):
         self.user_id = user_id
-        self.is_translator_on = is_translator_on
         if translate_to is None:
             translate_to = []
         self.translate_to: list[str] = translate_to

@@ -37,4 +37,4 @@ python3 main.py
 
 ## How to Contribute
 
-Read [CONTRIBUTING.md](https://github.com/SeoulSKY/SoruSora/blob/master/CONTRIBUTING.md) for details
+Read [CONTRIBUTING.md](https://github.com/SeoulSKY/SoruSora/blob/master/docs/CONTRIBUTING.md) for details
