@@ -134,7 +134,9 @@ class Translator(app_commands.Group):
             if len(message.embeds) != 0:
                 text += "\n\n"
                 for embed in message.embeds:
-                    text += embed.description
+                    text += embed.description + "\n\n"
+
+                text = text.removesuffix("\n\n")
 
             futures.append(executor.submit(translator.translate, text=text, dest=dest_lang))
 
