@@ -53,4 +53,4 @@ These are the documents that will be helpful to understand the codebase
 By contributing, you agree that your contributions will be licensed under its MIT License.
 
 ## Code of Conduct
-Consider reading [Code of Conduct](https://github.com/SeoulSKY/SoruSora/blob/master/CODE_OF_CONDUCT.md).
+Consider reading [Code of Conduct](https://github.com/SeoulSKY/SoruSora/blob/master/docs/CODE_OF_CONDUCT.md).
