@@ -85,10 +85,18 @@ if __name__ == "__main__":
     if not os.path.exists(LOGS_DIR):
         os.mkdir(LOGS_DIR)
 
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
     error_handler = logging.FileHandler(LOGS_DIR + "error.log")
     error_handler.setLevel(logging.ERROR)
-    error_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    error_handler.setFormatter(formatter)
 
-    logging.getLogger().addHandler(error_handler)
+    warning_handler = logging.FileHandler(LOGS_DIR + "warning.log")
+    warning_handler.setLevel(logging.WARNING)
+    warning_handler.setFormatter(formatter)
+
+    logger = logging.getLogger()
+    logger.addHandler(error_handler)
+    logger.addHandler(warning_handler)
 
     bot.run(os.getenv("BOT_TOKEN"), log_handler=logging.StreamHandler(), log_level=logging.INFO, root_logger=True)
