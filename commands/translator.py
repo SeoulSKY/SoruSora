@@ -1,11 +1,12 @@
 """
 This module implements translator command
 """
-
 import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 
 import discord.ui
-import googletrans
+import langid
+from deep_translator import GoogleTranslator
 from discord import app_commands, Interaction, Message, SelectOption, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
@@ -37,15 +38,18 @@ class LanguageSelect(discord.ui.Select):
             "russian",
             "spanish",
             "thai",
-            "vietnamese"
+            "vietnamese",
         ]
+
+        for lang in languages:
+            assert BatchTranslator.is_language_supported(lang), f"{lang} is not a supported language"
 
         languages = [SelectOption(label=lang) for lang in languages]
 
-        max_value_possible = 25
+        max_values_possible = 25
         super().__init__(placeholder="Select languages that will be translated to",
-                         max_values=min(max_value_possible, len(languages)),
-                         options=languages)
+                         max_values=min(max_values_possible, len(languages)),
+                         options=languages[: max_values_possible])
 
     async def callback(self, interaction: Interaction):
         config = await user.get_user(interaction.user.id)
@@ -67,6 +71,53 @@ class ChannelLanguageSelect(LanguageSelect):
 
         await interaction.response.send_message(success("Destination languages of this channel have been updated"),
                                                 ephemeral=True)
+
+
+class BatchTranslator:
+    """
+    Translator that can translate a text to multiple languages concurrently
+    """
+
+    _translator = GoogleTranslator()
+    _CODES_TO_LANGUAGES = {v: k for k, v in _translator.get_supported_languages(as_dict=True).items()}
+
+    def __init__(self, targets: list[str]):
+        languages_to_codes = self._translator.get_supported_languages(as_dict=True)
+        self._targets = (languages_to_codes[target] for target in targets)
+        self._executor = ThreadPoolExecutor(max_workers=len(targets))
+
+    @staticmethod
+    def is_language_supported(language: str):
+        """
+        Check if the given language is supported
+
+        :param language: The language to check
+        :return: True if it is supported, False otherwise
+        """
+        return BatchTranslator._translator.is_language_supported(language)
+
+    def translate(self, text: str):
+        """
+        Translate the text to target languages
+
+        :param text: The text to translate
+        :return: List of tuples containing target language code and translated text
+        """
+        source, _ = langid.classify(text)
+
+        futures = []
+        for target in self._targets:
+            if source == target:
+                continue
+
+            futures.append(self._executor.submit(self._translate, text, target))
+
+        for future in concurrent.futures.as_completed(futures):
+            yield future.result()
+
+    def _translate(self, text: str, target: str) -> tuple[str, str]:
+        self._translator.target = target
+        return self._CODES_TO_LANGUAGES[target], self._translator.translate(text)
 
 
 class Translator(app_commands.Group):
@@ -106,7 +157,21 @@ class Translator(app_commands.Group):
 
     @staticmethod
     async def _send_translation(message: Message, dest_langs: list[str]):
-        description = "\n\n".join(Translator._translate(message, dest_langs))
+        text = message.content
+
+        if len(message.embeds) != 0:
+            text += "\n\n"
+            for embed in message.embeds:
+                text += embed.description + "\n\n"
+
+            text = text.removesuffix("\n\n")
+
+        description = ""
+        for target, translated in BatchTranslator(dest_langs).translate(text):
+            description += f"**__{target.title()}__**\n{translated}\n\n"
+
+        description.removesuffix("\n\n")
+
         embeds = []
         for chunk in Translator._split(description, constants.EMBED_DESCRIPTION_MAX_LENGTH):
             embed = Embed(color=templates.color, description=chunk)
@@ -117,33 +182,10 @@ class Translator(app_commands.Group):
             await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)])
         except HTTPException as ex:
             if ex.code == 50035:
-                await message.reply(templates.error("Failed to translate because the content is too long"))
+                await message.reply(templates.error("Cannot send the translated text because it is too long"))
                 return
 
             raise ex
-
-    @staticmethod
-    def _translate(message: Message, dest_langs: list[str]):
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(dest_langs))
-        translator = googletrans.Translator()
-        futures = []
-
-        for dest_lang in dest_langs:
-            text = message.content
-
-            if len(message.embeds) != 0:
-                text += "\n\n"
-                for embed in message.embeds:
-                    text += embed.description + "\n\n"
-
-                text = text.removesuffix("\n\n")
-
-            futures.append(executor.submit(translator.translate, text=text, dest=dest_lang))
-
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
-            if result.src != result.dest:
-                yield f"**__{googletrans.LANGUAGES.get(result.dest).capitalize()}__**\n{result.text}"
 
     @staticmethod
     def _split(string: str, count: int):
