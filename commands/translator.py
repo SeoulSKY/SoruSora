@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import discord.ui
 import langid
 from deep_translator import GoogleTranslator
+from deep_translator.base import BaseTranslator
 from discord import app_commands, Interaction, Message, SelectOption, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
@@ -83,7 +84,8 @@ class BatchTranslator:
 
     def __init__(self, targets: list[str]):
         languages_to_codes = self._translator.get_supported_languages(as_dict=True)
-        self._targets = (languages_to_codes[target] for target in targets)
+
+        self._translators = (GoogleTranslator(target=languages_to_codes[target]) for target in targets)
         self._executor = ThreadPoolExecutor(max_workers=len(targets))
 
     @staticmethod
@@ -106,18 +108,19 @@ class BatchTranslator:
         source, _ = langid.classify(text)
 
         futures = []
-        for target in self._targets:
-            if source == target:
+        for translator in self._translators:
+            if source == translator.target:
                 continue
 
-            futures.append(self._executor.submit(self._translate, text, target))
+            translator.source = source
+            futures.append(self._executor.submit(self._translate, text, translator))
 
         for future in concurrent.futures.as_completed(futures):
             yield future.result()
 
-    def _translate(self, text: str, target: str) -> tuple[str, str]:
-        self._translator.target = target
-        return self._CODES_TO_LANGUAGES[target], self._translator.translate(text)
+    @staticmethod
+    def _translate(text: str, translator: BaseTranslator) -> tuple[str, str]:
+        return BatchTranslator._CODES_TO_LANGUAGES[translator.target], translator.translate(text)
 
 
 class Translator(app_commands.Group):
@@ -167,10 +170,14 @@ class Translator(app_commands.Group):
             text = text.removesuffix("\n\n")
 
         description = ""
-        for target, translated in BatchTranslator(dest_langs).translate(text):
+        translator = BatchTranslator(dest_langs)
+        for target, translated in translator.translate(text):
             description += f"**__{target.title()}__**\n{translated}\n\n"
 
         description.removesuffix("\n\n")
+
+        if len(description) == 0:
+            return
 
         embeds = []
         for chunk in Translator._split(description, constants.EMBED_DESCRIPTION_MAX_LENGTH):
