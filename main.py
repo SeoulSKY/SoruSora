@@ -35,7 +35,7 @@ class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
         self._level = level
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.levelno <= self._level
+        return record.levelno == self._level
 
 
 class MyBot(Bot):
