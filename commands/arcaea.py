@@ -14,7 +14,7 @@ from commands import Confirm
 
 EMPTY_TEXT = "Empty"
 
-LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
+LINK_PLAY_LIFESPAN = datetime.timedelta(days=1)
 
 logger = logging.getLogger(__name__)
 
