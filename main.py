@@ -25,6 +25,19 @@ LOGS_DIR = ROOT_DIR + "/logs/"
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 
+class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
+    """
+    Logger filter that filters only specific logging level
+    """
+
+    def __init__(self, level: int):
+        super().__init__()
+        self._level = level
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno <= self._level
+
+
 class MyBot(Bot):
     """
     Class to be used to run the Discord Bot
@@ -88,11 +101,11 @@ if __name__ == "__main__":
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     error_handler = logging.FileHandler(LOGS_DIR + "error.log")
-    error_handler.setLevel(logging.ERROR)
+    error_handler.addFilter(LevelFilter(logging.ERROR))
     error_handler.setFormatter(formatter)
 
     warning_handler = logging.FileHandler(LOGS_DIR + "warning.log")
-    warning_handler.setLevel(logging.WARNING)
+    warning_handler.addFilter(LevelFilter(logging.WARNING))
     warning_handler.setFormatter(formatter)
 
     logger = logging.getLogger()
