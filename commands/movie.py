@@ -199,8 +199,8 @@ class Movie(app_commands.Group):
 
         text = ""
         for arr in normalized_frame:
-            for char_idx in arr:
-                text += (MOBILE_CHARS[char_idx] if is_on_mobile else CHARS[char_idx]) * 2
+            for brightness in arr:
+                text += (MOBILE_CHARS[brightness] if is_on_mobile else CHARS[brightness]) * 2
             text += "\n"
 
         return text.removesuffix("\n")
