@@ -161,6 +161,7 @@ class Translator(app_commands.Group):
 
     @staticmethod
     async def _send_translation(message: Message, dest_langs: list[str]):
+        await message.channel.typing()
         text = message.content
 
         if len(message.embeds) != 0:
@@ -187,7 +188,7 @@ class Translator(app_commands.Group):
             embeds.append(embed)
 
         try:
-            await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)])
+            await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)], silent=True)
         except HTTPException as ex:
             if ex.code == 50035:
                 await message.reply(templates.error("Cannot send the translated text because it is too long"))

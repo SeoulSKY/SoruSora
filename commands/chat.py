@@ -57,6 +57,8 @@ class Chat(app_commands.Group):
         self.bot.add_listener(_listener, "on_message")
 
     async def _send_message(self, message: Message):
+        await message.channel.typing()
+
         user = await firestore.user.get_user(message.author.id)
         if user.chat_history_id is None:
             response = await self._client.chat.new_chat(self._char_info["external_id"])
