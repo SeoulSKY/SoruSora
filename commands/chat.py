@@ -65,7 +65,7 @@ class Chat(app_commands.Group):
             user.chat_history_id = response["external_id"]
 
             for participant in response["participants"]:
-                if participant["is_human"]:
+                if not participant["is_human"]:
                     user.chat_history_tgt = participant["user"]["username"]
 
             if user.chat_history_tgt is None:
