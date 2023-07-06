@@ -6,10 +6,13 @@ import os
 import re
 import json
 
-from discord import app_commands, Message
+from discord import app_commands, Message, Interaction
 from discord.ext.commands import Bot
 from characterai import PyAsyncCAI
 from characterai.errors import PyCAIError
+
+import firestore.user
+from templates import success, warning
 
 
 class Chat(app_commands.Group):
@@ -54,10 +57,49 @@ class Chat(app_commands.Group):
         self.bot.add_listener(_listener, "on_message")
 
     async def _send_message(self, message: Message):
+        user = await firestore.user.get_user(message.author.id)
+        if user.chat_history_id is None:
+            response = await self._client.chat.new_chat(self._char_info["external_id"])
+            user.chat_history_id = response["external_id"]
+
+            # in the list of "participants", a character can be at zero or in the first place
+            if not response["participants"][0]["is_human"]:
+                user.chat_history_tgt = response["participants"][0]["user"]["username"]
+            else:
+                user.chat_history_tgt = response["participants"][1]["user"]["username"]
+
+            await firestore.user.set_user(user)
+
         content = message.content.removeprefix(self.bot.user.mention).strip()
         text = re.compile(re.escape(self.bot.user.display_name), re.IGNORECASE).sub(self._char_info["name"], content)
 
-        response: dict = await self._client.chat.send_message(self._char_info["external_id"], text)
+        response: dict = await self._client.chat.send_message(self._char_info["external_id"], text,
+                                                              history_external_id=user.chat_history_id,
+                                                              tgt=user.chat_history_tgt)
         reply = response["replies"][0]["text"]
         content = re.compile(re.escape(self._char_info["name"]), re.IGNORECASE).sub(self.bot.user.display_name, reply)
         await message.reply(content)
+
+    @app_commands.command()
+    async def clear(self, interaction: Interaction):
+        """
+        Clear the chat history between you and this bot
+        """
+        user = await firestore.user.get_user(interaction.user.id)
+        if user.chat_history_id is None:
+            await interaction.response.send_message(warning(f"You don't have any conversations with "
+                                                            f"{interaction.client.user.display_name}"), ephemeral=True)
+            return
+
+        response: dict = await self._client.chat.get_history(user.chat_history_id)
+
+        uuids = []
+        for message in response["messages"]:
+            uuids.append(message["uuid"])
+
+        await self._client.chat.delete_message(user.chat_history_id, uuids)
+        user.chat_history_id = None
+        user.chat_history_tgt = None
+        await firestore.user.set_user(user)
+
+        await interaction.response.send_message(success("Deleted!"), ephemeral=True)

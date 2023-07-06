@@ -21,8 +21,11 @@ class User:
     A wrapper class to represent user configs in the database
     """
 
-    def __init__(self, user_id: int, translate_to: list[str] = None):
+    def __init__(self, user_id: int, chat_history_id: str = None, chat_history_tgt: str = None,
+                 translate_to: list[str] = None):
         self.user_id = user_id
+        self.chat_history_id = chat_history_id
+        self.chat_history_tgt = chat_history_tgt
         if translate_to is None:
             translate_to = []
         self.translate_to: list[str] = translate_to
@@ -34,8 +37,8 @@ class User:
         :param source: The source to create a new user
         :return: The new user config
         """
-        temp_id = 0
-        user = User(temp_id)
+        temp_user_id = 0
+        user = User(temp_user_id)
         for key, value in source.items():
             setattr(user, key, value)
 
