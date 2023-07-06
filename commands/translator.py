@@ -139,7 +139,7 @@ class Translator(app_commands.Group):
     def _setup_user_listeners(self):
         async def on_message(message: Message):
             usr = await user.get_user(message.author.id)
-            if len(usr.translate_to) == 0 or len(message.content.strip()) == 0:
+            if len(message.content.strip()) == 0 or len(usr.translate_to) == 0:
                 return
 
             await self._send_translation(message, usr.translate_to)
@@ -152,7 +152,7 @@ class Translator(app_commands.Group):
                 return
 
             chan = await channel.get_channel(message.channel.id)
-            if len(chan.translate_to) == 0 or len(message.content.strip()) == 0:
+            if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
                 return
 
             await self._send_translation(message, chan.translate_to)
