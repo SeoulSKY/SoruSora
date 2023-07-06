@@ -64,11 +64,13 @@ class Chat(app_commands.Group):
             response = await self._client.chat.new_chat(self._char_info["external_id"])
             user.chat_history_id = response["external_id"]
 
-            # in the list of "participants", a character can be at zero or in the first place
-            if not response["participants"][0]["is_human"]:
-                user.chat_history_tgt = response["participants"][0]["user"]["username"]
-            else:
-                user.chat_history_tgt = response["participants"][1]["user"]["username"]
+            for participant in response["participants"]:
+                if participant["is_human"]:
+                    user.chat_history_tgt = participant["user"]["username"]
+
+            if user.chat_history_tgt is None:
+                # at least one of the participants must be non-human
+                raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
 
             await firestore.user.set_user(user)
 
