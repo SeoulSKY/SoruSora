@@ -12,8 +12,7 @@ Introducing `/movie play` command
 * Set up and activate virtual environment
 
 ```bash
-pip install virtualenv
-virtualenv venv
+python3.10 -m venv venv
 
 # On Windows
 venv\Scripts\activate.bat
