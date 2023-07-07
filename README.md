@@ -9,15 +9,25 @@ Introducing `/movie play` command
 ## How to Set up and Run
 
 * Install [python 3.10](https://www.python.org/downloads/), [Git Large File Storage](https://git-lfs.github.com), and [FFmpeg](https://ffmpeg.org/download.html)
+* Find the path to the python executable
+
+```bash
+# On Windows
+where python3.10
+
+# On Linux or macOS
+which python3.10
+```
+
 * Set up and activate virtual environment
 
 ```bash
-python3.10 -m venv venv
+/path/to/python3.10 -m venv venv
 
 # On Windows
 venv\Scripts\activate.bat
 
-# On Linux and macOS
+# On Linux or macOS
 source venv/bin/activate
 ```
 
