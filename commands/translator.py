@@ -161,40 +161,41 @@ class Translator(app_commands.Group):
 
     @staticmethod
     async def _send_translation(message: Message, dest_langs: list[str]):
-        await message.channel.typing()
-        text = message.content
+        async with message.channel.typing():
+            text = message.content
 
-        if len(message.embeds) != 0:
-            text += "\n\n"
-            for embed in message.embeds:
-                text += embed.description + "\n\n"
+            if len(message.embeds) != 0:
+                text += "\n\n"
+                for embed in message.embeds:
+                    text += embed.description + "\n\n"
 
-            text = text.removesuffix("\n\n")
+                text = text.removesuffix("\n\n")
 
-        description = ""
-        translator = BatchTranslator(dest_langs)
-        for target, translated in translator.translate(text):
-            description += f"**__{target.title()}__**\n{translated}\n\n"
+            description = ""
+            translator = BatchTranslator(dest_langs)
+            for target, translated in translator.translate(text):
+                description += f"**__{target.title()}__**\n{translated}\n\n"
 
-        description.removesuffix("\n\n")
+            description.removesuffix("\n\n")
 
-        if len(description) == 0:
-            return
-
-        embeds = []
-        for chunk in Translator._split(description, constants.EMBED_DESCRIPTION_MAX_LENGTH):
-            embed = Embed(color=templates.color, description=chunk)
-            embed.set_footer(text=message.author.display_name, icon_url=message.author.display_avatar.url)
-            embeds.append(embed)
-
-        try:
-            await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)], silent=True)
-        except HTTPException as ex:
-            if ex.code == 50035:
-                await message.reply(templates.error("Cannot send the translated text because it is too long"))
+            if len(description) == 0:
                 return
 
-            raise ex
+            embeds = []
+            for chunk in Translator._split(description, constants.EMBED_DESCRIPTION_MAX_LENGTH):
+                embed = Embed(color=templates.color, description=chunk)
+                embed.set_footer(text=message.author.display_name, icon_url=message.author.display_avatar.url)
+                embeds.append(embed)
+
+            try:
+                await message.reply(embeds=embeds[0: min(len(embeds), constants.MAX_NUM_EMBEDS_IN_MESSAGE)],
+                                    silent=True)
+            except HTTPException as ex:
+                if ex.code == 50035:
+                    await message.reply(templates.error("Cannot send the translated text because it is too long"))
+                    return
+
+                raise ex
 
     @staticmethod
     def _split(string: str, count: int):

@@ -50,32 +50,33 @@ class Chat(app_commands.Group):
         self.bot.add_listener(_listener, "on_message")
 
     async def _send_message(self, message: Message):
-        await message.channel.typing()
+        async with message.channel.typing():
+            user = await firestore.user.get_user(message.author.id)
+            if user.chat_history_id is None:
+                response = await self._client.chat.new_chat(self._char_info["external_id"])
+                user.chat_history_id = response["external_id"]
 
-        user = await firestore.user.get_user(message.author.id)
-        if user.chat_history_id is None:
-            response = await self._client.chat.new_chat(self._char_info["external_id"])
-            user.chat_history_id = response["external_id"]
+                for participant in response["participants"]:
+                    if not participant["is_human"]:
+                        user.chat_history_tgt = participant["user"]["username"]
 
-            for participant in response["participants"]:
-                if not participant["is_human"]:
-                    user.chat_history_tgt = participant["user"]["username"]
+                if user.chat_history_tgt is None:
+                    # at least one of the participants must be non-human
+                    raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
 
-            if user.chat_history_tgt is None:
-                # at least one of the participants must be non-human
-                raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
+                await firestore.user.set_user(user)
 
-            await firestore.user.set_user(user)
+            content = message.content.removeprefix(self.bot.user.mention).strip()
+            text = re.compile(re.escape(self.bot.user.display_name),
+                              re.IGNORECASE).sub(self._char_info["name"], content)
 
-        content = message.content.removeprefix(self.bot.user.mention).strip()
-        text = re.compile(re.escape(self.bot.user.display_name), re.IGNORECASE).sub(self._char_info["name"], content)
-
-        response = await self._client.chat.send_message(self._char_info["external_id"], text,
-                                                        history_external_id=user.chat_history_id,
-                                                        tgt=user.chat_history_tgt)
-        reply = response["replies"][0]["text"]
-        content = re.compile(re.escape(self._char_info["name"]), re.IGNORECASE).sub(self.bot.user.display_name, reply)
-        await message.reply(content)
+            response = await self._client.chat.send_message(self._char_info["external_id"], text,
+                                                            history_external_id=user.chat_history_id,
+                                                            tgt=user.chat_history_tgt)
+            reply = response["replies"][0]["text"]
+            content = re.compile(re.escape(self._char_info["name"]),
+                                 re.IGNORECASE).sub(self.bot.user.display_name, reply)
+            await message.reply(content)
 
     @app_commands.command()
     async def clear(self, interaction: Interaction):
