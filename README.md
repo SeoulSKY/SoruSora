@@ -2,14 +2,22 @@
 
 ![python](https://img.shields.io/badge/python-v3.10-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
 
-Introducing `/movie play` command
+| `/movie` |
+|--------------|
+| <img style="width: 500px; height: auto" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/b20ed72f-55e0-4787-9428-c1f925ab3a0a"> |
 
-<img style="width: 500px; height: auto" src="https://user-images.githubusercontent.com/48105703/186945416-728905ae-562e-463d-92de-5cde435ac44c.gif">
+| `/chat` |
+|--------------|
+| <img style="width: 500px; height: auto" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/7f3eacda-87ac-45e0-a80a-6e6458752c82"> |
+
+| `/translator`  |
+| ------------ |
+| <img style="width: 500px; height: auto" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/5f84e863-c5c8-494f-a10d-064e3d9f64c7"> |
 
 ## How to Set up and Run
 
 * Install [python 3.10](https://www.python.org/downloads/), [Git Large File Storage](https://git-lfs.github.com), and [FFmpeg](https://ffmpeg.org/download.html)
-* Find the path to the python executable
+* Find the path to the Python executable
 
 ```bash
 # On Windows
