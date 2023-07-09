@@ -12,6 +12,7 @@ from discord import app_commands, Interaction, Embed, NotFound, HTTPException, M
 from discord.ext import tasks
 from discord.ext.commands import Bot
 from moviepy.editor import VideoFileClip
+from moviepy.video.fx import resize as resizer
 from numpy.core.records import ndarray
 
 import templates
@@ -185,8 +186,7 @@ class Movie(app_commands.Group):
             else:
                 new_resolution = MOVIE_RESOLUTION_16_9
 
-        # noinspection PyUnresolvedReferences
-        return video.resize(new_resolution)  # pylint: disable=no-member
+        return resizer.resize(video, new_resolution)
 
     @staticmethod
     def _create_text(frame: ndarray, is_on_mobile: bool) -> str:
