@@ -89,6 +89,8 @@ class Chat(app_commands.Group):
                                                           f"{interaction.client.user.display_name}"), ephemeral=True)
             return
 
+        await interaction.response.defer(thinking=True)
+
         response: dict = await self._client.chat.get_history(user.chat_history_id)
 
         uuids = []
@@ -100,4 +102,4 @@ class Chat(app_commands.Group):
         user.chat_history_tgt = None
         await firestore.user.set_user(user)
 
-        await interaction.response.send_message(success("Deleted!"), ephemeral=True)
+        await interaction.followup.send(success("Deleted!"))
