@@ -102,4 +102,4 @@ class Chat(app_commands.Group):
         user.chat_history_tgt = None
         await firestore.user.set_user(user)
 
-        await interaction.followup.send(success("Deleted!"))
+        await interaction.followup.send(success("Deleted!"), ephemeral=True)
