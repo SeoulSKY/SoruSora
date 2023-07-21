@@ -3,6 +3,7 @@ Main script where the program starts
 """
 
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 from importlib import import_module
 
@@ -20,7 +21,9 @@ IS_DEV_ENV = "PRODUCTION" not in os.environ
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-LOGS_DIR = ROOT_DIR + "/logs/"
+LOGS_DIR = os.path.join(ROOT_DIR, "logs")
+ERROR_DIR = os.path.join(LOGS_DIR, "error")
+WARNING_DIR = os.path.join(LOGS_DIR, "warning")
 
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
@@ -95,18 +98,23 @@ async def on_app_command_error(interaction: Interaction, error: AppCommandError)
 
 
 if __name__ == "__main__":
-    if not os.path.exists(LOGS_DIR):
-        os.mkdir(LOGS_DIR)
+    os.makedirs(ERROR_DIR, exist_ok=True)
+    os.makedirs(WARNING_DIR, exist_ok=True)
 
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    error_handler = logging.FileHandler(LOGS_DIR + "error.log")
-    error_handler.addFilter(LevelFilter(logging.ERROR))
+    error_log_path = os.path.join(ERROR_DIR, "error")
+    error_handler = TimedRotatingFileHandler(error_log_path, when="d", delay=True)
+    error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(formatter)
 
-    warning_handler = logging.FileHandler(LOGS_DIR + "warning.log")
-    warning_handler.addFilter(LevelFilter(logging.WARNING))
+    warning_log_path = os.path.join(WARNING_DIR, "warning")
+    warning_handler = TimedRotatingFileHandler(warning_log_path, when="d", delay=True)
+    warning_handler.setLevel(logging.WARNING)
     warning_handler.setFormatter(formatter)
+
+    error_handler.namer = lambda name: name + ".log"
+    warning_handler.namer = lambda name: name + ".log"
 
     logger = logging.getLogger()
     logger.addHandler(error_handler)
