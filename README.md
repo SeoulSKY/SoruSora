@@ -2,6 +2,12 @@
 
 ![python](https://img.shields.io/badge/python-v3.10-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
 
+> Discord bot dedicate to SeoulSKY's server
+
+[![Discord Server Invite](https://invite.caspertheghost.me?inviteCode=kQZDJJB)](https://discord.gg/kQZDJJB)
+
+# Feature Overview
+
 | `/movie` |
 |--------------|
 | <img style="width: 500px; height: auto" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/b20ed72f-55e0-4787-9428-c1f925ab3a0a"> |
