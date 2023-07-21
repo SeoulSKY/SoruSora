@@ -6,7 +6,7 @@
 
 [![Discord Server Invite](https://invite.caspertheghost.me?inviteCode=kQZDJJB)](https://discord.gg/kQZDJJB)
 
-# Feature Overview
+## Feature Overview
 
 | `/movie` |
 |--------------|
