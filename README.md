@@ -1,3 +1,5 @@
+<img width="250" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/08369937-4e80-4acf-b979-164f39dff5d7">
+
 # SoruSora
 
 ![python](https://img.shields.io/badge/python-v3.10-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
