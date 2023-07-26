@@ -98,7 +98,7 @@ class BatchTranslator:
         """
         return BatchTranslator._translator.is_language_supported(language)
 
-    def translate(self, text: str):
+    async def translate(self, text: str):
         """
         Translate the text to target languages
 
@@ -167,13 +167,14 @@ class Translator(app_commands.Group):
             if len(message.embeds) != 0:
                 text += "\n\n"
                 for embed in message.embeds:
-                    text += embed.description + "\n\n"
+                    if embed.description is not None:
+                        text += embed.description + "\n\n"
 
                 text = text.removesuffix("\n\n")
 
             description = ""
             translator = BatchTranslator(dest_langs)
-            for target, translated in translator.translate(text):
+            async for target, translated in translator.translate(text):
                 description += f"**__{target.title()}__**\n{translated}\n\n"
 
             description.removesuffix("\n\n")
@@ -192,7 +193,8 @@ class Translator(app_commands.Group):
                                     silent=True)
             except HTTPException as ex:
                 if ex.code == 50035:
-                    await message.reply(templates.error("Cannot send the translated text because it is too long"))
+                    await message.reply(templates.error("Cannot send the translated text because it is too long"),
+                                        silent=True)
                     return
 
                 raise ex

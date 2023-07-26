@@ -29,6 +29,7 @@ class Chat(app_commands.Group):
 
         async def _listener():
             await self._client.start()
+            # TODO handle NoResponse exception
             response = await self._client.character.info(os.getenv("CAI_CHAR_ID"))
             self._char_info = response["character"]
             self._is_ready.set()
