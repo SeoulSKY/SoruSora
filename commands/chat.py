@@ -43,7 +43,7 @@ class Chat(app_commands.Group):
         async def on_message(message: Message):
             if not self._is_ready.is_set() or message.author.bot:
                 return
-            if self.bot.user not in message.mentions and (
+            if not message.content.lstrip().startswith(self.bot.user.mention) and (
                     message.reference is None or message.reference.resolved.author != self.bot):
                 return
 
