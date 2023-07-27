@@ -2,7 +2,6 @@
 Implements a command relate to AI chat
 """
 import os
-import re
 import json
 import asyncio
 
@@ -27,19 +26,18 @@ class Chat(app_commands.Group):
         self._char_info = None
         self._is_ready = asyncio.Event()
 
-        async def _listener():
+        async def on_ready():
             await self._client.start()
-            # TODO handle NoResponse exception
-            response = await self._client.character.info(os.getenv("CAI_CHAR_ID"))
+            response = await self._client.character.info(os.getenv("CAI_CHAR_ID"), wait=True)
             self._char_info = response["character"]
             self._is_ready.set()
 
-        self.bot.add_listener(_listener, "on_ready")
+        self.bot.add_listener(on_ready)
 
         self._setup_chat_listeners()
 
     def _setup_chat_listeners(self):
-        async def _listener(message: Message):
+        async def on_message(message: Message):
             if not self._is_ready.is_set() or message.author.bot:
                 return
             if self.bot.user not in message.mentions and (
@@ -48,7 +46,11 @@ class Chat(app_commands.Group):
 
             await self._send_message(message)
 
-        self.bot.add_listener(_listener, "on_message")
+        self.bot.add_listener(on_message)
+
+    def _overloaded_message(self) -> str:
+        return f"(Looks like {self.bot.user.display_name} has turned on the Do Not Disturb mode. " \
+               "Let's talk to her later)"
 
     async def _send_message(self, message: Message):
         async with message.channel.typing():
@@ -65,19 +67,28 @@ class Chat(app_commands.Group):
                     # at least one of the participants must be non-human
                     raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
 
-                await firestore.user.set_user(user)
+                instruction = f"(OCC: Your name is {self.bot.user.display_name} and you are a Discord bot made by " \
+                         f"SeoulSKY. You like playing rhythm games. My name is {message.author.display_name})"
+                try:
+                    await self._client.chat.send_message(self._char_info["external_id"], instruction,
+                                                         history_external_id=user.chat_history_id,
+                                                         tgt=user.chat_history_tgt)
+                    await firestore.user.set_user(user)
+                except AttributeError:  # change this error type when the bug in the library is fixed
+                    # timed out
+                    await message.reply(self._overloaded_message())
+                    return
 
-            content = message.content.removeprefix(self.bot.user.mention).strip()
-            text = re.compile(re.escape(self.bot.user.display_name),
-                              re.IGNORECASE).sub(self._char_info["name"], content)
-
+            text = message.content.removeprefix(self.bot.user.mention).strip()
             response = await self._client.chat.send_message(self._char_info["external_id"], text,
                                                             history_external_id=user.chat_history_id,
                                                             tgt=user.chat_history_tgt)
-            reply = response["replies"][0]["text"]
-            content = re.compile(re.escape(self._char_info["name"]),
-                                 re.IGNORECASE).sub(self.bot.user.display_name, reply)
-            await message.reply(content)
+            content = response["replies"][0]["text"]
+            try:
+                await message.reply(content)
+            except AttributeError:  # change this error type when the bug in the library is fixed
+                # timed out
+                await message.reply(self._overloaded_message())
 
     @app_commands.command()
     async def clear(self, interaction: Interaction):
