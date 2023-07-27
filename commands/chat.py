@@ -43,8 +43,13 @@ class Chat(app_commands.Group):
         async def on_message(message: Message):
             if not self._is_ready.is_set() or message.author.bot:
                 return
-            if not message.content.lstrip().startswith(self.bot.user.mention) and (
-                    message.reference is None or message.reference.resolved.author != self.bot):
+
+            print(message.reference is None)
+            print(message.reference.resolved.author != self.bot.user)
+            print(not message.content.lstrip().startswith(self.bot.user.mention))
+
+            if message.reference is None and not message.content.lstrip().startswith(self.bot.user.mention) or \
+                    message.reference.resolved.author != self.bot.user:
                 return
 
             await self._send_message(message)
