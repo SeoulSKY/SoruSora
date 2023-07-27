@@ -76,11 +76,12 @@ class Chat(app_commands.Group):
                     await self._client.chat.send_message(self._char_info["external_id"], instruction,
                                                          history_external_id=user.chat_history_id,
                                                          tgt=user.chat_history_tgt)
-                    await firestore.user.set_user(user)
                 except AttributeError:  # change this error type when the bug in the library is fixed
                     # timed out
                     await message.reply(self._overloaded_message())
                     return
+
+                await firestore.user.set_user(user)
 
             text = message.content.removeprefix(self.bot.user.mention).strip()
             source_lang, _ = langid.classify(text)
