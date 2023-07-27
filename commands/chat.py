@@ -68,7 +68,7 @@ class Chat(app_commands.Group):
                     raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
 
                 instruction = f"(OCC: Your name is {self.bot.user.display_name} and you are a Discord bot made by "\
-                              "SeoulSKY. You like playing rhythm games. My name is {message.author.display_name})"
+                              f"SeoulSKY. You like playing rhythm games. My name is {message.author.display_name})"
                 try:
                     await self._client.chat.send_message(self._char_info["external_id"], instruction,
                                                          history_external_id=user.chat_history_id,
