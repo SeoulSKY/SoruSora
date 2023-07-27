@@ -9,6 +9,8 @@ from discord import app_commands, Message, Interaction
 from discord.ext.commands import Bot
 from characterai import PyAsyncCAI
 from characterai.errors import PyCAIError
+from deep_translator import GoogleTranslator
+from langid import langid
 
 import firestore.user
 from templates import success, error
@@ -68,7 +70,8 @@ class Chat(app_commands.Group):
                     raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
 
                 instruction = f"(OCC: Your name is {self.bot.user.display_name} and you are a Discord bot made by "\
-                              f"SeoulSKY. You like playing rhythm games. My name is {message.author.display_name})"
+                              f"SeoulSKY. The name of the Discord server you are in is {message.guild.name}. " \
+                              f"You like playing rhythm games. My name is {message.author.display_name})"
                 try:
                     await self._client.chat.send_message(self._char_info["external_id"], instruction,
                                                          history_external_id=user.chat_history_id,
@@ -80,15 +83,26 @@ class Chat(app_commands.Group):
                     return
 
             text = message.content.removeprefix(self.bot.user.mention).strip()
-            response = await self._client.chat.send_message(self._char_info["external_id"], text,
-                                                            history_external_id=user.chat_history_id,
-                                                            tgt=user.chat_history_tgt)
-            content = response["replies"][0]["text"]
+            source_lang, _ = langid.classify(text)
+            if source_lang != "en":
+                translator = GoogleTranslator(source_lang)
+                text = await asyncio.to_thread(translator.translate, text)
+
             try:
-                await message.reply(content)
+                response = await self._client.chat.send_message(self._char_info["external_id"], text,
+                                                                history_external_id=user.chat_history_id,
+                                                                tgt=user.chat_history_tgt)
             except AttributeError:  # change this error type when the bug in the library is fixed
                 # timed out
                 await message.reply(self._overloaded_message())
+                return
+
+            content = response["replies"][0]["text"]
+            if source_lang != "en":
+                translator = GoogleTranslator("en", source_lang)
+                content = await asyncio.to_thread(translator.translate, content)
+
+            await message.reply(content)
 
     @app_commands.command()
     async def clear(self, interaction: Interaction):
@@ -109,7 +123,7 @@ class Chat(app_commands.Group):
         for message in response["messages"]:
             uuids.append(message["uuid"])
 
-        await self._client.chat.delete_message(user.chat_history_id, uuids)
+        await self._client.chat.delete_message(user.chat_history_id, uuids, wait=True)
         user.chat_history_id = None
         user.chat_history_tgt = None
         await firestore.user.set_user(user)
