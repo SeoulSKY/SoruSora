@@ -41,15 +41,13 @@ class Chat(app_commands.Group):
 
     def _setup_chat_listeners(self):
         async def on_message(message: Message):
-            if not self._is_ready.is_set() or message.author.bot:
+            if message.author.bot:
                 return
-
-            print(message.reference is None)
-            print(message.reference.resolved.author != self.bot.user)
-            print(not message.content.lstrip().startswith(self.bot.user.mention))
-
-            if message.reference is None and not message.content.lstrip().startswith(self.bot.user.mention) or \
-                    message.reference.resolved.author != self.bot.user:
+            if self.bot.user not in message.mentions and (
+                    message.reference is None or message.reference.resolved.author != self.bot):
+                return
+            if not self._is_ready.is_set():
+                await message.reply(self._overloaded_message())
                 return
 
             await self._send_message(message)
