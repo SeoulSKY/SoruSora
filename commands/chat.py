@@ -14,7 +14,7 @@ from langid import langid
 from playwright._impl._api_types import Error
 
 import firestore.user
-from templates import success, error
+from templates import info, success, error
 
 
 class Chat(app_commands.Group):
@@ -55,8 +55,8 @@ class Chat(app_commands.Group):
         self.bot.add_listener(on_message)
 
     def _overloaded_message(self) -> str:
-        return f"(Looks like {self.bot.user.display_name} has turned on the Do Not Disturb mode. " \
-               "Let's talk to her later)"
+        return info(f"Looks like {self.bot.user.display_name} has turned on the Do Not Disturb mode. "
+                    "Let's talk to her later")
 
     async def _send_message(self, message: Message):
         async with message.channel.typing():

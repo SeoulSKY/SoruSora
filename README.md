@@ -4,7 +4,7 @@
 
 ![python](https://img.shields.io/badge/python-v3.10-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
 
-> An AI-Powered Multi-Functional Discord Bot Dedicated to SeoulSKY's Discord Server
+> AI-Powered Multi-Functional Discord Bot Dedicated to SeoulSKY's Discord Server
 
 [![Discord Server Invite](https://invite.caspertheghost.me?inviteCode=kQZDJJB)](https://discord.gg/kQZDJJB)
 
@@ -24,8 +24,45 @@
 
 ## How to Set up and Run
 
-* Install [python 3.10](https://www.python.org/downloads/), [Git Large File Storage](https://git-lfs.github.com), and [FFmpeg](https://ffmpeg.org/download.html)
+### Setting Environment Variables
+
+Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development
+environment.
+
+Following is the description of each environment variable:
+
+| Name                                 | Description                                                                                                                                                                                                                                             |
+|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                                                                           |
+| TEST_GUILD_ID                        | (Optional) Find your test server id following the [guide](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-). In the test server, the slash commands immediately get updated when you run the program |
+| FIREBASE_TYPE                        | One of the value in the private key in your Firebase project. Go to `Project Settings` →  `Service accounts` → `Firebase Admin SDK` → `Generate new private key`                                                                                        |
+| FIREBASE_PROJECT_ID                  | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_PRIVATE_KEY_ID              | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_PRIVATE_KEY                 | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_CLIENT_EMAIL                | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_CLIENT_ID                   | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_AUTH_URI                    | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_TOKEN_URI                   | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_AUTH_PROVIDER_X509_CERT_URL | Same as above                                                                                                                                                                                                                                           |
+| FIREBASE_CLIENT_X509_CERT_URL        | Same as above                                                                                                                                                                                                                                           |
+| CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                        |
+| CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                   |
+
+
+### With [Docker](https://www.docker.com) (Recommended)
+
+Run the following commands:
+
+```
+docker build -t sorusora .
+docker run --name sorusora sorusora
+```
+
+### Without [Docker](https://www.docker.com)
+
+* Install [python 3.10](https://www.python.org/downloads/) and [FFmpeg](https://ffmpeg.org/download.html)
 * Find the path to the Python executable
+
 
 ```bash
 # On Windows
@@ -53,7 +90,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-* Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development environment
+```bash
+playwright install
+playwright install-dev
+```
+
 * Run `main.py`
 
 ```

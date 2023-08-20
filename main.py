@@ -10,7 +10,7 @@ from importlib import import_module
 import discord
 from discord import app_commands, Interaction
 from discord.app_commands import AppCommandError, MissingPermissions
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
 
 from templates import forbidden
@@ -28,6 +28,15 @@ WARNING_DIR = os.path.join(LOGS_DIR, "warning")
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
 
 
+class EmptyHelpCommand(MinimalHelpCommand):
+    """
+    A help command that sends nothing
+    """
+
+    async def send_pages(self):
+        pass
+
+
 class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
     """
     Logger filter that filters only specific logging level
@@ -41,13 +50,14 @@ class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
         return record.levelno == self._level
 
 
-class MyBot(Bot):
+class SoruSora(Bot):
     """
     Class to be used to run the Discord Bot
     """
 
     def __init__(self):
         super().__init__(command_prefix="s!", intents=discord.Intents.all())
+        self.help_command = EmptyHelpCommand()
         self._add_commands()
 
     def _add_commands(self):
@@ -68,12 +78,13 @@ class MyBot(Bot):
             self.tree.add_command(group_command_class(bot=self))
 
     async def setup_hook(self):
-        self.tree.copy_global_to(guild=TEST_GUILD)
+        if TEST_GUILD is not None:
+            self.tree.copy_global_to(guild=TEST_GUILD)
+            await self.tree.sync(guild=TEST_GUILD)
         await self.tree.sync()
-        await self.tree.sync(guild=TEST_GUILD)
 
 
-bot = MyBot()
+bot = SoruSora()
 
 
 @bot.event
@@ -81,8 +92,7 @@ async def on_ready():
     """
     Executed when the bot becomes ready
     """
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
+    logging.info("Logged in as %s (ID: %d)", bot.user, bot.user.id)
 
 
 @bot.tree.error
