@@ -25,7 +25,7 @@ LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ERROR_DIR = os.path.join(LOGS_DIR, "error")
 WARNING_DIR = os.path.join(LOGS_DIR, "warning")
 
-TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID"))
+TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") is not None else None
 
 
 class EmptyHelpCommand(MinimalHelpCommand):
