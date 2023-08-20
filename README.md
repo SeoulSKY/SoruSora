@@ -6,7 +6,8 @@
 
 > AI-Powered Multi-Functional Discord Bot Dedicated to SeoulSKY's Discord Server
 
-[![Discord Server Invite](https://invite.caspertheghost.me?inviteCode=kQZDJJB)](https://discord.gg/kQZDJJB)
+[![Discord Server Invite](http://invidget.switchblade.xyz/kQZDJJB)](https://discord.gg/kQZDJJB)
+
 
 ## Feature Overview
 
