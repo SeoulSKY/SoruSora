@@ -49,7 +49,7 @@ Following is the description of each environment variable:
 | CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                   |
 
 
-### With [Docker](https://www.docker.com) (Recommended)
+### Running With [Docker](https://www.docker.com) (Recommended)
 
 Run the following commands:
 
@@ -58,7 +58,7 @@ docker build -t sorusora .
 docker run --name sorusora sorusora
 ```
 
-### Without [Docker](https://www.docker.com)
+### Running Without [Docker](https://www.docker.com)
 
 * Install [python 3.10](https://www.python.org/downloads/) and [FFmpeg](https://ffmpeg.org/download.html)
 * Find the path to the Python executable
@@ -89,6 +89,8 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+
+* Setup playwright
 
 ```bash
 playwright install
