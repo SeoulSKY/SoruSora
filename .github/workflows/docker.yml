@@ -78,8 +78,16 @@ jobs:
       - name: Create manifest list and push
         run: |
           image_name="${{ env.REGISTRY_IMAGE }}:${{ github.sha }}"
-          docker manifest create "$image_name" $(cat /tmp/digests/digest.txt)
-          docker manifest annotate "$image_name" ${{ env.REGISTRY_IMAGE }}:${{ github.sha }} --arch amd64
+
+          # Collect the image digests for each platform from the digest.txt file
+          digests=($(cat /tmp/digests/digest.txt))
+
+          # Create a manifest list for each platform
+          for digest in "${digests[@]}"; do
+            docker manifest create "$image_name" --amend "$image_name"@"$digest" --arch $(docker manifest inspect --format '{{.Platform.Architecture}}' "$image_name"@"$digest")
+          done
+
+          # Push the manifest list to GitHub Container Registry
           docker manifest push --purge "$image_name"
 
       - name: Inspect image
