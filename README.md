@@ -25,9 +25,12 @@
 
 ## How to Set up and Run
 
-### Setting Environment Variables
+<details>
+  <summary>
+    <h3>Setting Environment Variables (Click to expand)<h3>
+  </summary>
 
-Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development
+  Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development
 environment.
 
 Following is the description of each environment variable:
@@ -49,6 +52,7 @@ Following is the description of each environment variable:
 | CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                        |
 | CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                   |
 
+</details>
 
 ### Running With [Docker](https://www.docker.com) (Recommended)
 
