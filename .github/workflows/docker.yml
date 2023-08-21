@@ -85,3 +85,4 @@ jobs:
 
       - name: Inspect image
         run: docker manifest inspect "${{ env.REGISTRY_IMAGE }}:${{ github.sha }}"
+
