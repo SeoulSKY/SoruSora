@@ -56,7 +56,7 @@ Run the following commands:
 
 ```
 docker build -t sorusora .
-docker run --name sorusora sorusora
+docker run --rm --name sorusora sorusora
 ```
 
 ### Running Without [Docker](https://www.docker.com)
