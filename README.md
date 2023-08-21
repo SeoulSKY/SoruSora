@@ -27,7 +27,7 @@
 
 <details>
   <summary>
-    <h3>Setting Environment Variables (Click to expand)</h3>>
+    <h3>Setting Environment Variables (Click to expand)</h3>
   </summary>
 
   Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development
@@ -56,12 +56,13 @@ Following is the description of each environment variable:
 
 ### Running with [Docker](https://www.docker.com) (Recommended)
 
-Run the following commands:
+Run the following command:
 
 ```
-docker build -t sorusora .
-docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora sorusora
+docker run --rm -v ./logs:/app/logs --env-file=.env ghcr.io/seoulsky/sorusora:master
 ```
+
+Optionally, add the `-d` option to run the docker container in detached mode.
 
 ### Running without [Docker](https://www.docker.com)
 
