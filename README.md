@@ -60,7 +60,7 @@ Run the following commands:
 
 ```
 docker build -t sorusora .
-docker run --rm -v ./logs:/app/logs --name sorusora sorusora
+docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora sorusora
 ```
 
 ### Running Without [Docker](https://www.docker.com)
