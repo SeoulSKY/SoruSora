@@ -43,8 +43,9 @@ jobs:
           platforms: ${{ matrix.platform }}
           tags: ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
 
-      - name: Export digest
-        run: echo "${{ steps.build.outputs.digest }}" > digest.txt
+      - name: Create Environment File
+        run: |
+          echo "DOCKER_DIGEST=${{ steps.build.outputs.digest }}" >> $GITHUB_ENV
 
       - name: Upload digest
         uses: actions/upload-artifact@v2
@@ -75,6 +76,10 @@ jobs:
           registry: docker.pkg.github.com
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use Environment File
+        run: |
+          echo "Digest from build job: $DOCKER_DIGEST"
 
       - name: Create manifest list and push
         run: |
