@@ -1,4 +1,4 @@
-name: ci
+name: Build and Push a Docker Image
 
 on:
   push:
@@ -10,6 +10,8 @@ env:
 
 jobs:
   build:
+    environment: soru-sora
+
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -17,7 +19,7 @@ jobs:
         platform:
           - linux/amd64
           - linux/arm64/v8
-          - linux/arm64
+          - linux/arm/v7
     steps:
       -
         name: Checkout
