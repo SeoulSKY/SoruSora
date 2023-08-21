@@ -25,15 +25,14 @@
 
 ## How to Set up and Run
 
+### Setting Environment Variables
+
+Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development environment.
+
 <details>
   <summary>
-    <h3>Setting Environment Variables (Click to expand)</h3>
+    <h3>Description of each environment variable (Click to expand)</h3>
   </summary>
-
-  Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development
-environment.
-
-Following is the description of each environment variable:
 
 | Name                                 | Description                                                                                                                                                                                                                                             |
 |--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
