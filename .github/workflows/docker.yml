@@ -6,7 +6,7 @@ on:
       - "master"
 
 env:
-  REGISTRY_IMAGE: docker.pkg.github.com/SeoulSKY/sorusora/sorusora
+  REGISTRY_IMAGE: docker.pkg.github.com/seoulsky/sorusora/sorusora
 
 jobs:
   build:
