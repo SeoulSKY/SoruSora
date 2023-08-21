@@ -12,4 +12,4 @@ RUN pip install -r requirements.txt
 RUN playwright install &&  \
     playwright install-deps
 
-CMD ["python3", "main.py"]
+CMD ["python", "main.py"]
