@@ -10,4 +10,5 @@ from templates import info
 @app_commands.command()
 async def ping(interaction: discord.Interaction):
     """Ping this bot"""
-    await interaction.response.send_message(info(f'Pong with latency `{interaction.client.latency * 1000}ms`'))
+    await interaction.response.send_message(info(f'Latency `{interaction.client.latency * 1000}ms`'),
+                                            ephemeral=True)
