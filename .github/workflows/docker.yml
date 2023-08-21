@@ -5,6 +5,9 @@ on:
     branches:
       - "master"
 
+env:
+  REGISTRY_IMAGE: swkim7519/sorusora
+
 jobs:
   build:
     environment: soru-sora
@@ -25,6 +28,8 @@ jobs:
         name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
