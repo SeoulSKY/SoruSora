@@ -27,7 +27,7 @@
 
 <details>
   <summary>
-    <h3>Setting Environment Variables (Click to expand)<h3>
+    <h3>Setting Environment Variables (Click to expand)</h3>>
   </summary>
 
   Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development
@@ -54,7 +54,7 @@ Following is the description of each environment variable:
 
 </details>
 
-### Running With [Docker](https://www.docker.com) (Recommended)
+### Running with [Docker](https://www.docker.com) (Recommended)
 
 Run the following commands:
 
@@ -63,7 +63,7 @@ docker build -t sorusora .
 docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora sorusora
 ```
 
-### Running Without [Docker](https://www.docker.com)
+### Running without [Docker](https://www.docker.com)
 
 * Install [python 3.10](https://www.python.org/downloads/) and [FFmpeg](https://ffmpeg.org/download.html)
 * Find the path to the Python executable
