@@ -58,10 +58,18 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 Run the following command:
 
 ```
-docker run --rm -v ./logs:/app/logs --env-file=.env ghcr.io/seoulsky/sorusora:master
+docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora ghcr.io/seoulsky/sorusora:master
 ```
 
-Optionally, add the `-d` option to run the docker container in detached mode.
+Optionally, you can add `-d` flag to run the docker container in detached mode.
+
+
+If you want to build the docker image by yourself and run it, use the following commands:
+
+```
+docker build -t sorusora .
+docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora sorusora
+```
 
 ### Running without [Docker](https://www.docker.com)
 
