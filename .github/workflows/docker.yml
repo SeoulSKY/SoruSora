@@ -26,9 +26,11 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -
-        name: Get Repository Name in Lowercase
+      - name: Get Repository Name in Lowercase
         id: repo_name
-        run: echo "::set-output name=repository_name::$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')"
+        uses: ASzc/change-string-case-action@v5
+        with:
+          string: ${{ github.repository }}
       -
         name: Build and push
         uses: docker/build-push-action@v2
@@ -37,4 +39,4 @@ jobs:
           platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.repo_name.outputs.repository_name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ steps.repo_name.outputs.lowercase }}:latest
