@@ -26,7 +26,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -
-      - name: Get Repository Name in Lowercase
+        name: Get Repository Name in Lowercase
         id: repo_name
         uses: ASzc/change-string-case-action@v5
         with:
