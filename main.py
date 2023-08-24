@@ -3,9 +3,9 @@ Main script where the program starts
 """
 
 import logging
-from logging.handlers import TimedRotatingFileHandler
 import os
 from importlib import import_module
+from logging.handlers import TimedRotatingFileHandler
 
 import discord
 from discord import app_commands, Interaction

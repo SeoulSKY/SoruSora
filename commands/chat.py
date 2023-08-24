@@ -1,20 +1,18 @@
 """
 Implements a command relate to AI chat
 """
-import os
-import json
 import asyncio
+import os
 
+from characterai import PyAsyncCAI
+from characterai.errors import NoResponse, FilterError
+from deep_translator import GoogleTranslator
 from discord import app_commands, Message, Interaction
 from discord.ext.commands import Bot
-from characterai import PyAsyncCAI
-from characterai.errors import PyCAIError, ServerError
-from deep_translator import GoogleTranslator
 from langid import langid
-from playwright._impl._api_types import Error
 
 import firestore.user
-from templates import info, success, error
+from templates import info, success, error, warning
 
 
 class Chat(app_commands.Group):
@@ -62,28 +60,15 @@ class Chat(app_commands.Group):
         async with message.channel.typing():
             user = await firestore.user.get_user(message.author.id)
             if user.chat_history_id is None:
-                try:
-                    response = await self._client.chat.new_chat(self._char_info["external_id"])
-                except (AttributeError, Error):  # change this error type when the bug in the library is fixed
-                    await message.reply(self._overloaded_message())
-                    return
-
+                response = await self._client.chat.new_chat(self._char_info["external_id"])
                 user.chat_history_id = response["external_id"]
-
-                for participant in response["participants"]:
-                    if not participant["is_human"]:
-                        user.chat_history_tgt = participant["user"]["username"]
-
-                if user.chat_history_tgt is None:
-                    # at least one of the participants must be non-human
-                    raise PyCAIError(f"Unexpected format of response:\n{json.dumps(response, indent=1)}")
 
                 instruction = f"(OCC: Your name is {self.bot.user.display_name} and you are a Discord bot made by " \
                               f"SeoulSKY. The name of the Discord server you are in is {message.guild.name}. " \
                               f"You like playing rhythm games. My name is {message.author.display_name})"
                 try:
                     await self._send_request(instruction, user)
-                except ServerError:
+                except NoResponse:
                     await message.reply(self._overloaded_message())
                     return
 
@@ -97,19 +82,19 @@ class Chat(app_commands.Group):
 
             try:
                 content = await self._send_request(text, user, source_lang)
-            except ServerError:
+            except NoResponse:
                 await message.reply(self._overloaded_message())
+                return
+            except FilterError:
+                await message.reply(
+                    warning("Your message might contain inappropriate content. Try to be more respectful"))
                 return
 
             await message.reply(content)
 
     async def _send_request(self, text: str, user: firestore.user.User, dest_lang="en"):
-        try:
-            response = await self._client.chat.send_message(self._char_info["external_id"], text,
-                                                            history_external_id=user.chat_history_id,
-                                                            tgt=user.chat_history_tgt)
-        except (AttributeError, Error) as ex:  # change this error type when the bug in the library is fixed
-            raise ServerError("AI server is overloaded") from ex
+        response = await self._client.chat.send_message(user.chat_history_id,
+                                                        self._char_info["participant__user__username"], text)
 
         content = response["replies"][0]["text"]
         if dest_lang != "en":
