@@ -107,7 +107,7 @@ pip install -r requirements.txt
 
 ```bash
 playwright install
-playwright install-dev
+playwright install-deps
 ```
 
 * Run `main.py`
