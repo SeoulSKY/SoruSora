@@ -2,6 +2,7 @@
 Implements a command relate to AI chat
 """
 import asyncio
+import logging
 import os
 
 from characterai import PyAsyncCAI
@@ -23,6 +24,7 @@ class Chat(app_commands.Group):
     def __init__(self, bot: Bot):
         super().__init__()
         self.bot = bot
+        self._logger = logging.getLogger(__name__)
         self._client = PyAsyncCAI(os.getenv("CAI_TOKEN"))
         self._char_info = None
         self._is_ready = asyncio.Event()
@@ -32,6 +34,7 @@ class Chat(app_commands.Group):
             response = await self._client.character.info(os.getenv("CAI_CHAR_ID"), wait=True)
             self._char_info = response["character"]
             self._is_ready.set()
+            self._logger.info("Chat AI is ready to be used")
 
         self.bot.add_listener(on_ready)
 
@@ -48,7 +51,24 @@ class Chat(app_commands.Group):
                 await message.reply(self._overloaded_message())
                 return
 
-            await self._send_message(message)
+            async with message.channel.typing():
+                user = await firestore.user.get_user(message.author.id)
+                if user.chat_history_id is None:
+                    try:
+                        await self._create_new_chat(user, message.author.display_name)
+                    except NoResponse:
+                        await message.reply(self._overloaded_message())
+                        return
+
+                try:
+                    content = await self._send_message(user,
+                                                       message.content.removeprefix(self.bot.user.mention).strip())
+                except NoResponse:
+                    content = self._overloaded_message()
+                except FilterError:
+                    content = warning("Your message might contain inappropriate content. Try to be more respectful")
+
+                await message.reply(content)
 
         self.bot.add_listener(on_message)
 
@@ -56,49 +76,26 @@ class Chat(app_commands.Group):
         return info(f"Looks like {self.bot.user.display_name} has turned on the Do Not Disturb mode. "
                     "Let's talk to her later")
 
-    async def _send_message(self, message: Message):
-        async with message.channel.typing():
-            user = await firestore.user.get_user(message.author.id)
-            if user.chat_history_id is None:
-                response = await self._client.chat.new_chat(self._char_info["external_id"])
-                user.chat_history_id = response["external_id"]
+    async def _create_new_chat(self, user: firestore.user.User, user_name: str):
+        response = await self._client.chat.new_chat(self._char_info["external_id"])
+        user.chat_history_id = response["external_id"]
 
-                instruction = f"(OCC: Your name is {self.bot.user.display_name} and you are a Discord bot made by " \
-                              f"SeoulSKY. The name of the Discord server you are in is {message.guild.name}. " \
-                              f"You like playing rhythm games. My name is {message.author.display_name})"
-                try:
-                    await self._send_request(instruction, user)
-                except NoResponse:
-                    await message.reply(self._overloaded_message())
-                    return
+        instruction = f"(OCC: Forget about my previous name. My new name is {user_name})"
+        await self._send_message(user, instruction)
+        await firestore.user.set_user(user)
 
-                await firestore.user.set_user(user)
+    async def _send_message(self, user: firestore.user.User, text: str) -> str:
+        language, _ = langid.classify(text)
+        if language != "en":
+            translator = GoogleTranslator(language)
+            text = await asyncio.to_thread(translator.translate, text)
 
-            text = message.content.removeprefix(self.bot.user.mention).strip()
-            source_lang, _ = langid.classify(text)
-            if source_lang != "en":
-                translator = GoogleTranslator(source_lang)
-                text = await asyncio.to_thread(translator.translate, text)
-
-            try:
-                content = await self._send_request(text, user, source_lang)
-            except NoResponse:
-                await message.reply(self._overloaded_message())
-                return
-            except FilterError:
-                await message.reply(
-                    warning("Your message might contain inappropriate content. Try to be more respectful"))
-                return
-
-            await message.reply(content)
-
-    async def _send_request(self, text: str, user: firestore.user.User, dest_lang="en"):
         response = await self._client.chat.send_message(user.chat_history_id,
                                                         self._char_info["participant__user__username"], text)
 
         content = response["replies"][0]["text"]
-        if dest_lang != "en":
-            translator = GoogleTranslator("en", dest_lang)
+        if language != "en":
+            translator = GoogleTranslator("en", language)
             content = await asyncio.to_thread(translator.translate, content)
 
         return content
