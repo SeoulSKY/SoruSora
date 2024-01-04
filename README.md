@@ -4,7 +4,7 @@
 
 ![python](https://img.shields.io/badge/python-v3.11-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
 
-> AI-Powered Versatile Discord Bot Dedicated to SeoulSKY's Discord Server
+> AI-Powered Versatile Discord Bot
 
 [![Discord Server Invite](http://invidget.switchblade.xyz/kQZDJJB)](https://discord.gg/kQZDJJB)
 
@@ -68,8 +68,6 @@ If you want to build the docker image by yourself and run it, use the following 
 
 ```
 docker-compose -f docker-compose-dev.yml up --build
-```
-
 ```
 
 ### Running without [Docker](https://www.docker.com)
