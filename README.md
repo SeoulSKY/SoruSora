@@ -53,12 +53,12 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 | CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:` Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn about it.                                                                                          |
 </details>
 
-### Running with [Docker](https://www.docker.com) (Recommended)
+### Running with [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/install/) (Recommended)
 
 Run the following command:
 
 ```
-docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora ghcr.io/seoulsky/sorusora:latest
+docker-compose pull && docker-compose up
 ```
 
 Optionally, you can add `-d` flag to run the docker container in detached mode.
@@ -67,8 +67,9 @@ Optionally, you can add `-d` flag to run the docker container in detached mode.
 If you want to build the docker image by yourself and run it, use the following commands:
 
 ```
-docker build -t sorusora .
-docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora sorusora
+docker-compose -f docker-compose-dev.yml up --build
+```
+
 ```
 
 ### Running without [Docker](https://www.docker.com)

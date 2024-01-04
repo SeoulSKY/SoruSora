@@ -3,6 +3,7 @@ version: "3"
 services:
   sorusora:
     build: .
+    container_name: sorusora
     volumes:
       - ./logs:/app/logs
       - ./cache:/app/cache
