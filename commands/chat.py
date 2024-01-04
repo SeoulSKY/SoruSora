@@ -14,8 +14,8 @@ from discord.ext.commands import Bot
 from discord.ui import View
 
 import firestore.user
-from utils.templates import info, success, error, warning
 from utils import ui
+from utils.templates import info, success, error, warning
 
 
 class MainLanguageSelect(ui.LanguageSelect):

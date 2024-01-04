@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  sorusora:
+    build: .
+    volumes:
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+    env_file:
+      - .env

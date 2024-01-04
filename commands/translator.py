@@ -10,8 +10,8 @@ from discord import app_commands, Interaction, Message, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
 
-from utils import constants, templates, ui
 from firestore import user, channel
+from utils import constants, templates, ui
 from utils.templates import success
 
 

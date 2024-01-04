@@ -6,10 +6,16 @@ Constants:
     MAX_NUM_EMBEDS_IN_MESSAGE
     LANGUAGES
 """
+
+import os
 from typing import Type
 
 from deep_translator import GoogleTranslator
 from deep_translator.base import BaseTranslator
+
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(ROOT_DIR, "..", "cache")
+ASSETS_DIR = os.path.join(ROOT_DIR, "..", "assets")
 
 EMBED_DESCRIPTION_MAX_LENGTH = 4096
 

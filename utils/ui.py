@@ -8,8 +8,8 @@ classes:
 
 import discord
 from discord import SelectOption, Interaction
-from firestore import user
 
+from firestore import user
 from utils import constants
 from utils.templates import info, success
 
