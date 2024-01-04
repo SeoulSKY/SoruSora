@@ -7,7 +7,6 @@ import logging
 import os
 
 from characterai import PyAsyncCAI
-from characterai.errors import FilterError
 from deep_translator import GoogleTranslator
 from discord import app_commands, Message, Interaction
 from discord.ext.commands import Bot
@@ -15,7 +14,7 @@ from discord.ui import View
 
 import firestore.user
 from utils import ui
-from utils.templates import info, success, error, warning
+from utils.templates import info, success, error
 
 
 class MainLanguageSelect(ui.LanguageSelect):
@@ -63,20 +62,18 @@ class Chat(app_commands.Group):
                     except IOError:
                         await message.reply(self._timeout_message())
                         return
-                    except Exception as e:
-                        self._logger.exception(e)
+                    except RuntimeError as ex:
+                        self._logger.exception(ex)
                         await message.reply(self._error_message())
                         return
 
                 try:
                     content = await self._send_message(user,
                                                        message.content.removeprefix(self.bot.user.mention).strip())
-                except FilterError:
-                    content = warning("Your message might contain inappropriate content. Try to be more respectful")
                 except IOError:
                     content = self._timeout_message()
-                except Exception as e:
-                    self._logger.exception(e)
+                except RuntimeError as ex:
+                    self._logger.exception(ex)
                     content = self._error_message()
 
                 await message.reply(content)

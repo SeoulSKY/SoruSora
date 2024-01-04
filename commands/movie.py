@@ -98,13 +98,14 @@ class Movie(app_commands.Group):
                                                     audio=False), is_on_mobile)
 
                 buffer = []
-                with open(Movie._get_cache_path(movie_name.removesuffix(".mp4"), is_on_mobile), "w") as f:
+                with (open(Movie._get_cache_path(movie_name.removesuffix(".mp4"), is_on_mobile), "w", encoding="utf-8")
+                      as file):
                     for frame in tqdm(movie.iter_frames(), desc=f"Caching {movie_name} for "
                                                                 f"{'mobile' if is_on_mobile else 'desktop'}",
                                       total=movie.reader.nframes, unit="frame"):
                         buffer.append(Movie._create_text(frame, is_on_mobile))
 
-                    f.write(json.dumps(buffer))
+                    file.write(json.dumps(buffer))
 
     @staticmethod
     def _get_cache_path(name: str, is_on_mobile: bool) -> str:
@@ -112,10 +113,14 @@ class Movie(app_commands.Group):
 
     @staticmethod
     async def get_frames(name: str, is_on_mobile: bool) -> list[str]:
+        """
+        Get the frames of the movie
+        """
+
         path = Movie._get_cache_path(name, is_on_mobile)
         if path not in Movie._cache:
-            with open(path, "r") as f:
-                Movie._cache[path] = json.load(f)
+            with open(path, "r", encoding="utf-8") as file:
+                Movie._cache[path] = json.load(file)
 
         return Movie._cache[path]
 

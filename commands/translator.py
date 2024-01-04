@@ -29,6 +29,7 @@ class ChannelLanguageSelect(ui.LanguageSelect):
                                                 ephemeral=True)
 
 
+# pylint: disable=too-few-public-methods
 class BatchTranslator:
     """
     Translator that can translate a text to multiple languages concurrently
