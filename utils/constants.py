@@ -6,20 +6,18 @@ Constants:
     MAX_NUM_EMBEDS_IN_MESSAGE
     LANGUAGES
 """
+from typing import Type
 
 from deep_translator import GoogleTranslator
+from deep_translator.base import BaseTranslator
 
 EMBED_DESCRIPTION_MAX_LENGTH = 4096
 
 MAX_NUM_EMBEDS_IN_MESSAGE = 10
 
 languages = [
-    "bulgarian",
     "chinese (simplified)",
     "chinese (traditional)",
-    "croatian",
-    "czech",
-    "danish",
     "dutch",
     "english",
     "filipino",
@@ -28,12 +26,10 @@ languages = [
     "german",
     "greek",
     "hindi",
-    "hungarian",
     "indonesian",
     "italian",
     "japanese",
     "korean",
-    "lithuanian",
     "malay",
     "norwegian",
     "polish",
@@ -43,9 +39,9 @@ languages = [
     "spanish",
     "swedish",
     "thai",
-    "turkish",
     "ukrainian",
     "vietnamese",
 ]
 
-translator = GoogleTranslator()
+Translator: Type[BaseTranslator] = GoogleTranslator
+translator = Translator()

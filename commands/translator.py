@@ -1,12 +1,11 @@
 """
 This module implements translator command
 """
+
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
 import langid
-from deep_translator import GoogleTranslator
-from deep_translator.base import BaseTranslator
 from discord import app_commands, Interaction, Message, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
@@ -40,18 +39,8 @@ class BatchTranslator:
     def __init__(self, targets: list[str]):
         languages_to_codes = constants.translator.get_supported_languages(as_dict=True)
 
-        self._translators = (GoogleTranslator(target=languages_to_codes[target]) for target in targets)
+        self._translators = (constants.Translator(target=languages_to_codes[target]) for target in targets)
         self._executor = ThreadPoolExecutor(max_workers=len(targets))
-
-    @staticmethod
-    def is_language_supported(language: str):
-        """
-        Check if the given language is supported
-
-        :param language: The language to check
-        :return: True if it is supported, False otherwise
-        """
-        return BatchTranslator._translator.is_language_supported(language)
 
     async def translate(self, text: str):
         """
@@ -75,7 +64,7 @@ class BatchTranslator:
             yield future.result()
 
     @staticmethod
-    def _translate(text: str, translator: BaseTranslator) -> tuple[str, str]:
+    def _translate(text: str, translator: constants.Translator) -> tuple[str, str]:
         return BatchTranslator._CODES_TO_LANGUAGES[translator.target], translator.translate(text)
 
 
@@ -177,3 +166,28 @@ class Translator(app_commands.Group):
         view = View()
         view.add_item(ChannelLanguageSelect())
         await interaction.response.send_message(view=view, ephemeral=True)
+
+    @app_commands.command()
+    async def clear_your_languages(self, interaction: Interaction):
+        """
+        Clear languages to be translated for your messages
+        """
+        config = await user.get_user(interaction.user.id)
+        config.translate_to = []
+        await user.set_user(config)
+
+        await interaction.response.send_message(success("Your languages to be translated have been cleared"),
+                                                ephemeral=True)
+
+    @app_commands.command()
+    @app_commands.checks.has_permissions(administrator=True)
+    async def clear_channel_languages(self, interaction: Interaction):
+        """
+        Clear languages to be translated for this channel
+        """
+        config = await channel.get_channel(interaction.channel_id)
+        config.translate_to = []
+        await channel.set_channel(config)
+
+        await interaction.response.send_message(success("This channel's languages to be translated have been cleared"),
+                                                ephemeral=True)

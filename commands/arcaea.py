@@ -6,11 +6,10 @@ import datetime
 import logging
 
 import discord
-from discord import ui, app_commands, Interaction, Forbidden
+from discord import app_commands, Interaction, Forbidden
 from discord.ext.commands import Bot
 
-from utils import templates
-from commands import Confirm
+from utils import templates, ui
 
 EMPTY_TEXT = "Empty"
 
@@ -19,7 +18,7 @@ LINK_PLAY_LIFESPAN = datetime.timedelta(days=1)
 logger = logging.getLogger(__name__)
 
 
-class LinkPlayView(ui.View):
+class LinkPlayView(discord.ui.View):
     """
     Buttons for LinkPlay message
     """
@@ -30,8 +29,8 @@ class LinkPlayView(ui.View):
     async def on_timeout(self) -> None:
         raise RuntimeError("Buttons are timed out and their interactions will fail")
 
-    @ui.button(label="Join", custom_id="linkview-join-button", style=discord.ButtonStyle.primary)
-    async def join(self, interaction: Interaction, _: ui.Button):
+    @discord.ui.button(label="Join", custom_id="linkview-join-button", style=discord.ButtonStyle.primary)
+    async def join(self, interaction: Interaction, _: discord.ui.Button):
         """
         Add the username to the embed when pressed
         """
@@ -89,8 +88,8 @@ class LinkPlayView(ui.View):
             except Forbidden:
                 pass
 
-    @ui.button(label="Leave", custom_id="linkview-leave-button")
-    async def leave(self, interaction: Interaction, _: ui.Button):
+    @discord.ui.button(label="Leave", custom_id="linkview-leave-button")
+    async def leave(self, interaction: Interaction, _: discord.ui.Button):
         """
         Remove the username from the embed when pressed
         """
@@ -107,7 +106,7 @@ class LinkPlayView(ui.View):
 
             lead_user_mention = embed.fields[0].value
             if user.mention == lead_user_mention:
-                confirm_view = Confirm(confirmed_message="Deleted")
+                confirm_view = ui.Confirm(confirmed_message="Deleted")
                 await interaction.response.send_message(
                     templates.warning("You're about to delete the Link Play you created. Do you want to continue?"),
                     view=confirm_view, ephemeral=True)
