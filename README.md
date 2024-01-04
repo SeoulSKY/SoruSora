@@ -2,9 +2,9 @@
 
 # SoruSora
 
-![python](https://img.shields.io/badge/python-v3.10-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
+![python](https://img.shields.io/badge/python-v3.11-blue) ![test](https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg) ![lint](https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg) ![license](https://img.shields.io/github/license/SeoulSKY/SoruSora) ![SoruSora](https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord)
 
-> AI-Powered Multi-Functional Discord Bot Dedicated to SeoulSKY's Discord Server
+> AI-Powered Versatile Discord Bot Dedicated to SeoulSKY's Discord Server
 
 [![Discord Server Invite](http://invidget.switchblade.xyz/kQZDJJB)](https://discord.gg/kQZDJJB)
 
@@ -50,7 +50,7 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 | FIREBASE_CLIENT_X509_CERT_URL        | Same as above                                                                                                                                                                                                                                           |
 | CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                        |
 | CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                   |
-
+| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:` Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn about it.                                                                                          |
 </details>
 
 ### Running with [Docker](https://www.docker.com) (Recommended)
@@ -73,47 +73,30 @@ docker run --rm -v ./logs:/app/logs --env-file=.env --name sorusora sorusora
 
 ### Running without [Docker](https://www.docker.com)
 
-* Install [python 3.10](https://www.python.org/downloads/) and [FFmpeg](https://ffmpeg.org/download.html)
-* Find the path to the Python executable
-
+* Install [pyenv](https://github.com/pyenv/pyenv#installation) and [FFmpeg](https://ffmpeg.org/download.html)
+* Install python 3.11.7
 
 ```bash
-# On Windows
-where python3.10
-
-# On Linux or macOS
-which python3.10
+pyenv install 3.11.7
 ```
 
-* Set up and activate virtual environment
+* Setup and activate virtual environment
 
 ```bash
-/path/to/python3.10 -m venv venv
-
-# On Windows
-venv\Scripts\activate.bat
-
-# On Linux or macOS
-source venv/bin/activate
+pyenv virtualenv 3.11.7 sorusora
+pyenv local sorusora
 ```
 
 * Install required packages
 
 ```bash
-pip install -r requirements.txt
-```
-
-* Setup playwright
-
-```bash
-playwright install
-playwright install-deps
+pyenv exec pip install -r requirements.txt
 ```
 
 * Run `main.py`
 
-```
-python main.py
+```bash
+pyenv exec python main.py
 ```
 
 ## How to Contribute

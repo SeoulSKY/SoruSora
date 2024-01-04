@@ -15,7 +15,7 @@ from moviepy.editor import VideoFileClip
 from moviepy.video.fx import resize as resizer
 from numpy.core.records import ndarray
 
-import templates
+from utils import templates
 
 CHARS = " ░▒▓█"
 """

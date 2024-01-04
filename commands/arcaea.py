@@ -9,7 +9,7 @@ import discord
 from discord import ui, app_commands, Interaction, Forbidden
 from discord.ext.commands import Bot
 
-import templates
+from utils import templates
 from commands import Confirm
 
 EMPTY_TEXT = "Empty"

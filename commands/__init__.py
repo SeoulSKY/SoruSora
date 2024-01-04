@@ -7,7 +7,7 @@ Classes:
 
 import discord
 
-from templates import success, info
+from utils.templates import success, info
 
 
 class Confirm(discord.ui.View):

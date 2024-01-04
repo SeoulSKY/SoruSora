@@ -13,7 +13,7 @@ from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
 
-from templates import forbidden
+from utils.templates import forbidden
 
 load_dotenv()
 
@@ -25,7 +25,7 @@ LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ERROR_DIR = os.path.join(LOGS_DIR, "error")
 WARNING_DIR = os.path.join(LOGS_DIR, "warning")
 
-TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") is not None else None
+TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
 
 
 class EmptyHelpCommand(MinimalHelpCommand):
@@ -81,6 +81,7 @@ class SoruSora(Bot):
         if TEST_GUILD is not None:
             self.tree.copy_global_to(guild=TEST_GUILD)
             await self.tree.sync(guild=TEST_GUILD)
+
         await self.tree.sync()
 
 
@@ -122,9 +123,6 @@ if __name__ == "__main__":
     warning_handler = TimedRotatingFileHandler(warning_log_path, when="d", delay=True)
     warning_handler.setLevel(logging.WARNING)
     warning_handler.setFormatter(formatter)
-
-    error_handler.namer = lambda name: name + ".log"
-    warning_handler.namer = lambda name: name + ".log"
 
     logger = logging.getLogger()
     logger.addHandler(error_handler)
