@@ -10,4 +10,3 @@ class UserNotFoundError(RuntimeError):
     """
     Thrown when the user is not found
     """
-    pass
