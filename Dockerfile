@@ -1,4 +1,4 @@
-FROM python:3.10.12 AS build
+FROM python:3.11.7 AS build
 
 WORKDIR /app
 
@@ -8,8 +8,5 @@ RUN apt update && \
 COPY . .
 
 RUN pip install -r requirements.txt
-
-RUN playwright install &&  \
-    playwright install-deps
 
 CMD ["python", "main.py"]
