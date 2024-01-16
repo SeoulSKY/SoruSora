@@ -13,6 +13,7 @@ from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
 
+from commands.movie import Movie
 from utils.templates import forbidden
 
 load_dotenv()
@@ -26,6 +27,10 @@ ERROR_DIR = os.path.join(LOGS_DIR, "error")
 WARNING_DIR = os.path.join(LOGS_DIR, "warning")
 
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+
+DEV_COMMANDS = {
+    Movie,
+}
 
 
 class EmptyHelpCommand(MinimalHelpCommand):
@@ -74,15 +79,14 @@ class SoruSora(Bot):
                 self.tree.add_command(command)
 
         for group_command_class in app_commands.Group.__subclasses__():
+            if group_command_class in DEV_COMMANDS and not IS_DEV_ENV:
+                continue
+
             # noinspection PyArgumentList
-            self.tree.add_command(group_command_class(bot=self))
+            self.tree.add_command(group_command_class(bot=self), guild=TEST_GUILD)
 
     async def setup_hook(self):
-        if TEST_GUILD is not None:
-            self.tree.copy_global_to(guild=TEST_GUILD)
-            await self.tree.sync(guild=TEST_GUILD)
-
-        await self.tree.sync()
+        await self.tree.sync(guild=TEST_GUILD)
 
 
 bot = SoruSora()
@@ -93,6 +97,7 @@ async def on_ready():
     """
     Executed when the bot becomes ready
     """
+    logging.info("Running in %s environment", "development" if IS_DEV_ENV else "production")
     logging.info("Logged in as %s (ID: %d)", bot.user, bot.user.id)
 
 

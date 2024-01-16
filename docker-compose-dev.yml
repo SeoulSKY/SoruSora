@@ -9,3 +9,9 @@ services:
       - ./cache:/app/cache
     env_file:
       - .env
+
+  mongo:
+    image: mongo:7.0.5
+    container_name: mongo
+    volumes:
+      - ~/mongo:/data/db

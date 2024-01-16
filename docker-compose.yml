@@ -9,3 +9,11 @@ services:
       - ./cache:/app/cache
     env_file:
       - .env
+    environment:
+      - PRODUCTION=1
+
+  mongo:
+    image: mongo:7.0.5
+    container_name: mongo
+    volumes:
+      - ~/mongo:/data/db
