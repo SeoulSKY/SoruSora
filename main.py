@@ -83,10 +83,14 @@ class SoruSora(Bot):
                 continue
 
             # noinspection PyArgumentList
-            self.tree.add_command(group_command_class(bot=self), guild=TEST_GUILD)
+            self.tree.add_command(group_command_class(bot=self))
 
     async def setup_hook(self):
-        await self.tree.sync(guild=TEST_GUILD)
+        if TEST_GUILD is not None:
+            self.tree.copy_global_to(guild=TEST_GUILD)
+            await self.tree.sync(guild=TEST_GUILD)
+        else:
+            await self.tree.sync()
 
 
 bot = SoruSora()
