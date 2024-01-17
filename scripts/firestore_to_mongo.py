@@ -3,6 +3,7 @@ This script copies all the data from Firestore to MongoDB.
 """
 
 import asyncio
+import os
 import sys
 
 import firebase_admin
@@ -11,7 +12,8 @@ from google.cloud.firestore_v1 import AsyncClient
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from utils.constants import DATABASE_NAME
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.constants import DATABASE_NAME  # pylint: disable=wrong-import-position
 
 
 async def main():
