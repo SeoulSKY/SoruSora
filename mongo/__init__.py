@@ -12,12 +12,15 @@ Functions:
     get_document
     set_document
 """
-
+import os
 from typing import Type, TypeVar, Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 
-db: AsyncIOMotorDatabase = AsyncIOMotorClient().get_database("SoruSora")
+from utils.constants import DATABASE_NAME
+
+client = AsyncIOMotorClient(host="mongo") if os.getenv("DOCKER") else AsyncIOMotorClient()
+db: AsyncIOMotorDatabase = client.get_database(DATABASE_NAME)
 
 T = TypeVar("T", bound="Collection")
 

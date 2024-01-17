@@ -11,6 +11,8 @@ from google.cloud.firestore_v1 import AsyncClient
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from utils.constants import DATABASE_NAME
+
 
 async def main():
     """
@@ -24,7 +26,7 @@ async def main():
     app = firebase_admin.initialize_app(credentials.Certificate(sys.argv[1]))
     firestore = AsyncClient(credentials=app.credential.get_credential(), project=app.project_id)
 
-    mongo = AsyncIOMotorClient().get_database("SoruSora")
+    mongo = AsyncIOMotorClient().get_database(DATABASE_NAME)
 
     async for firestore_collection in firestore.collections():
         docs = []

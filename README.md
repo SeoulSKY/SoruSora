@@ -34,23 +34,13 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
     <h3>Description of each environment variable (Click to expand)</h3>
   </summary>
 
-| Name                                 | Description                                                                                                                                                                                                                                             |
-|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                                                                           |
+| Name                                 | Description                                                                                                                                             |
+|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                   |
 | TEST_GUILD_ID                        | (Optional) Find your test server id following the [guide](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-). In the test server, the slash commands immediately get updated when you run the program |
-| FIREBASE_TYPE                        | One of the value in the private key in your Firebase project. Go to `Project Settings` →  `Service accounts` → `Firebase Admin SDK` → `Generate new private key`                                                                                        |
-| FIREBASE_PROJECT_ID                  | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_PRIVATE_KEY_ID              | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_PRIVATE_KEY                 | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_CLIENT_EMAIL                | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_CLIENT_ID                   | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_AUTH_URI                    | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_TOKEN_URI                   | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_AUTH_PROVIDER_X509_CERT_URL | Same as above                                                                                                                                                                                                                                           |
-| FIREBASE_CLIENT_X509_CERT_URL        | Same as above                                                                                                                                                                                                                                           |
-| CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                        |
-| CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                   |
-| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:`. Run `scripts/cai_tgt.py` to get it.                                                                                                                                        |
+| CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                |
+| CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                           |
+| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:`. Run `scripts/cai_tgt.py` to get it.                                        |
 </details>
 
 ### Running with [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/install/) (Recommended)
@@ -74,7 +64,7 @@ docker-compose -f docker-compose-dev.yml up --build
 
 * Install [pyenv](https://github.com/pyenv/pyenv#installation), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/) and [FFmpeg](https://ffmpeg.org/download.html)
 
-* [Start MongoDB] (https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/#run-mongodb-community-edition)
+* [Start MongoDB](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/#run-mongodb-community-edition)
 
 * Install python 3.11.7
 

@@ -21,6 +21,8 @@ EMBED_DESCRIPTION_MAX_LENGTH = 4096
 
 MAX_NUM_EMBEDS_IN_MESSAGE = 10
 
+DATABASE_NAME = "SoruSora"
+
 languages = [
     "chinese (simplified)",
     "chinese (traditional)",

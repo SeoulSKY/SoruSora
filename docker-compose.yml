@@ -18,4 +18,5 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ~/mongo:/data/db
+      - ~/mongoDB:/data/db
+    restart: always
