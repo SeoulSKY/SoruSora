@@ -88,9 +88,11 @@ class SoruSora(Bot):
     async def setup_hook(self):
         if TEST_GUILD is not None:
             self.tree.copy_global_to(guild=TEST_GUILD)
-            await self.tree.sync(guild=TEST_GUILD)
+            synced_commands = [command.name for command in await self.tree.sync(guild=TEST_GUILD)]
+            logging.info("Synced commands to the test guild: %s", str(synced_commands))
         else:
-            await self.tree.sync()
+            synced_commands = [command.name for command in await self.tree.sync()]
+            logging.info("Synced commands to all guilds: %s", str(synced_commands))
 
 
 bot = SoruSora()
