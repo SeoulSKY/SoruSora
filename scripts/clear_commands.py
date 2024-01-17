@@ -16,10 +16,17 @@ class TempBot(Bot):
     """
 
     async def setup_hook(self) -> None:
-        self.tree.clear_commands(guild=None)
-        await self.tree.sync()
+        if os.getenv("TEST_GUILD_ID"):
+            guild = discord.Object(id=os.getenv("TEST_GUILD_ID"))
+            self.tree.clear_commands(guild=guild)
+            assert len(await self.tree.sync(guild=guild)) == 0
 
-        print("Done")
+            print("Test guild commands cleared")
+
+        self.tree.clear_commands(guild=None)
+        assert len(await self.tree.sync()) == 0
+
+        print("Global commands cleared")
         sys.exit(0)
 
 

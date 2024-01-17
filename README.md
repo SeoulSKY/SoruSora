@@ -29,19 +29,16 @@
 
 Create `.env` file, copy and paste all contents from `.env.example` file, and fill the values for your development environment.
 
-<details>
-  <summary>
-    <h3>Description of each environment variable (Click to expand)</h3>
-  </summary>
+### Description of each environment variable
 
-| Name                                 | Description                                                                                                                                             |
-|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                   |
-| TEST_GUILD_ID                        | (Optional) Find your test server id following the [guide](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-). In the test server, the slash commands immediately get updated when you run the program |
-| CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                |
-| CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                           |
-| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:`. Run `scripts/cai_tgt.py` to get it.                                        |
-</details>
+| Name                                 | Description                                                                                                                                                                                                    |
+|--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                                  |
+| TEST_GUILD_ID                        | (Optional) Find your test server id following the [guide](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-). If provided, the bot runs in development mode. |
+| CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                               |
+| CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                          |
+| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:`. Run `scripts/cai_tgt.py` to get it.                                                                                               |
+
 
 ### Running with [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/install/) (Recommended)
 
@@ -93,4 +90,4 @@ pyenv exec python main.py
 
 ## How to Contribute
 
-Read [CONTRIBUTING.md](https://github.com/SeoulSKY/SoruSora/blob/master/docs/CONTRIBUTING.md) for details
+Read [CONTRIBUTING.md](https://github.com/SeoulSKY/SoruSora/blob/master/docs/CONTRIBUTING.md) for details.

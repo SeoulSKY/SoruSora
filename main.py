@@ -18,8 +18,6 @@ from utils.templates import forbidden
 
 load_dotenv()
 
-IS_DEV_ENV = "PRODUCTION" not in os.environ
-
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
@@ -27,6 +25,7 @@ ERROR_DIR = os.path.join(LOGS_DIR, "error")
 WARNING_DIR = os.path.join(LOGS_DIR, "warning")
 
 TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+IS_DEV_ENV = TEST_GUILD is not None
 
 DEV_COMMANDS = {
     Movie,
@@ -86,7 +85,7 @@ class SoruSora(Bot):
             self.tree.add_command(group_command_class(bot=self))
 
     async def setup_hook(self):
-        if TEST_GUILD is not None:
+        if IS_DEV_ENV:
             self.tree.copy_global_to(guild=TEST_GUILD)
             synced_commands = [command.name for command in await self.tree.sync(guild=TEST_GUILD)]
             logging.info("Synced commands to the test guild: %s", str(synced_commands))
