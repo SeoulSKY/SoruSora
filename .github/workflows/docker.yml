@@ -39,4 +39,4 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: |
-            ghcr.io/${{ steps.repo_name.outputs.lowercase }}:${{ github.ref }}
+            ghcr.io/${{ steps.repo_name.outputs.lowercase }}:${{ github.ref | replace("refs/tags/v", "") }}
