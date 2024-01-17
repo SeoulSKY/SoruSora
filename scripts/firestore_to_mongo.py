@@ -19,14 +19,14 @@ async def main():
     Main function
     """
 
-    if len(sys.argv) != 2:
-        print("Usage: python firestore_to_mongo.py <path/to/service_account.json>")
+    if len(sys.argv) != 3:
+        print("Usage: python firestore_to_mongo.py <path/to/service_account.json> <host>")
         sys.exit(1)
 
     app = firebase_admin.initialize_app(credentials.Certificate(sys.argv[1]))
     firestore = AsyncClient(credentials=app.credential.get_credential(), project=app.project_id)
 
-    mongo = AsyncIOMotorClient().get_database(DATABASE_NAME)
+    mongo = AsyncIOMotorClient(host=sys.argv[2]).get_database(DATABASE_NAME)
 
     async for firestore_collection in firestore.collections():
         docs = []
