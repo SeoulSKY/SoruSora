@@ -12,7 +12,7 @@ from discord import app_commands, Message, Interaction
 from discord.ext.commands import Bot
 from discord.ui import View
 
-import firestore.user
+from mongo.user import User, get_user, set_user
 from utils import ui
 from utils.templates import info, success, error
 
@@ -26,9 +26,9 @@ class MainLanguageSelect(ui.LanguageSelect):
         super().__init__(min_values=1, max_values=1, placeholder="Select the chat language")
 
     async def callback(self, interaction: Interaction):
-        config = await firestore.user.get_user(interaction.user.id)
+        config = await get_user(interaction.user.id)
         config.main_language = self.values[0]
-        await firestore.user.set_user(config)
+        await set_user(config)
 
         await interaction.response.send_message(success("Your chat language has been updated"), ephemeral=True)
 
@@ -55,7 +55,7 @@ class Chat(app_commands.Group):
                 return
 
             async with message.channel.typing():
-                user = await firestore.user.get_user(message.author.id)
+                user = await get_user(message.author.id)
                 if user.chat_history_id is None:
                     try:
                         await self._create_new_chat(user, message.author.display_name)
@@ -88,15 +88,15 @@ class Chat(app_commands.Group):
     def _error_message() -> str:
         return error("Something went wrong. Please let `SeoulSKY` know about this")
 
-    async def _create_new_chat(self, user: firestore.user.User, user_name: str):
+    async def _create_new_chat(self, user: User, user_name: str):
         response = await self._client.chat.new_chat(os.getenv("CAI_CHAR_ID"))
         user.chat_history_id = response["external_id"]
 
         instruction = f"(OCC: Forget about my previous name. My new name is {user_name})"
         await self._send_message(user, instruction)
-        await firestore.user.set_user(user)
+        await set_user(user)
 
-    async def _send_message(self, user: firestore.user.User, text: str) -> str:
+    async def _send_message(self, user: User, text: str) -> str:
         if user.main_language is not None and user.main_language != "en":
             translator = GoogleTranslator(user.main_language)
             text = await asyncio.to_thread(translator.translate, text)
@@ -125,7 +125,7 @@ class Chat(app_commands.Group):
         """
         Clear the chat history between you and this bot
         """
-        user = await firestore.user.get_user(interaction.user.id)
+        user = await get_user(interaction.user.id)
         if user.chat_history_id is None:
             await interaction.response.send_message(error(f"You don't have any conversations with "
                                                           f"{interaction.client.user.display_name}"), ephemeral=True)
@@ -142,6 +142,6 @@ class Chat(app_commands.Group):
         await self._client.chat.delete_message(user.chat_history_id, uuids)
         user.chat_history_id = None
         user.chat_history_tgt = None
-        await firestore.user.set_user(user)
+        await set_user(user)
 
         await interaction.followup.send(success("Deleted!"), ephemeral=True)

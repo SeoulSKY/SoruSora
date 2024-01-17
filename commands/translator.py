@@ -10,7 +10,8 @@ from discord import app_commands, Interaction, Message, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
 
-from firestore import user, channel
+from mongo.user import get_user, set_user
+from mongo.channel import get_channel, set_channel
 from utils import constants, templates, ui
 from utils.templates import success
 
@@ -21,9 +22,9 @@ class ChannelLanguageSelect(ui.LanguageSelect):
     """
 
     async def callback(self, interaction: Interaction):
-        config = await channel.get_channel(interaction.channel_id)
+        config = await get_channel(interaction.channel_id)
         config.translate_to = self.values
-        await channel.set_channel(config)
+        await set_channel(config)
 
         await interaction.response.send_message(success("This channel's languages to be translated have been updated"),
                                                 ephemeral=True)
@@ -83,7 +84,7 @@ class Translator(app_commands.Group):
 
     def _setup_user_listeners(self):
         async def on_message(message: Message):
-            usr = await user.get_user(message.author.id)
+            usr = await get_user(message.author.id)
             if len(message.content.strip()) == 0 or len(usr.translate_to) == 0:
                 return
 
@@ -96,7 +97,7 @@ class Translator(app_commands.Group):
             if message.author == self.bot.user:
                 return
 
-            chan = await channel.get_channel(message.channel.id)
+            chan = await get_channel(message.channel.id)
             if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
                 return
 
@@ -173,9 +174,9 @@ class Translator(app_commands.Group):
         """
         Clear languages to be translated for your messages
         """
-        config = await user.get_user(interaction.user.id)
+        config = await get_user(interaction.user.id)
         config.translate_to = []
-        await user.set_user(config)
+        await set_user(config)
 
         await interaction.response.send_message(success("Your languages to be translated have been cleared"),
                                                 ephemeral=True)
@@ -186,9 +187,9 @@ class Translator(app_commands.Group):
         """
         Clear languages to be translated for this channel
         """
-        config = await channel.get_channel(interaction.channel_id)
+        config = await get_channel(interaction.channel_id)
         config.translate_to = []
-        await channel.set_channel(config)
+        await set_channel(config)
 
         await interaction.response.send_message(success("This channel's languages to be translated have been cleared"),
                                                 ephemeral=True)

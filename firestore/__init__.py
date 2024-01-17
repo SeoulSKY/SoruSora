@@ -1,5 +1,5 @@
 """
-This module provides database instances for test_firestore
+This module provides database instances for test_mongo
 
 Instances:
     db

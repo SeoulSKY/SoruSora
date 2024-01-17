@@ -13,7 +13,7 @@ from utils import templates, ui
 
 EMPTY_TEXT = "Empty"
 
-LINK_PLAY_LIFESPAN = datetime.timedelta(days=1)
+LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
 
 logger = logging.getLogger(__name__)
 

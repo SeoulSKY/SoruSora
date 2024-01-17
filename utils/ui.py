@@ -9,7 +9,7 @@ classes:
 import discord
 from discord import SelectOption, Interaction
 
-from firestore import user
+from mongo.user import get_user, set_user
 from utils import constants
 from utils.templates import info, success
 
@@ -75,9 +75,9 @@ class LanguageSelect(discord.ui.Select):
                          options=languages)
 
     async def callback(self, interaction: Interaction):
-        config = await user.get_user(interaction.user.id)
+        config = await get_user(interaction.user.id)
         config.translate_to = self.values
-        await user.set_user(config)
+        await set_user(config)
 
         await interaction.response.send_message(success("Your languages to be translated have been updated"),
                                                 ephemeral=True)
