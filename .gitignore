@@ -6,3 +6,5 @@
 **.pytest_cache/
 /logs/
 /cache/
+
+service_account.json
