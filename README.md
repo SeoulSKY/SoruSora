@@ -50,7 +50,7 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 | FIREBASE_CLIENT_X509_CERT_URL        | Same as above                                                                                                                                                                                                                                           |
 | CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                        |
 | CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                                                                   |
-| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:` Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn about it.                                                                                          |
+| CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:`. Run `scripts/cai_tgt.py` to get it.                                                                                                                                        |
 </details>
 
 ### Running with [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/install/) (Recommended)

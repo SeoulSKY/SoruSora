@@ -1,9 +1,6 @@
 """
 Provides functions to interact with the channel configs in the firestore
 
-Classes:
-    Channel
-
 Functions:
     get_collection()
     has_channel()
@@ -14,39 +11,7 @@ Functions:
 from google.cloud.firestore_v1 import AsyncCollectionReference
 
 from firestore import db
-
-
-class Channel:
-    """
-    A wrapper class to represent channel configs in the database
-    """
-
-    def __init__(self, channel_id: int, translate_to: list[str] = None):
-        self.channel_id = channel_id
-        if translate_to is None:
-            translate_to = []
-        self.translate_to: list[str] = translate_to
-
-    @staticmethod
-    def from_dict(source: dict):
-        """
-        Create a new user configs from the given source
-        :param source: The source to create a new user
-        :return: The new user config
-        """
-        temp_id = 0
-        user = Channel(temp_id)
-        for key, value in source.items():
-            setattr(user, key, value)
-
-        return user
-
-    def to_dict(self) -> dict:
-        """
-        Convert this user configs to dictionary
-        :return: The dictionary
-        """
-        return vars(self)
+from mongo.channel import Channel
 
 
 def get_collection() -> AsyncCollectionReference:

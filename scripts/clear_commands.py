@@ -1,6 +1,7 @@
 """
 Clears all app commands of the bot
 """
+
 import os
 import sys
 
