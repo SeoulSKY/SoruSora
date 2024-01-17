@@ -22,7 +22,7 @@ from utils.constants import DATABASE_NAME
 client = AsyncIOMotorClient(host="mongo") if os.getenv("DOCKER") else AsyncIOMotorClient()
 db: AsyncIOMotorDatabase = client.get_database(DATABASE_NAME)
 
-T = TypeVar("T", bound="Collection")
+T = TypeVar("T", bound="Document")
 
 
 class Document:  # pylint: disable=too-few-public-methods
@@ -39,11 +39,11 @@ class Document:  # pylint: disable=too-few-public-methods
         :return: The new document
         """
 
-        collection = child_class()
+        document = child_class()
         for key, value in source.items():
-            setattr(collection, key, value)
+            setattr(document, key, value)
 
-        return collection
+        return document
 
     def to_dict(self) -> dict:
         """
