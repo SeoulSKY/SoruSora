@@ -2,18 +2,15 @@
 This module implements translator command
 """
 
-import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
-
-import langid
 from discord import app_commands, Interaction, Message, Embed, HTTPException
 from discord.ext.commands import Bot
 from discord.ui import View
 
-from mongo.user import get_user, set_user
 from mongo.channel import get_channel, set_channel
+from mongo.user import get_user, set_user
 from utils import constants, templates, ui
 from utils.templates import success
+from utils.translator import BatchTranslator
 
 
 class ChannelLanguageSelect(ui.LanguageSelect):
@@ -28,46 +25,6 @@ class ChannelLanguageSelect(ui.LanguageSelect):
 
         await interaction.response.send_message(success("This channel's languages to be translated have been updated"),
                                                 ephemeral=True)
-
-
-# pylint: disable=too-few-public-methods
-class BatchTranslator:
-    """
-    Translator that can translate a text to multiple languages concurrently
-    """
-
-    _CODES_TO_LANGUAGES = {v: k for k, v in constants.translator.get_supported_languages(as_dict=True).items()}
-
-    def __init__(self, targets: list[str]):
-        languages_to_codes = constants.translator.get_supported_languages(as_dict=True)
-
-        self._translators = (constants.Translator(target=languages_to_codes[target]) for target in targets)
-        self._executor = ThreadPoolExecutor(max_workers=len(targets))
-
-    async def translate(self, text: str):
-        """
-        Translate the text to target languages
-
-        :param text: The text to translate
-        :return: List of tuples containing target language code and translated text
-        """
-
-        source, _ = langid.classify(text)
-
-        futures = []
-        for translator in self._translators:
-            if source == translator.target:
-                continue
-
-            translator.source = source
-            futures.append(self._executor.submit(self._translate, text, translator))
-
-        for future in concurrent.futures.as_completed(futures):
-            yield future.result()
-
-    @staticmethod
-    def _translate(text: str, translator: constants.Translator) -> tuple[str, str]:
-        return BatchTranslator._CODES_TO_LANGUAGES[translator.target], translator.translate(text)
 
 
 class Translator(app_commands.Group):

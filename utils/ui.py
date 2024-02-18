@@ -10,8 +10,9 @@ import discord
 from discord import SelectOption, Interaction
 
 from mongo.user import get_user, set_user
-from utils import constants
+from utils import translator
 from utils.templates import info, success
+from utils.translator import language_to_code
 
 
 class Confirm(discord.ui.View):
@@ -63,10 +64,7 @@ class LanguageSelect(discord.ui.Select):
     """
 
     def __init__(self, min_values: int = 0, max_values: int = None, placeholder: str = None):
-        for lang in constants.languages:
-            assert constants.translator.is_language_supported(lang), f"{lang} is not a supported language"
-
-        languages = [SelectOption(label=lang) for lang in constants.languages]
+        languages = [SelectOption(label=lang, value=language_to_code(lang)) for lang in translator.languages]
 
         super().__init__(placeholder=("Select languages that will be translated to"
                                       if placeholder is None else placeholder),

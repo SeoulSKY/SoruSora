@@ -8,7 +8,6 @@
 
 [![Discord Server Invite](http://invidget.switchblade.xyz/kQZDJJB)](https://discord.gg/kQZDJJB)
 
-
 ## Feature Overview
 
 | `/movie` |

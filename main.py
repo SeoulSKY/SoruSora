@@ -1,20 +1,25 @@
 """
 Main script where the program starts
 """
-
+import concurrent.futures
+import itertools
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor, Future
 from importlib import import_module
 from logging.handlers import TimedRotatingFileHandler
 
 import discord
-from discord import app_commands, Interaction
+from discord import app_commands, Interaction, Locale, AppCommandType
 from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 from commands.movie import Movie
+from utils.constants import COMMAND_DESCRIPTION_MAX_LENGTH
 from utils.templates import forbidden
+from utils.translator import CommandTranslator, Translator, locale_to_code
 
 load_dotenv()
 
@@ -65,17 +70,18 @@ class SoruSora(Bot):
         self._add_commands()
 
     def _add_commands(self):
-        package_name = "commands"
+        package_names = ["commands", "context_menus"]
 
-        for module_name in os.listdir(package_name):
-            if module_name == "__init__.py" or not module_name.endswith(".py"):
-                continue
+        for package_name in package_names:
+            for module_name in os.listdir(package_name):
+                if module_name == "__init__.py" or not module_name.endswith(".py"):
+                    continue
 
-            module = import_module("." + module_name.removesuffix(".py"), package_name)
+                module = import_module("." + module_name.removesuffix(".py"), package_name)
 
-            command = getattr(module, module_name.removesuffix(".py"), None)
-            if command is not None:
-                self.tree.add_command(command)
+                command = getattr(module, module_name.removesuffix(".py"), None)
+                if command is not None:
+                    self.tree.add_command(command)
 
         for group_command_class in app_commands.Group.__subclasses__():
             if group_command_class in DEV_COMMANDS and not IS_DEV_ENV:
@@ -84,7 +90,62 @@ class SoruSora(Bot):
             # noinspection PyArgumentList
             self.tree.add_command(group_command_class(bot=self))
 
+    def _translate_commands(self) -> dict[Locale, dict[str, str]]:
+        # pylint: disable=too-many-locals
+        """
+        Translate the commands to all available locales
+        """
+
+        result = {}
+        futures: list[Future] = []
+
+        def translate(text: str, locale: Locale, is_name: bool = False) -> tuple[Locale, bool, str, str]:
+            if len(text.strip()) == 0:
+                return locale, is_name, text, text
+
+            return locale, is_name, text, Translator(source="en", target=locale_to_code(locale)).translate(text)
+
+        with ThreadPoolExecutor() as executor:
+            for locale in Locale:
+                if locale in {Locale.british_english, Locale.american_english}:
+                    continue
+
+                result[locale] = {}
+
+                for command in self.tree.walk_commands():
+                    futures.append(executor.submit(translate, command.name, locale, True))
+                    futures.append(executor.submit(translate, command.description, locale))
+
+                    if isinstance(command, app_commands.Group):
+                        continue
+
+                    for name, description, choices in \
+                            [(param.name, param.description, param.choices) for param in command.parameters]:
+                        futures.append(executor.submit(translate, name, locale, True))
+                        futures.append(executor.submit(translate, description, locale))
+
+                        for choice in choices:
+                            futures.append(executor.submit(translate, choice.name, locale, True))
+
+                for context_menu in itertools.chain(self.tree.walk_commands(type=AppCommandType.message),
+                                                    self.tree.walk_commands(type=AppCommandType.user)):
+                    futures.append(executor.submit(translate, context_menu.name, locale))
+
+            for future in tqdm(concurrent.futures.as_completed(futures), "Translating commands",
+                               total=len(futures), unit="texts"):
+                locale, is_name, text, translated = future.result()
+
+                if is_name:
+                    translated = "".join(char for char in translated if char.isalnum()).lower().replace(" ", "_")
+
+                result[locale][text] = translated[:COMMAND_DESCRIPTION_MAX_LENGTH]
+
+            return result
+
     async def setup_hook(self):
+        cache = self._translate_commands()
+        await self.tree.set_translator(CommandTranslator(cache))
+
         if IS_DEV_ENV:
             self.tree.copy_global_to(guild=TEST_GUILD)
             synced_commands = [command.name for command in await self.tree.sync(guild=TEST_GUILD)]
@@ -92,6 +153,8 @@ class SoruSora(Bot):
         else:
             synced_commands = [command.name for command in await self.tree.sync()]
             logging.info("Synced commands to all guilds: %s", str(synced_commands))
+
+        cache.clear()
 
 
 bot = SoruSora()

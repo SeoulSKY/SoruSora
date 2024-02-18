@@ -10,6 +10,7 @@ from typing import Literal, Optional
 
 import numpy as np
 from discord import app_commands, Interaction, Embed, HTTPException, Message, NotFound
+from discord.app_commands import Choice
 from discord.ext import tasks
 from discord.ext.commands import Bot
 from moviepy.editor import VideoFileClip
@@ -130,23 +131,26 @@ class Movie(app_commands.Group):
                                "Default value: 2")
     @app_commands.describe(original_speed="Play the movie at the original speed by skipping some frames. "
                                           "Default value: True")
+    @app_commands.choices(name=[
+        Choice(name="Bad Apple", value="bad_apple"),
+        Choice(name="Ultra B+K", value="ultra_b+k")
+    ])
     async def play(self, interaction: Interaction,
-                   name: Literal["bad_apple", "ultra_b+k"],
+                   name: Choice[str],
                    fps: Optional[Literal[1, 2]] = 2,
                    original_speed: Optional[bool] = True):
         """
         Play the movie
         """
         is_on_mobile = interaction.guild.get_member(interaction.user.id).is_on_mobile()
-        embed = Embed(color=templates.color, title=name.replace("_", " ").title(),
-                      description="Loading...")
+        embed = Embed(color=templates.color, title=name, description="Loading...")
         await interaction.response.send_message(embed=embed)
 
         message: Message = await interaction.original_response()
         counter = itertools.count(start=0, step=FPS // fps if original_speed else 1)
         with Movie._lock:
             Movie._num_playing += 1
-            frames = await Movie.get_frames(name, is_on_mobile)
+            frames = await Movie.get_frames(name.value, is_on_mobile)
 
         @tasks.loop(seconds=1 / fps)
         async def display():
