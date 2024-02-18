@@ -9,7 +9,6 @@ import sys
 import firebase_admin
 from firebase_admin import credentials
 from google.cloud.firestore_v1 import AsyncClient
-
 from motor.motor_asyncio import AsyncIOMotorClient
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

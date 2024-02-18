@@ -8,7 +8,6 @@ import pytest
 
 from mongo import db, has_document, get_document, set_document
 
-
 collection = db.get_collection("test-user")
 
 
