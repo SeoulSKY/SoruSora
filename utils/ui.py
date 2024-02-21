@@ -5,14 +5,13 @@ classes:
     Confirm
     LanguageSelect
 """
+import os
 
 import discord
-from discord import SelectOption, Interaction
+from discord import SelectOption, Interaction, Locale
 
-from mongo.user import get_user, set_user
-from utils import translator
 from utils.templates import info, success
-from utils.translator import language_to_code
+from utils.translator import languages, language_to_code, Localization, locale_to_code
 
 
 class Confirm(discord.ui.View):
@@ -20,7 +19,7 @@ class Confirm(discord.ui.View):
     Buttons for confirmation
     """
 
-    def __init__(self, *, confirmed_message: str = "Confirmed", cancelled_message: str = "Cancelled"):
+    def __init__(self, confirmed_message: str, cancelled_message: str, locale: Locale):
         """
         View to get a confirmation from a user. When the confirm button is pressed, set the is_confirmed to `True` and
         stop the View from listening to more input
@@ -29,8 +28,13 @@ class Confirm(discord.ui.View):
         """
         super().__init__()
 
+        self._localization = Localization([locale_to_code(locale)], [os.path.join("utils", "ui.ftl")])
+
         self._confirmed_message = success(confirmed_message)
         self._cancelled_message = info(cancelled_message)
+
+        self.confirm.label = self._localization.format_value("confirm")
+        self.cancel.label = self._localization.format_value("cancel")
 
         self.is_confirmed = None
         """
@@ -39,7 +43,7 @@ class Confirm(discord.ui.View):
         False: The user cancelled
         """
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    @discord.ui.button(style=discord.ButtonStyle.green)
     async def confirm(self, interaction: discord.Interaction, _: discord.ui.Button):
         """
         Confirm when pressed
@@ -48,7 +52,7 @@ class Confirm(discord.ui.View):
         await interaction.response.send_message(self._confirmed_message, ephemeral=True)
         self.stop()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey)
+    @discord.ui.button(style=discord.ButtonStyle.grey)
     async def cancel(self, interaction: discord.Interaction, _: discord.ui.Button):
         """
         Cancel when pressed
@@ -63,19 +67,11 @@ class LanguageSelect(discord.ui.Select):
     Select UI to select available languages for a user
     """
 
-    def __init__(self, min_values: int = 0, max_values: int = None, placeholder: str = None):
-        languages = [SelectOption(label=lang, value=language_to_code(lang)) for lang in translator.languages]
+    def __init__(self, placeholder: str, min_values: int = 1, max_values: int = None):
+        options = [SelectOption(label=lang.title(), value=language_to_code(lang)) for lang in languages]
 
-        super().__init__(placeholder=("Select languages that will be translated to"
-                                      if placeholder is None else placeholder),
-                         min_values=min_values,
-                         max_values=max_values if max_values is not None else len(languages),
-                         options=languages)
+        super().__init__(placeholder=placeholder, min_values=min_values,
+                         max_values=max_values if max_values is not None else len(languages), options=options)
 
     async def callback(self, interaction: Interaction):
-        config = await get_user(interaction.user.id)
-        config.translate_to = self.values
-        await set_user(config)
-
-        await interaction.response.send_message(success("Your languages to be translated have been updated"),
-                                                ephemeral=True)
+        raise NotImplementedError("This method should be overridden in a subclass")

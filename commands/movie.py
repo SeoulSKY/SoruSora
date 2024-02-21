@@ -1,12 +1,11 @@
 """
-Implements a command relate to movie
+Implements a commands relate to movie
 """
 
 import itertools
 import json
 import os
 import threading
-from typing import Literal, Optional
 
 import numpy as np
 from discord import app_commands, Interaction, Embed, HTTPException, Message, NotFound
@@ -18,6 +17,7 @@ from moviepy.video.fx import resize as resizer
 from tqdm import tqdm
 
 from utils import templates, constants
+from utils.translator import Localization
 
 DESKTOP_CACHE_PATH = os.path.join(constants.CACHE_DIR, "movie", "desktop")
 """
@@ -75,9 +75,16 @@ class Movie(app_commands.Group):
     Commands related to Movie
     """
 
+    FPS_MIN = 1
+    FPS_MAX = 2
+    FPS_DEFAULT = 2
+    ORIGINAL_SPEED_DEFAULT = True
+
     _cache: dict[str, list[str]] = {}
     _num_playing = 0
     _lock = threading.Lock()
+
+    loc = Localization(["en"], [os.path.join("commands", "movie.ftl")])
 
     def __init__(self, bot: Bot):
         super().__init__()
@@ -125,32 +132,35 @@ class Movie(app_commands.Group):
 
         return Movie._cache[path]
 
-    @app_commands.command()
-    @app_commands.describe(name="Name of the movie to play")
-    @app_commands.describe(fps="Number of frames to display per second. Range from 1 to 2 (inclusive). "
-                               "Default value: 2")
-    @app_commands.describe(original_speed="Play the movie at the original speed by skipping some frames. "
-                                          "Default value: True")
-    @app_commands.choices(name=[
+    @app_commands.command(description=loc.format_value("description"))
+    @app_commands.describe(title=loc.format_value("title"))
+    @app_commands.describe(fps=loc.format_value("fps", {
+        "min": FPS_MIN, "max": FPS_MAX, "default": FPS_DEFAULT
+    }))
+    @app_commands.describe(original_speed=loc.format_value("original-speed", {
+        "default": str(ORIGINAL_SPEED_DEFAULT)
+    }))
+    @app_commands.choices(title=[
         Choice(name="Bad Apple", value="bad_apple"),
         Choice(name="Ultra B+K", value="ultra_b+k")
     ])
+    @app_commands.choices(fps=[Choice(name=str(i), value=i) for i in range(FPS_MIN, FPS_MAX + 1)])
     async def play(self, interaction: Interaction,
-                   name: Choice[str],
-                   fps: Optional[Literal[1, 2]] = 2,
-                   original_speed: Optional[bool] = True):
+                   title: Choice[str],
+                   fps: int = FPS_DEFAULT,
+                   original_speed: bool = ORIGINAL_SPEED_DEFAULT):
         """
-        Play the movie
+        Play a movie
         """
         is_on_mobile = interaction.guild.get_member(interaction.user.id).is_on_mobile()
-        embed = Embed(color=templates.color, title=name, description="Loading...")
+        embed = Embed(color=templates.color, title=title.name, description="Loading...")
         await interaction.response.send_message(embed=embed)
 
         message: Message = await interaction.original_response()
         counter = itertools.count(start=0, step=FPS // fps if original_speed else 1)
         with Movie._lock:
             Movie._num_playing += 1
-            frames = await Movie.get_frames(name.value, is_on_mobile)
+            frames = await Movie.get_frames(title.value, is_on_mobile)
 
         @tasks.loop(seconds=1 / fps)
         async def display():

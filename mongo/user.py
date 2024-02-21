@@ -23,13 +23,13 @@ class User(Document):
     """
 
     def __init__(self, user_id: int = -1, chat_history_id: str = None, translate_to: list[str] = None,
-                 main_language: str = None):
+                 locale: str = None):
         self.user_id = user_id
         self.chat_history_id = chat_history_id
         if translate_to is None:
             translate_to = []
         self.translate_to: list[str] = translate_to
-        self.main_language = main_language
+        self.locale = locale
 
     @staticmethod
     def from_dict(source: dict) -> "User":

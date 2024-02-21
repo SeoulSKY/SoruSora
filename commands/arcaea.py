@@ -1,21 +1,25 @@
 """
-This module implements arcaea command
+This module implements arcaea commands
 """
 
 import datetime
 import logging
+import os
 
 import discord
 from discord import app_commands, Interaction, Forbidden
 from discord.ext.commands import Bot
 
 from utils import templates, ui
+from utils.translator import Localization
 
-EMPTY_TEXT = "Empty"
-
-LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=30)
+LINK_PLAY_LIFESPAN_MINUTES = 30
+LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=LINK_PLAY_LIFESPAN_MINUTES)
 
 logger = logging.getLogger(__name__)
+
+loc = Localization(["en"], [os.path.join("commands", "arcaea.ftl")])
+EMPTY_TEXT = loc.format_value("empty")
 
 
 class LinkPlayView(discord.ui.View):
@@ -24,12 +28,15 @@ class LinkPlayView(discord.ui.View):
     """
 
     def __init__(self):
-        super().__init__(timeout=False)
+        super().__init__(timeout=LINK_PLAY_LIFESPAN.total_seconds())
 
     async def on_timeout(self) -> None:
-        raise RuntimeError("Buttons are timed out and their interactions will fail")
+        """
+        Delete the message when the view times out
+        """
+        self.clear_items()
 
-    @discord.ui.button(label="Join", custom_id="linkview-join-button", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label=loc.format_value("join"), style=discord.ButtonStyle.primary)
     async def join(self, interaction: Interaction, _: discord.ui.Button):
         """
         Add the username to the embed when pressed
@@ -38,24 +45,22 @@ class LinkPlayView(discord.ui.View):
         user = interaction.user
 
         if self._is_joined(embed, user):
-            await interaction.response.send_message(templates.error("You've already joined the Link Play"),
-                                                    ephemeral=True)
+            await interaction.response.send_message(templates.error(loc.format_value("already-joined")), ephemeral=True)
             return
 
         if self._is_full(embed):
-            await interaction.response.send_message(templates.error("There are no more slots available"),
-                                                    ephemeral=True)
+            await interaction.response.send_message(templates.error(loc.format_value("full")), ephemeral=True)
             return
 
         await self._alert_others(interaction.guild, embed, user,
-                                 templates.info(f"{user.mention} has joined the Link Play!"))
+                                 templates.info(loc.format_value("joined-alert", {"user": user.mention})))
 
         for i, _ in enumerate(embed.fields):
             if embed.fields[i].value == EMPTY_TEXT:
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=user.mention)
                 await interaction.message.edit(embed=embed)
 
-                await interaction.response.send_message(templates.success("Joined!"), ephemeral=True)
+                await interaction.response.send_message(templates.success(loc.format_value("joined")), ephemeral=True)
                 return
 
     @staticmethod
@@ -79,16 +84,19 @@ class LinkPlayView(discord.ui.View):
                             message: str) -> None:
 
         for field in embed.fields:
-            if field.value in (EMPTY_TEXT, interacted_user.mention):
+            if field.value in {EMPTY_TEXT, interacted_user.mention}:
                 continue
 
             user = guild.get_member(int(field.value.removeprefix("<@").removesuffix(">")))
+            if user is None:
+                continue
+
             try:
                 await user.send(message)
             except Forbidden:
                 pass
 
-    @discord.ui.button(label="Leave", custom_id="linkview-leave-button")
+    @discord.ui.button(label=loc.format_value("leave"))
     async def leave(self, interaction: Interaction, _: discord.ui.Button):
         """
         Remove the username from the embed when pressed
@@ -97,7 +105,7 @@ class LinkPlayView(discord.ui.View):
         user = interaction.user
 
         if not self._is_joined(embed, user):
-            await interaction.response.send_message(templates.error("You haven't joined the Link Play"), ephemeral=True)
+            await interaction.response.send_message(templates.error(loc.format_value("not-joined")), ephemeral=True)
             return
 
         for i, _ in enumerate(embed.fields):
@@ -106,21 +114,22 @@ class LinkPlayView(discord.ui.View):
 
             lead_user_mention = embed.fields[0].value
             if user.mention == lead_user_mention:
-                confirm_view = ui.Confirm(confirmed_message="Deleted")
-                await interaction.response.send_message(
-                    templates.warning("You're about to delete the Link Play you created. Do you want to continue?"),
-                    view=confirm_view, ephemeral=True)
+                confirm_view = ui.Confirm(loc.format_value("deleted"), loc.format_value("cancelled"),
+                                          interaction.locale)
+                await interaction.response.send_message(templates.warning(loc.format_value("delete-confirm")),
+                                                        view=confirm_view, ephemeral=True)
                 await confirm_view.wait()
 
                 if confirm_view.is_confirmed:
                     await interaction.message.delete()
             else:
                 await self._alert_others(interaction.guild, embed, user,
-                                         templates.info(f"{user.mention} has left the Link Play"))
+                                         templates.info(loc.format_value("left-alert", {
+                                             "user": user.mention})))
 
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=EMPTY_TEXT)
                 await interaction.edit_original_response(embed=embed)
-                await interaction.response.send_message(templates.success("You've left the Link Play"), ephemeral=True)
+                await interaction.response.send_message(templates.success(loc.format_value("left")), ephemeral=True)
 
             return
 
@@ -134,27 +143,28 @@ class Arcaea(app_commands.Group):
         super().__init__()
         self.bot = bot
 
-    @app_commands.command()
-    @app_commands.describe(roomcode="Room code of your Arcaea Link Play")
+    @app_commands.command(description=loc.format_value("description", {
+        "duration": LINK_PLAY_LIFESPAN_MINUTES
+    }))
+    @app_commands.describe(roomcode=loc.format_value("roomcode"))
     async def linkplay(self, interaction: Interaction, roomcode: str):
         """
-        Create an embed to invite people to your Link Play. It will last for 30 minutes
+        Create an embed to invite people to your Link Play
         """
 
         user = interaction.user
 
-        embed = discord.Embed(color=templates.color,
-                              title="Arcaea Link Play",
-                              description=f"{user.mention} is waiting for players to join")
+        embed = discord.Embed(color=templates.color, title=loc.format_value("title"),
+                              description=loc.format_value("embed-description", {"user": user.mention}))
 
-        embed.add_field(name="Lead", value=user.mention)
+        embed.add_field(name=loc.format_value("lead"), value=user.mention)
 
         num_players = 3
         for _ in range(0, num_players):
-            embed.add_field(name="Player", value=EMPTY_TEXT)
+            embed.add_field(name=loc.format_value("player"), value=EMPTY_TEXT)
 
         embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
-        embed.set_footer(text=f"Room code: {roomcode}")
+        embed.set_footer(text=loc.format_value("embed-roomcode", {"roomcode": roomcode}))
         embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/"
                                 "183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
 

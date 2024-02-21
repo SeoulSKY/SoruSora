@@ -17,9 +17,9 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from commands.movie import Movie
-from utils.constants import COMMAND_DESCRIPTION_MAX_LENGTH
+from utils.constants import Limit
 from utils.templates import forbidden
-from utils.translator import CommandTranslator, Translator, locale_to_code
+from utils.translator import Translator, locale_to_code
 
 load_dotenv()
 
@@ -39,7 +39,7 @@ DEV_COMMANDS = {
 
 class EmptyHelpCommand(MinimalHelpCommand):
     """
-    A help command that sends nothing
+    A help commands that sends nothing
     """
 
     async def send_pages(self):
@@ -138,13 +138,13 @@ class SoruSora(Bot):
                 if is_name:
                     translated = "".join(char for char in translated if char.isalnum()).lower().replace(" ", "_")
 
-                result[locale][text] = translated[:COMMAND_DESCRIPTION_MAX_LENGTH]
+                result[locale][text] = translated[:int(Limit.COMMAND_DESCRIPTION_LEN)]
 
             return result
 
     async def setup_hook(self):
-        cache = self._translate_commands()
-        await self.tree.set_translator(CommandTranslator(cache))
+        # cache = self._translate_commands()
+        # await self.tree.set_translator(CommandTranslator(cache))
 
         if IS_DEV_ENV:
             self.tree.copy_global_to(guild=TEST_GUILD)
@@ -154,7 +154,7 @@ class SoruSora(Bot):
             synced_commands = [command.name for command in await self.tree.sync()]
             logging.info("Synced commands to all guilds: %s", str(synced_commands))
 
-        cache.clear()
+        # cache.clear()
 
 
 bot = SoruSora()
