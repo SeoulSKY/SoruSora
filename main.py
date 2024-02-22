@@ -9,11 +9,12 @@ from concurrent.futures import ThreadPoolExecutor
 from importlib import import_module
 from logging.handlers import TimedRotatingFileHandler
 from threading import Lock
+from typing import Iterable
 
 import discord
 from discord import app_commands, Interaction, Locale, AppCommandType
 from discord.app_commands import AppCommandError, MissingPermissions
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -21,7 +22,8 @@ from commands.movie import Movie
 from utils import translator
 from utils.constants import Limit, DEFAULT_LOCALE
 from utils.templates import forbidden
-from utils.translator import locale_to_code, Localization, CommandTranslator, Translator, has_localization, Translations
+from utils.translator import locale_to_code, Localization, CommandTranslator, Translator, has_localization, \
+    Translations, get_resource
 
 load_dotenv()
 
@@ -37,6 +39,14 @@ IS_DEV_ENV = TEST_GUILD is not None
 DEV_COMMANDS = {
     Movie,
 }
+
+
+class EmptyHelpCommand(MinimalHelpCommand):
+    """
+    Help command that does nothing
+    """
+    async def send_pages(self) -> None:
+        pass
 
 
 class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
@@ -58,7 +68,9 @@ class SoruSora(Bot):
     """
 
     def __init__(self):
-        super().__init__(command_prefix=None, intents=discord.Intents.all())
+        super().__init__(command_prefix="s!", intents=discord.Intents.all())
+
+        self.help_command = EmptyHelpCommand()
         self._add_commands()
 
     def _add_commands(self):
@@ -82,63 +94,67 @@ class SoruSora(Bot):
             # noinspection PyArgumentList
             self.tree.add_command(group_command_class(bot=self))
 
-    def _localize_commands(self, locales: list[str]) -> Translations:
-        # pylint: disable=too-many-locals
-
+    def _localize_commands(self, locales: Iterable[str]) -> Translations:
         localizations = {}
-        lock = Lock()
 
-        def translate(locale: str, text: str) -> None:
-            translated = translator.translate(text, locale, DEFAULT_LOCALE)
-
-            with lock:
-                localizations[locale][text] = translated[:int(Limit.COMMAND_DESCRIPTION_LEN)]
-
-        def localize(loc: Localization, msg_id: str, text: str, snake_case: bool) -> None:
-            result = loc.format_value(msg_id)
-            transformed = "".join(char for char in result if char.isalnum()).lower().replace(" ", "_") \
+        def localize(loc: Localization, args: dict, msg_id: str, snake_case: bool) -> str:
+            result = loc.format_value(msg_id, args)
+            transformed = "".join(char for char in result
+                                  if char.isalnum()).lower().replace(" ", "_") \
                 if snake_case else result
 
-            with lock:
-                localizations[loc.locales[0]][text] = transformed[:int(Limit.COMMAND_DESCRIPTION_LEN)]
+            return transformed[:int(Limit.COMMAND_DESCRIPTION_LEN)]
 
-        with ThreadPoolExecutor() as executor:
-            for locale in locales:
-                for command in self.tree.walk_commands():
-                    loc = Localization(locale, [os.path.join(
-                        "commands", f"{command.root_parent.name if command.root_parent else command.name}.ftl"
-                    )])
+        for locale in tqdm(locales, desc="Localizing commands", unit="locale"):
+            localization = {}
 
-                    command_prefix = command.name.replace('_', '-')
+            for command in self.tree.walk_commands():
+                loc = Localization(locale, [
+                    os.path.join("commands",
+                                 f"{command.root_parent.name if command.root_parent else command.name}.ftl"),
+                    get_resource()
+                ])
 
-                    executor.submit(localize, loc, f"{command_prefix}-name", command.name, True)
-                    executor.submit(localize, loc, f"{command_prefix}-description", command.description, False)
+                command_prefix = command.name.replace('_', '-')
 
-                    if isinstance(command, app_commands.Group):
-                        continue
+                localization[command.name] = localize(loc, command.extras,
+                                                      f"{command_prefix}-name", True)
+                localization[command.description] = localize(loc, command.extras,
+                                                             f"{command_prefix}-description", False)
 
-                    for name, description, choices in [(param.name, param.description, param.choices)
-                                                       for param in command.parameters]:
-                        executor.submit(localize, loc, f"{command_prefix}-{name}-name", name, True)
-                        executor.submit(localize, loc, f"{command_prefix}-{name}-description", description, False)
+                if isinstance(command, app_commands.Group):
+                    continue
 
-                        for choice in choices:
-                            executor.submit(translate, locale, choice.name)
+                for name, description, choices in [(param.name, param.description, param.choices)
+                                                   for param in command.parameters]:
+                    replaced_name = name.replace('_', '-')
+                    localization[name] = localize(loc, command.extras,f"{command_prefix}-{replaced_name}-name",
+                                                  True)
+                    localization[description] = localize(loc, command.extras,
+                                                         f"{command_prefix}-{replaced_name}-description",
+                                                         False)
 
-                for context_menu in itertools.chain(self.tree.walk_commands(type=AppCommandType.message),
-                                                    self.tree.walk_commands(type=AppCommandType.user)):
-                    loc = Localization(locale, [os.path.join(
-                        "context_menus", f"{context_menu.name.lower().replace(' ', '_')}.ftl"
-                    )])
+                    for choice in choices:
+                        if choice.name.isnumeric():
+                            localization[choice.name] = choice.value
+                        else:
+                            localization[choice.name] = localize(loc, command.extras, choice.value, False)
 
-                    executor.submit(localize, loc, f"{context_menu.name.lower().replace(' ', '-')}-name",
-                                    context_menu.name, False)
+            for context_menu in itertools.chain(self.tree.walk_commands(type=AppCommandType.message),
+                                                self.tree.walk_commands(type=AppCommandType.user)):
+                loc = Localization(locale, [os.path.join(
+                    "context_menus", f"{context_menu.name.lower().replace(' ', '_')}.ftl"
+                )])
 
-            executor.shutdown(wait=True)
+                localization[context_menu.name] = localize(loc, context_menu.extras,
+                                                           f"{context_menu.name.lower().replace(' ', '-')}-name",
+                                                           False)
+
+            localizations[locale] = localization
 
         return localizations
 
-    def _translate_commands(self, locales) -> Translations:
+    def _translate_commands(self, locales: Iterable[str]) -> Translations:
         """
         Translate the commands to given locales
         """
@@ -165,7 +181,6 @@ class SoruSora(Bot):
 
         with ThreadPoolExecutor() as executor:
             for locale in locales:
-                locale = locale_to_code(locale)
                 translations[locale] = {}
 
                 batch = []
@@ -202,14 +217,17 @@ class SoruSora(Bot):
         return translations
 
     async def setup_hook(self):
-        localized = []
-        non_localized = []
+        localized = set()
+        non_localized = set()
 
         for locale in map(locale_to_code, Locale):
+            if locale == DEFAULT_LOCALE:
+                continue
+
             if has_localization(locale):
-                localized.append(locale)
+                localized.add(locale)
             else:
-                non_localized.append(locale)
+                non_localized.add(locale)
 
         translations = self._translate_commands(non_localized)
         localizations = self._localize_commands(localized)
@@ -217,8 +235,6 @@ class SoruSora(Bot):
         # merge two dicts
         for locale, localization in localizations.items():
             translations[locale] = localization
-
-        localizations.clear()
 
         await self.tree.set_translator(CommandTranslator(translations))
 
@@ -229,8 +245,6 @@ class SoruSora(Bot):
         else:
             synced_commands = [command.name for command in await self.tree.sync()]
             logging.info("Synced commands to all guilds: %s", str(synced_commands))
-
-        translations.clear()
 
 
 bot = SoruSora()
@@ -244,17 +258,29 @@ async def on_ready():
     logging.info("Running in %s environment", "development" if IS_DEV_ENV else "production")
     logging.info("Logged in as %s (ID: %d)", bot.user, bot.user.id)
 
+    await bot.tree.set_translator(None)
+
 
 @bot.tree.error
 async def on_app_command_error(interaction: Interaction, error: AppCommandError):
     """
     Executed when an exception is raised while running app commands
     """
-    if isinstance(error, MissingPermissions):
-        await interaction.response.send_message(forbidden(str(error)), ephemeral=True)
-        return
 
-    raise error
+    if not isinstance(error, MissingPermissions):
+        raise error
+
+    locale = locale_to_code(interaction.locale)
+    resources = ["main.ftl"]
+
+    if has_localization(locale):
+        loc = Localization(locale, resources)
+        message = loc.format_value("missing-permission")
+    else:
+        loc = Localization(DEFAULT_LOCALE, resources)
+        message = translator.translate(loc.format_value("missing-permission"), locale, DEFAULT_LOCALE)
+
+    await interaction.response.send_message(forbidden(message), ephemeral=True)
 
 
 if __name__ == "__main__":

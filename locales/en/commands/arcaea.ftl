@@ -2,7 +2,7 @@
 arcaea-name = arcaea
 arcaea-description = Commands related to Arcaea
 linkplay-name = linkplay
-linkplay-description = Create an embed to invite people to your Link Play. It will last for { $duration } minutes
+linkplay-description = Create an embed to invite people to your Link Play. It will last for { $linkplay-description-duration } minutes
 linkplay-roomcode-name = roomcode
 linkplay-roomcode-description = Room code of your Arcaea Link Play
 

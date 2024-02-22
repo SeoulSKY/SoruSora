@@ -11,7 +11,7 @@ import discord
 from discord import SelectOption, Interaction, Locale
 
 from utils.templates import info, success
-from utils.translator import languages, language_to_code, Localization, locale_to_code
+from utils.translator import languages, Localization, locale_to_code, get_resource
 
 
 class Confirm(discord.ui.View):
@@ -51,6 +51,7 @@ class Confirm(discord.ui.View):
         self.is_confirmed = True
         await interaction.response.send_message(self._confirmed_message, ephemeral=True)
         self.stop()
+        self.clear_items()
 
     @discord.ui.button(style=discord.ButtonStyle.grey)
     async def cancel(self, interaction: discord.Interaction, _: discord.ui.Button):
@@ -60,6 +61,7 @@ class Confirm(discord.ui.View):
         self.is_confirmed = False
         await interaction.response.send_message(self._cancelled_message, ephemeral=True)
         self.stop()
+        self.clear_items()
 
 
 class LanguageSelect(discord.ui.Select):
@@ -67,8 +69,10 @@ class LanguageSelect(discord.ui.Select):
     Select UI to select available languages for a user
     """
 
-    def __init__(self, placeholder: str, min_values: int = 1, max_values: int = None):
-        options = [SelectOption(label=lang.title(), value=language_to_code(lang)) for lang in languages]
+    def __init__(self, placeholder: str, locale: Locale, min_values: int = 1, max_values: int = None):
+        loc = Localization(locale_to_code(locale), [get_resource()])
+
+        options = [SelectOption(label=loc.format_value(code), value=code) for code in languages]
 
         super().__init__(placeholder=placeholder, min_values=min_values,
                          max_values=max_values if max_values is not None else len(languages), options=options)

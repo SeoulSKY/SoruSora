@@ -12,6 +12,7 @@ Constants:
     BOT_NAME
     DATABASE_NAME
     DEFAULT_LANGUAGE
+    BUG_REPORT_LINK
 """
 
 import os
@@ -56,3 +57,5 @@ BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
 
 DEFAULT_LOCALE = "en"
+
+BUG_REPORT_LINK = "https://github.com/SeoulSKY/SoruSora/issues/new?template=bug_report.md"

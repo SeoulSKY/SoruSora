@@ -8,6 +8,7 @@ Classes:
 
 Functions:
     has_localization
+    get_resource
     translate
     is_english
     language_to_code
@@ -36,31 +37,30 @@ from discord.app_commands import locale_str, TranslationContextTypes
 from fluent.runtime import FluentResourceLoader, FluentLocalization
 
 languages = [
-    "chinese (simplified)",
-    "chinese (traditional)",
-    "dutch",
-    "english",
-    "filipino",
-    "finnish",
-    "french",
-    "german",
-    "greek",
-    "hindi",
-    "indonesian",
-    "italian",
-    "japanese",
-    "korean",
-    "malay",
-    "norwegian",
-    "polish",
-    "portuguese",
-    "romanian",
-    "russian",
-    "spanish",
-    "swedish",
-    "thai",
-    "ukrainian",
-    "vietnamese",
+    "zh-CN",
+    "zh-TW",
+    "nl",
+    "en",
+    "tl",
+    "fr",
+    "de",
+    "el",
+    "hi",
+    "id",
+    "it",
+    "ja",
+    "ko",
+    "ms",
+    "no",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "es",
+    "sv",
+    "th",
+    "uk",
+    "vi",
 ]
 
 Translations = dict[str, dict[str, str]]
@@ -96,6 +96,14 @@ def has_localization(locale: str) -> bool:
     """
 
     return os.path.exists(os.path.join("locales", locale))
+
+
+def get_resource() -> str:
+    """
+    Get the resource for the translator
+    """
+
+    return os.path.join("utils", "translator.ftl")
 
 
 def translate(text: str, target: str, source: str = "auto") -> str:

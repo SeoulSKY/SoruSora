@@ -8,7 +8,7 @@ update-language-language-name = language
 update-language-language-description = The new chat language. Defaults to your current discord language
 
 clear-name = clear
-clear-description = Clear the chat history between you and this bot
+clear-description = Clear the chat history between you and { $clear-description-name }
 
 # Successes
 updated = The chat language has been updated to `{ $language }`
@@ -17,4 +17,4 @@ deleted = Deleted!
 # Errors
 no-history = You don't have any conversations with { $name }
 timeout = Looks like { $name } has turned on the Do Not Disturb mode. Let's talk to her later
-error = Something went wrong. Please let `{ $name }` know about this issue
+error = Something went wrong. Please share this issue [here]({ $link })

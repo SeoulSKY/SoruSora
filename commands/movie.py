@@ -136,14 +136,16 @@ class Movie(app_commands.Group):
     @app_commands.command(name=loc.format_value("play-name"), description=loc.format_value("play-description"))
     @app_commands.describe(title=loc.format_value("play-title-description"))
     @app_commands.describe(fps=loc.format_value("play-fps-description", {
-        "min": FPS_MIN, "max": FPS_MAX, "default": FPS_DEFAULT
+        "play-fps-description-min": FPS_MIN,
+        "play-fps-description-max": FPS_MAX,
+        "play-fps-description-default": FPS_DEFAULT
     }))
     @app_commands.describe(original_speed=loc.format_value("play-original-speed-description", {
-        "default": str(ORIGINAL_SPEED_DEFAULT)
+        "play-original-speed-description-default": str(ORIGINAL_SPEED_DEFAULT)
     }))
     @app_commands.choices(title=[
         Choice(name="Bad Apple!!", value="bad_apple"),
-        Choice(name="ULTRA B+K", value="ultra_b+k")
+        Choice(name="ULTRA B+K", value="ultra_bk")
     ])
     @app_commands.choices(fps=[Choice(name=str(i), value=i) for i in range(FPS_MIN, FPS_MAX + 1)])
     async def play(self, interaction: Interaction,
@@ -235,3 +237,8 @@ class Movie(app_commands.Group):
             text += "\n"
 
         return text.removesuffix("\n")
+
+    play.extras["play-fps-description-min"] = FPS_MIN
+    play.extras["play-fps-description-max"] = FPS_MAX
+    play.extras["play-fps-description-default"] = FPS_DEFAULT
+    play.extras["play-original-speed-description-default"] = str(ORIGINAL_SPEED_DEFAULT)
