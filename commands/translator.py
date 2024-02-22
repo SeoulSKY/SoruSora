@@ -10,9 +10,11 @@ from discord.ui import View
 from mongo.channel import get_channel, set_channel
 from mongo.user import get_user, set_user
 from utils import templates, ui
-from utils.constants import ErrorCode, Limit
+from utils.constants import ErrorCode, Limit, DEFAULT_LOCALE
 from utils.templates import success
 from utils.translator import BatchTranslator, locale_to_code, Localization
+
+loc = Localization(DEFAULT_LOCALE, [os.path.join("commands", "translator.ftl")])
 
 
 class ChannelLanguageSelect(ui.LanguageSelect):
@@ -21,9 +23,8 @@ class ChannelLanguageSelect(ui.LanguageSelect):
     """
 
     def __init__(self, locale: Locale):
-        self.localization = Localization([locale_to_code(locale)],
-                                         [os.path.join("commands", "translator.ftl")])
-        super().__init__(self.localization.format_value("select-channel-languages"))
+        self.loc = Localization(locale_to_code(locale),[os.path.join("commands", "translator.ftl")])
+        super().__init__(self.loc.format_value("select-channel-languages"))
 
     async def callback(self, interaction: Interaction):
         config = await get_channel(interaction.channel_id)
@@ -31,7 +32,7 @@ class ChannelLanguageSelect(ui.LanguageSelect):
         await set_channel(config)
 
         await interaction.response.send_message(
-            success(self.localization.format_value("channel-languages-updated")), ephemeral=True
+            success(self.loc.format_value("channel-languages-updated")), ephemeral=True
         )
 
 
@@ -41,8 +42,7 @@ class UserLanguageSelect(ui.LanguageSelect):
     """
 
     def __init__(self, locale: Locale):
-        self.loc = Localization([locale_to_code(locale)],
-                                [os.path.join("commands", "translator.ftl")])
+        self.loc = Localization(locale_to_code(locale),[os.path.join("commands", "translator.ftl")])
         super().__init__(self.loc.format_value("select-your-languages"))
 
     async def callback(self, interaction: Interaction):
@@ -60,10 +60,9 @@ class Translator(app_commands.Group):
     Commands related to translation
     """
 
-    doc = Localization(["en"], [os.path.join("commands", "translator.ftl")])
-
     def __init__(self, bot: Bot):
-        super().__init__()
+        super().__init__(name=loc.format_value("translator-name"),
+                         description=loc.format_value("translator-description"))
         self.bot = bot
 
         self._setup_user_listeners()
@@ -137,7 +136,8 @@ class Translator(app_commands.Group):
         for i in range(0, len(string), count):
             yield string[i: i + count]
 
-    @app_commands.command(name=doc.format_value("name"), description=doc.format_value("description"))
+    @app_commands.command(name=loc.format_value("set-your-languages-name"),
+                          description=loc.format_value("set-your-languages-description"))
     async def set_your_languages(self, interaction: Interaction):
         """
         Set languages to be translated for your messages
@@ -146,7 +146,8 @@ class Translator(app_commands.Group):
         view.add_item(UserLanguageSelect(interaction.locale))
         await interaction.response.send_message(view=view, ephemeral=True)
 
-    @app_commands.command(name=doc.format_value("name2"), description=doc.format_value("description2"))
+    @app_commands.command(name=loc.format_value("set-channel-languages-name"),
+                          description=loc.format_value("set-channel-languages-description"))
     @app_commands.checks.has_permissions(administrator=True)
     async def set_channel_languages(self, interaction: Interaction):
         """
@@ -156,7 +157,8 @@ class Translator(app_commands.Group):
         view.add_item(ChannelLanguageSelect(interaction.locale))
         await interaction.response.send_message(view=view, ephemeral=True)
 
-    @app_commands.command(name=doc.format_value("name3"), description=doc.format_value("description3"))
+    @app_commands.command(name=loc.format_value("clear-your-languages-name"),
+                          description=loc.format_value("clear-your-languages-description"))
     async def clear_your_languages(self, interaction: Interaction):
         """
         Clear languages to be translated for your messages
@@ -165,10 +167,11 @@ class Translator(app_commands.Group):
         user.translate_to = []
         await set_user(user)
 
-        await interaction.response.send_message(success(self.doc.format_value("your-languages-cleared")),
+        await interaction.response.send_message(success(loc.format_value("your-languages-cleared")),
                                                 ephemeral=True)
 
-    @app_commands.command(name=doc.format_value("name4"), description=doc.format_value("description4"))
+    @app_commands.command(name=loc.format_value("clear-channel-languages-name"),
+                          description=loc.format_value("clear-channel-languages-description"))
     @app_commands.checks.has_permissions(administrator=True)
     async def clear_channel_languages(self, interaction: Interaction):
         """
@@ -178,5 +181,5 @@ class Translator(app_commands.Group):
         channel.translate_to = []
         await set_channel(channel)
 
-        await interaction.response.send_message(success(self.doc.format_value("channel-languages-cleared")),
+        await interaction.response.send_message(success(loc.format_value("channel-languages-cleared")),
                                                 ephemeral=True)

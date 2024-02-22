@@ -1,25 +1,27 @@
 """
 Main script where the program starts
 """
-import concurrent.futures
+
 import itertools
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor
 from importlib import import_module
 from logging.handlers import TimedRotatingFileHandler
+from threading import Lock
 
 import discord
 from discord import app_commands, Interaction, Locale, AppCommandType
 from discord.app_commands import AppCommandError, MissingPermissions
-from discord.ext.commands import Bot, MinimalHelpCommand
+from discord.ext.commands import Bot
 from dotenv import load_dotenv
 from tqdm import tqdm
 
 from commands.movie import Movie
-from utils.constants import Limit
+from utils import translator
+from utils.constants import Limit, DEFAULT_LOCALE
 from utils.templates import forbidden
-from utils.translator import Translator, locale_to_code
+from utils.translator import locale_to_code, Localization, CommandTranslator, Translator, has_localization, Translations
 
 load_dotenv()
 
@@ -35,15 +37,6 @@ IS_DEV_ENV = TEST_GUILD is not None
 DEV_COMMANDS = {
     Movie,
 }
-
-
-class EmptyHelpCommand(MinimalHelpCommand):
-    """
-    A help commands that sends nothing
-    """
-
-    async def send_pages(self):
-        pass
 
 
 class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
@@ -65,8 +58,7 @@ class SoruSora(Bot):
     """
 
     def __init__(self):
-        super().__init__(command_prefix="s!", intents=discord.Intents.all())
-        self.help_command = EmptyHelpCommand()
+        super().__init__(command_prefix=None, intents=discord.Intents.all())
         self._add_commands()
 
     def _add_commands(self):
@@ -90,61 +82,145 @@ class SoruSora(Bot):
             # noinspection PyArgumentList
             self.tree.add_command(group_command_class(bot=self))
 
-    def _translate_commands(self) -> dict[Locale, dict[str, str]]:
+    def _localize_commands(self, locales: list[str]) -> Translations:
         # pylint: disable=too-many-locals
-        """
-        Translate the commands to all available locales
-        """
 
-        result = {}
-        futures: list[Future] = []
+        localizations = {}
+        lock = Lock()
 
-        def translate(text: str, locale: Locale, is_name: bool = False) -> tuple[Locale, bool, str, str]:
-            if len(text.strip()) == 0:
-                return locale, is_name, text, text
+        def translate(locale: str, text: str) -> None:
+            translated = translator.translate(text, locale, DEFAULT_LOCALE)
 
-            return locale, is_name, text, Translator(source="en", target=locale_to_code(locale)).translate(text)
+            with lock:
+                localizations[locale][text] = translated[:int(Limit.COMMAND_DESCRIPTION_LEN)]
+
+        def localize(loc: Localization, msg_id: str, text: str, snake_case: bool) -> None:
+            result = loc.format_value(msg_id)
+            transformed = "".join(char for char in result if char.isalnum()).lower().replace(" ", "_") \
+                if snake_case else result
+
+            with lock:
+                localizations[loc.locales[0]][text] = transformed[:int(Limit.COMMAND_DESCRIPTION_LEN)]
 
         with ThreadPoolExecutor() as executor:
-            for locale in Locale:
-                if locale in {Locale.british_english, Locale.american_english}:
-                    continue
-
-                result[locale] = {}
-
+            for locale in locales:
                 for command in self.tree.walk_commands():
-                    futures.append(executor.submit(translate, command.name, locale, True))
-                    futures.append(executor.submit(translate, command.description, locale))
+                    loc = Localization(locale, [os.path.join(
+                        "commands", f"{command.root_parent.name if command.root_parent else command.name}.ftl"
+                    )])
+
+                    command_prefix = command.name.replace('_', '-')
+
+                    executor.submit(localize, loc, f"{command_prefix}-name", command.name, True)
+                    executor.submit(localize, loc, f"{command_prefix}-description", command.description, False)
 
                     if isinstance(command, app_commands.Group):
                         continue
 
-                    for name, description, choices in \
-                            [(param.name, param.description, param.choices) for param in command.parameters]:
-                        futures.append(executor.submit(translate, name, locale, True))
-                        futures.append(executor.submit(translate, description, locale))
+                    for name, description, choices in [(param.name, param.description, param.choices)
+                                                       for param in command.parameters]:
+                        executor.submit(localize, loc, f"{command_prefix}-{name}-name", name, True)
+                        executor.submit(localize, loc, f"{command_prefix}-{name}-description", description, False)
 
                         for choice in choices:
-                            futures.append(executor.submit(translate, choice.name, locale, True))
+                            executor.submit(translate, locale, choice.name)
 
                 for context_menu in itertools.chain(self.tree.walk_commands(type=AppCommandType.message),
                                                     self.tree.walk_commands(type=AppCommandType.user)):
-                    futures.append(executor.submit(translate, context_menu.name, locale))
+                    loc = Localization(locale, [os.path.join(
+                        "context_menus", f"{context_menu.name.lower().replace(' ', '_')}.ftl"
+                    )])
 
-            for future in tqdm(concurrent.futures.as_completed(futures), "Translating commands",
-                               total=len(futures), unit="texts"):
-                locale, is_name, text, translated = future.result()
+                    executor.submit(localize, loc, f"{context_menu.name.lower().replace(' ', '-')}-name",
+                                    context_menu.name, False)
 
-                if is_name:
-                    translated = "".join(char for char in translated if char.isalnum()).lower().replace(" ", "_")
+            executor.shutdown(wait=True)
 
-                result[locale][text] = translated[:int(Limit.COMMAND_DESCRIPTION_LEN)]
+        return localizations
 
-            return result
+    def _translate_commands(self, locales) -> Translations:
+        """
+        Translate the commands to given locales
+        """
+
+        translations = {}
+        lock = Lock()
+        pbar = tqdm(total=0, desc="Translating commands", unit="locale")
+
+        def translate_batch(locale: str, texts: list[str], snake_case: list[bool]) -> None:
+            with lock:
+                pbar.total += 1
+
+            translated = Translator(DEFAULT_LOCALE, locale).translate_batch(texts)
+
+            with lock:
+                for i, text in enumerate(texts):
+                    result = "".join(char for char in translated[i]
+                                     if char.isalnum()).lower().replace(" ", "_"
+                                                                        ) if snake_case[i] else translated[i]
+                    translations[locale][text] = result[:int(Limit.COMMAND_DESCRIPTION_LEN)]
+
+                pbar.update()
+                pbar.set_description(f"Translated commands ({locale})")
+
+        with ThreadPoolExecutor() as executor:
+            for locale in locales:
+                locale = locale_to_code(locale)
+                translations[locale] = {}
+
+                batch = []
+                snake_cases = []
+                for command in self.tree.walk_commands():
+                    batch.append(command.name)
+                    snake_cases.append(True)
+
+                    batch.append(command.description)
+                    snake_cases.append(False)
+
+                    if isinstance(command, app_commands.Group):
+                        continue
+
+                    for param in command.parameters:
+                        batch.append(param.name)
+                        snake_cases.append(True)
+
+                        batch.append(param.description)
+                        snake_cases.append(False)
+
+                        batch.extend(choice.name for choice in param.choices)
+                        snake_cases.extend(itertools.repeat(False, len(param.choices)))
+
+                for context_menu in itertools.chain(self.tree.walk_commands(type=AppCommandType.message),
+                                                    self.tree.walk_commands(type=AppCommandType.user)):
+                    batch.append(context_menu.name)
+                    snake_cases.append(False)
+
+                executor.submit(translate_batch, locale, batch, snake_cases)
+
+            executor.shutdown(wait=True)
+
+        return translations
 
     async def setup_hook(self):
-        # cache = self._translate_commands()
-        # await self.tree.set_translator(CommandTranslator(cache))
+        localized = []
+        non_localized = []
+
+        for locale in map(locale_to_code, Locale):
+            if has_localization(locale):
+                localized.append(locale)
+            else:
+                non_localized.append(locale)
+
+        translations = self._translate_commands(non_localized)
+        localizations = self._localize_commands(localized)
+
+        # merge two dicts
+        for locale, localization in localizations.items():
+            translations[locale] = localization
+
+        localizations.clear()
+
+        await self.tree.set_translator(CommandTranslator(translations))
 
         if IS_DEV_ENV:
             self.tree.copy_global_to(guild=TEST_GUILD)
@@ -154,7 +230,7 @@ class SoruSora(Bot):
             synced_commands = [command.name for command in await self.tree.sync()]
             logging.info("Synced commands to all guilds: %s", str(synced_commands))
 
-        # cache.clear()
+        translations.clear()
 
 
 bot = SoruSora()

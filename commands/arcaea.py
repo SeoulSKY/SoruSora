@@ -11,6 +11,7 @@ from discord import app_commands, Interaction, Forbidden
 from discord.ext.commands import Bot
 
 from utils import templates, ui
+from utils.constants import DEFAULT_LOCALE
 from utils.translator import Localization
 
 LINK_PLAY_LIFESPAN_MINUTES = 30
@@ -18,7 +19,7 @@ LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=LINK_PLAY_LIFESPAN_MINUTES)
 
 logger = logging.getLogger(__name__)
 
-loc = Localization(["en"], [os.path.join("commands", "arcaea.ftl")])
+loc = Localization(DEFAULT_LOCALE, [os.path.join("commands", "arcaea.ftl")])
 EMPTY_TEXT = loc.format_value("empty")
 
 
@@ -140,13 +141,14 @@ class Arcaea(app_commands.Group):
     """
 
     def __init__(self, bot: Bot):
-        super().__init__()
+        super().__init__(name=loc.format_value("arcaea-name"), description=loc.format_value("arcaea-description"))
         self.bot = bot
 
-    @app_commands.command(description=loc.format_value("description", {
-        "duration": LINK_PLAY_LIFESPAN_MINUTES
-    }))
-    @app_commands.describe(roomcode=loc.format_value("roomcode"))
+    @app_commands.command(name=loc.format_value("linkplay-name"),
+                          description=loc.format_value("linkplay-description", {
+                              "duration": LINK_PLAY_LIFESPAN_MINUTES
+                          }))
+    @app_commands.describe(roomcode=loc.format_value("linkplay-roomcode-description"))
     async def linkplay(self, interaction: Interaction, roomcode: str):
         """
         Create an embed to invite people to your Link Play

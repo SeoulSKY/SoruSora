@@ -1,15 +1,18 @@
 # Commands
-name = set_your_languages
-description = Set languages to be translated for your messages
+translator-name = translator
+translator-description = Commands related to translation
 
-name2 = set_channel_languages
-description2 = [Admins only] Set languages to be translated for this channel
+set-your-languages-name = set_your_languages
+set-your-languages-description = Set languages to be translated for your messages
 
-name3 = clear_your_languages
-description3 = Clear languages to be translated for your messages
+set-channel-languages-name = set_channel_languages
+set-channel-languages-description = [Admins only] Set languages to be translated for this channel
 
-name4 = clear_channel_languages
-description4 = [Admins only] Clear languages to be translated for this channel
+clear-your-languages-name = clear_your_languages
+clear-your-languages-description = Clear languages to be translated for your messages
+
+clear-channel-languages-name = clear_channel_languages
+clear-channel-languages-description = [Admins only] Clear languages to be translated for this channel
 
 # Select UI
 select-your-languages = Select the languages you want to translate your messages to

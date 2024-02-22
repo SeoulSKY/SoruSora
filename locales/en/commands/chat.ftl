@@ -1,10 +1,14 @@
 # Commands
-name = update_language
-description = Update the chat language to the current discord language
-language = The new chat language. Defaults to your current discord language
+chat-name = chat
+chat-description = Commands related to AI chats
 
-name2 = clear
-description2 = Clear the chat history between you and this bot
+update-language-name = update_language
+update-language-description = Update the chat language to the current discord language
+update-language-language-name = language
+update-language-language-description = The new chat language. Defaults to your current discord language
+
+clear-name = clear
+clear-description = Clear the chat history between you and this bot
 
 # Successes
 updated = The chat language has been updated to `{ $language }`

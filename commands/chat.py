@@ -12,8 +12,11 @@ from discord.app_commands import Choice
 from discord.ext.commands import Bot
 
 from mongo.user import User, get_user, set_user
+from utils.constants import DEFAULT_LOCALE
 from utils.templates import info, success, error
-from utils.translator import is_english, languages, language_to_code, Localization, locale_to_language, Translator
+from utils.translator import is_english, languages, language_to_code, Localization, Translator, code_to_language
+
+loc = Localization(DEFAULT_LOCALE, [os.path.join("commands", "chat.ftl")])
 
 
 class Chat(app_commands.Group):
@@ -21,10 +24,8 @@ class Chat(app_commands.Group):
     Commands related to AI chats
     """
 
-    loc = Localization(["en"], [os.path.join("commands", "chat.ftl")])
-
     def __init__(self, bot: Bot):
-        super().__init__()
+        super().__init__(name=loc.format_value("chat-name"), description=loc.format_value("chat-description"))
         self.bot = bot
         self._logger = logging.getLogger(__name__)
         self._client = PyAsyncCAI(os.getenv("CAI_TOKEN"))
@@ -67,11 +68,11 @@ class Chat(app_commands.Group):
         self.bot.add_listener(on_message)
 
     def _timeout_message(self) -> str:
-        return info(self.loc.format_value("timeout", {"name": self.bot.user.display_name}))
+        return info(loc.format_value("timeout", {"name": self.bot.user.display_name}))
 
     @staticmethod
     def _error_message() -> str:
-        return error(Chat.loc.format_value("error", {"name": "SeoulSKY"}))
+        return error(loc.format_value("error", {"name": "SeoulSKY"}))
 
     async def _create_new_chat(self, user: User, user_name: str):
         response = await self._client.chat.new_chat(os.getenv("CAI_CHAR_ID"))
@@ -95,9 +96,10 @@ class Chat(app_commands.Group):
 
         return content
 
-    @app_commands.command(name=loc.format_value("name"), description=loc.format_value("description"))
+    @app_commands.command(name=loc.format_value("update-language-name"),
+                          description=loc.format_value("update-language-description"))
     @app_commands.choices(language=[Choice(name=lang.title(), value=language_to_code(lang)) for lang in languages])
-    @app_commands.describe(language=loc.format_value("language"))
+    @app_commands.describe(language=loc.format_value("update-language-language-description"))
     async def update_language(self, interaction: Interaction, language: str = None):
         """
         Update the chat language to the current discord language
@@ -107,11 +109,11 @@ class Chat(app_commands.Group):
         await set_user(user)
 
         await interaction.response.send_message(
-            self.loc.format_value("updated", {"language": locale_to_language(user.locale).title()}),
+            loc.format_value("updated", {"language": code_to_language(user.locale).title()}),
             ephemeral=True
         )
 
-    @app_commands.command(name=loc.format_value("name2"), description=loc.format_value("description2"))
+    @app_commands.command(name=loc.format_value("clear-name"), description=loc.format_value("clear-description"))
     async def clear(self, interaction: Interaction):
         """
         Clear the chat history between you and this bot
@@ -119,7 +121,7 @@ class Chat(app_commands.Group):
         user = await get_user(interaction.user.id)
         if user.chat_history_id is None:
             await interaction.response.send_message(
-                error(self.loc.format_value("no-history", {"name": interaction.client.user.display_name})),
+                error(loc.format_value("no-history", {"name": interaction.client.user.display_name})),
                 ephemeral=True)
             return
 
@@ -136,4 +138,4 @@ class Chat(app_commands.Group):
         user.chat_history_tgt = None
         await set_user(user)
 
-        await interaction.followup.send(success(self.loc.format_value("deleted")), ephemeral=True)
+        await interaction.followup.send(success(loc.format_value("deleted")), ephemeral=True)

@@ -1,10 +1,17 @@
 """
 Provides list of constants
 
+Classes:
+    ErrorCode
+    Limit
+
 Constants:
-    EMBED_DESCRIPTION_MAX_LENGTH
-    MAX_NUM_EMBEDS_IN_MESSAGE
-    LANGUAGES
+    ROOT_DIR
+    CACHE_DIR
+    ASSETS_DIR
+    BOT_NAME
+    DATABASE_NAME
+    DEFAULT_LANGUAGE
 """
 
 import os
@@ -15,6 +22,7 @@ class ErrorCode(Enum):
     """
     Provides error codes from discord API
     """
+    MESSAGE_EXPIRED = 50027
     MESSAGE_TOO_LONG = 50035
 
     def __eq__(self, other):
@@ -46,3 +54,5 @@ class Limit(Enum):
 
 BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
+
+DEFAULT_LOCALE = "en"

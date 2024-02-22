@@ -7,9 +7,11 @@ Classes:
     BatchTranslator
 
 Functions:
+    has_localization
     translate
     is_english
     language_to_code
+    code_to_language
     locale_to_code
     locale_to_language
 
@@ -61,6 +63,7 @@ languages = [
     "vietnamese",
 ]
 
+Translations = dict[str, dict[str, str]]
 Translator: Type[BaseTranslator] = GoogleTranslator
 _translator = Translator()
 
@@ -73,51 +76,26 @@ _CODES_TO_LANGUAGES = {v: k for k, v in _LANGUAGES_TO_CODES.items()}
 logger = logging.getLogger(__name__)
 
 
-class Localization:
+def translator_code(code: str) -> str:
     """
-    Provides localization functionality
+    Convert the language code to the code for translators
+
+    :param code: The language code to convert
+    :return: The translator code
     """
 
-    _loader = FluentResourceLoader(os.path.join("locales", "{locale}"))
+    return code.split("-")[0]
 
-    def __init__(self, locales: list[str], resources: list[str]):
-        self._localization = FluentLocalization(locales, resources, self._loader)
 
-    def format_value(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> str:
-        """
-        Format the value of the message id with the arguments. If the message id is not found, translate it to the first
-        locale
+def has_localization(locale: str) -> bool:
+    """
+    Check if the locale has localization
 
-        :param msg_id: The message id to format
-        :param args: The arguments to format the message with
-        :return: The formatted message
-        """
+    :param locale: The locale to check
+    :return: True if the locale has localization
+    """
 
-        text = self._localization.format_value(msg_id, args)
-        if text != msg_id:  # format_value() returns msg_id if not found
-            return text
-
-        return translate(text, self._localization.locales[0])
-
-    @property
-    def locales(self) -> list[str]:
-        """
-        Get the locales of the localization
-
-        :return: The locales of the localization
-        """
-
-        return self._localization.locales
-
-    @property
-    def resources(self) -> list[str]:
-        """
-        Get the resources of the localization
-
-        :return: The resources of the localization
-        """
-
-        return self._localization.resource_ids
+    return os.path.exists(os.path.join("locales", locale))
 
 
 def translate(text: str, target: str, source: str = "auto") -> str:
@@ -159,6 +137,24 @@ def language_to_code(language: str) -> str:
     return _LANGUAGES_TO_CODES[language]
 
 
+def code_to_language(code: str) -> str:
+    """
+    Get the language of the language code
+
+    :param code: The language code to get the language of
+    :return: The language of the language code
+    :raises ValueError: If the language code is not supported by the translator
+    """
+
+    if code not in _CODES_TO_LANGUAGES:
+        code = translator_code(code)
+
+        if code not in _CODES_TO_LANGUAGES:
+            raise ValueError(f"Language code {code} is not supported")
+
+    return _CODES_TO_LANGUAGES[code]
+
+
 def locale_to_code(locale: Locale) -> str:
     """
     Get the language code of the locale
@@ -172,8 +168,8 @@ def locale_to_code(locale: Locale) -> str:
     if _translator.is_language_supported(language_code):
         return language_code
 
-    # try again with characters after '-' truncated
-    language_code = language_code.split("-", maxsplit=1)[0]
+    language_code = translator_code(language_code)
+
     if _translator.is_language_supported(language_code):
         return language_code
 
@@ -192,20 +188,76 @@ def locale_to_language(locale: Locale) -> str:
     return _CODES_TO_LANGUAGES[locale_to_code(locale)]
 
 
+class Localization:
+    """
+    Provides localization functionality
+    """
+
+    _loader = FluentResourceLoader(os.path.join("locales", "{locale}"))
+
+    def __init__(self, locale: str, resources: list[str], fallbacks: Optional[list[str]] = None):
+        if len(resources) == 0:
+            raise ValueError("At least one resource must be provided")
+
+        locales = [locale]
+        if fallbacks is not None:
+            locales.extend(fallbacks)
+
+        self._loc = FluentLocalization(locales, resources, self._loader)
+
+    def format_value(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> str:
+        """
+        Format the value of the message id with the arguments.
+
+        :param msg_id: The message id to format
+        :param args: The arguments to format the message with
+        :return: The formatted message
+        :raises ValueError: If the message id is not found
+        """
+
+        result = self._loc.format_value(msg_id, args)
+        if result == msg_id:  # format_value() returns msg_id if not found
+            raise ValueError(f"Localization '{self._loc.locales[0]}' not found for message id '{msg_id}' in resources"
+                             f" '{self._loc.resource_ids}'")
+
+        return result
+
+    @property
+    def locales(self) -> list[str]:
+        """
+        Get the locales of the localization
+
+        :return: The locales of the localization
+        """
+
+        return self._loc.locales
+
+    @property
+    def resources(self) -> list[str]:
+        """
+        Get the resources of the localization
+
+        :return: The resources of the localization
+        """
+
+        return self._loc.resource_ids
+
+
 class CommandTranslator(discord.app_commands.Translator):
     """
     Translator for the commands
     """
 
-    def __init__(self, cache: dict[Locale, dict[str, str]] = None):
+    def __init__(self, translations: Translations):
         super().__init__()
-        self._cache = cache or {}
+        self._translations = translations
 
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> Optional[str]:
-        if locale in {Locale.british_english, Locale.american_english}:
+        locale = locale_to_code(locale)
+        if is_english(locale):
             return None
-        if locale in self._cache and string.message in self._cache[locale]:
-            return self._cache[locale][string.message]
+        if locale in self._translations and string.message in self._translations[locale]:
+            return self._translations[locale][string.message]
 
         logger.warning("Translation of text '%s' not found for locale '%s'", string.message, locale)
         return None

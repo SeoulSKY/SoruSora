@@ -28,13 +28,13 @@ class Confirm(discord.ui.View):
         """
         super().__init__()
 
-        self._localization = Localization([locale_to_code(locale)], [os.path.join("utils", "ui.ftl")])
+        self._loc = Localization(locale_to_code(locale), [os.path.join("utils", "ui.ftl")])
 
         self._confirmed_message = success(confirmed_message)
         self._cancelled_message = info(cancelled_message)
 
-        self.confirm.label = self._localization.format_value("confirm")
-        self.cancel.label = self._localization.format_value("cancel")
+        self.confirm.label = self._loc.format_value("confirm")
+        self.cancel.label = self._loc.format_value("cancel")
 
         self.is_confirmed = None
         """

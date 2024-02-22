@@ -17,6 +17,7 @@ from moviepy.video.fx import resize as resizer
 from tqdm import tqdm
 
 from utils import templates, constants
+from utils.constants import ErrorCode, DEFAULT_LOCALE
 from utils.translator import Localization
 
 DESKTOP_CACHE_PATH = os.path.join(constants.CACHE_DIR, "movie", "desktop")
@@ -69,6 +70,8 @@ PIXEL_VALUE_RANGE = 255
 Maximum value of RGB for each pixel
 """
 
+loc = Localization(DEFAULT_LOCALE, [os.path.join("commands", "movie.ftl")])
+
 
 class Movie(app_commands.Group):
     """
@@ -84,10 +87,8 @@ class Movie(app_commands.Group):
     _num_playing = 0
     _lock = threading.Lock()
 
-    loc = Localization(["en"], [os.path.join("commands", "movie.ftl")])
-
     def __init__(self, bot: Bot):
-        super().__init__()
+        super().__init__(name=loc.format_value("movie-name"), description=loc.format_value("movie-description"))
         self.bot = bot
 
         if not os.path.exists(DESKTOP_CACHE_PATH) or not os.path.exists(MOBILE_CACHE_PATH):
@@ -132,17 +133,17 @@ class Movie(app_commands.Group):
 
         return Movie._cache[path]
 
-    @app_commands.command(description=loc.format_value("description"))
-    @app_commands.describe(title=loc.format_value("title"))
-    @app_commands.describe(fps=loc.format_value("fps", {
+    @app_commands.command(name=loc.format_value("play-name"), description=loc.format_value("play-description"))
+    @app_commands.describe(title=loc.format_value("play-title-description"))
+    @app_commands.describe(fps=loc.format_value("play-fps-description", {
         "min": FPS_MIN, "max": FPS_MAX, "default": FPS_DEFAULT
     }))
-    @app_commands.describe(original_speed=loc.format_value("original-speed", {
+    @app_commands.describe(original_speed=loc.format_value("play-original-speed-description", {
         "default": str(ORIGINAL_SPEED_DEFAULT)
     }))
     @app_commands.choices(title=[
-        Choice(name="Bad Apple", value="bad_apple"),
-        Choice(name="Ultra B+K", value="ultra_b+k")
+        Choice(name="Bad Apple!!", value="bad_apple"),
+        Choice(name="ULTRA B+K", value="ultra_b+k")
     ])
     @app_commands.choices(fps=[Choice(name=str(i), value=i) for i in range(FPS_MIN, FPS_MAX + 1)])
     async def play(self, interaction: Interaction,
@@ -183,7 +184,7 @@ class Movie(app_commands.Group):
             except NotFound:  # Message is deleted
                 display.cancel()
             except HTTPException as ex:
-                if ex.code == 50027:
+                if ex.code == ErrorCode.MESSAGE_EXPIRED:
                     message = await message.channel.fetch_message(message.id)
                     await message.edit(embed=embed)
                 else:
