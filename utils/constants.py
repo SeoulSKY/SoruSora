@@ -33,6 +33,7 @@ class ErrorCode(Enum):
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(ROOT_DIR, "..", "cache")
 ASSETS_DIR = os.path.join(ROOT_DIR, "..", "assets")
+HELP_DIR = os.path.join(ROOT_DIR, "..", "docs", "help")
 
 
 class Limit(Enum):
