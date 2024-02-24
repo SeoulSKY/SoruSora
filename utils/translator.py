@@ -10,7 +10,7 @@ Functions:
     has_localization
     get_resource
     translate
-    is_english
+    is_default
     language_to_code
     code_to_language
     locale_to_code
@@ -35,6 +35,7 @@ from deep_translator import GoogleTranslator
 from deep_translator.base import BaseTranslator
 from discord import Locale, app_commands, AppCommandType
 from discord.app_commands import locale_str, TranslationContextTypes
+from discord.app_commands.translator import TranslationContextLocation
 from discord.ext.commands import Bot
 from fluent.runtime import FluentResourceLoader, FluentLocalization
 from tqdm import tqdm
@@ -82,30 +83,6 @@ _CODES_TO_LANGUAGES = {v: k for k, v in _LANGUAGES_TO_CODES.items()}
 logger = logging.getLogger(__name__)
 
 
-# def get_qualified_command_names(locale: Locale) -> Generator[str, None, None]:
-#     """
-#     Get the qualified names of the commands
-#
-#     :param locale: The locale to get the qualified names for
-#     :return: The qualified names of the commands
-#     """
-#
-#     localize = has_localization(locale_to_code(locale))
-#
-#     for command in bot.tree.walk_commands():
-#         translated_name = command.qualified_name.split(" ")
-#         loc = Localization(locale, [os.path.join("commands", f"{translated_name[0]}.ftl")])
-#
-#         for i, name in enumerate(translated_name):
-#             if localize:
-#                 translated_name[i] = loc.format_value(f"{name}-name")
-#             else:
-#                 translated_name[i] = asyncio.get_event_loop().run_until_complete(
-#                     bot.tree.translator.translate(locale_str(name), locale, TranslationContextLocation.command_name))
-#
-#         yield " ".join(translated_name)
-
-
 def translator_code(code: str) -> str:
     """
     Convert the language code to the code for translators
@@ -136,7 +113,7 @@ def get_resource() -> str:
     return os.path.join("utils", "translator.ftl")
 
 
-def translate(text: str, target: str, source: str = "auto") -> str:
+def translate(text: str, target: Union[str, Locale], source: str = "auto") -> str:
     """
     Translate the text to the target language
 
@@ -146,18 +123,21 @@ def translate(text: str, target: str, source: str = "auto") -> str:
     :return: The translated text
     """
 
+    if isinstance(target, Locale):
+        target = locale_to_code(target)
+
     return Translator(source, target).translate(text)
 
 
-def is_english(code: str) -> bool:
+def is_default(code: str) -> bool:
     """
-    Check if the language code is English
+    Check if the language code is a default locale
 
     :param code: The language code to check
-    :return: True if the language code is English
+    :return: True if the language code is a default locale
     """
 
-    return code.startswith("en")
+    return code.startswith(DEFAULT_LOCALE)
 
 
 def language_to_code(language: str) -> str:
@@ -233,6 +213,9 @@ class Localization:
 
     _loader = FluentResourceLoader(os.path.join("locales", "{locale}"))
 
+    _cache = {}
+    _cache_lock = Lock()
+
     def __init__(self, locale: Union[str, Locale], resources: list[str], fallbacks: Optional[list[str]] = None):
         if len(resources) == 0:
             raise ValueError("At least one resource must be provided")
@@ -246,6 +229,10 @@ class Localization:
 
         self._loc = FluentLocalization(locales, resources, self._loader)
 
+    def _format_value(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> Optional[str]:
+        result = self._loc.format_value(msg_id, args)
+        return result if result != msg_id else None  # format_value() returns msg_id if not found
+
     def format_value(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> str:
         """
         Format the value of the message id with the arguments.
@@ -256,8 +243,8 @@ class Localization:
         :raises ValueError: If the message id is not found
         """
 
-        result = self._loc.format_value(msg_id, args)
-        if result == msg_id:  # format_value() returns msg_id if not found
+        result = self._format_value(msg_id, args)
+        if result is None:
             raise ValueError(f"Localization '{self._loc.locales[0]}' not found for message id '{msg_id}' in resources"
                              f" '{self._loc.resource_ids}'")
 
@@ -271,12 +258,22 @@ class Localization:
         :param args: The arguments to format the message with
         :return: The formatted message
         """
-        result = self._loc.format_value(msg_id, args)
-        if result == msg_id:  # format_value() returns msg_id if not found
-            loc = Localization(DEFAULT_LOCALE, self._loc.resource_ids)
-            return translate(loc.format_value(msg_id, args), self._loc.locales[0], DEFAULT_LOCALE)
 
-        return result
+        with self._cache_lock:
+            if msg_id in self._cache:
+                return self._cache[msg_id]
+
+        result = self._format_value(msg_id, args)
+        if result is not None:
+            return result
+
+        loc = Localization(DEFAULT_LOCALE, self._loc.resource_ids)
+        translated = translate(loc.format_value(msg_id, args), self._loc.locales[0], DEFAULT_LOCALE)
+
+        with self._cache_lock:
+            self._cache[msg_id] = translated
+
+        return translated
 
     @property
     def locales(self) -> list[str]:
@@ -303,6 +300,14 @@ class CommandTranslator(discord.app_commands.Translator):
     """
     Translator for the commands
     """
+
+    _CACHING_TRANSLATIONS = {
+        TranslationContextLocation.command_name,
+        TranslationContextLocation.command_description,
+        TranslationContextLocation.group_name,
+        TranslationContextLocation.group_description,
+        TranslationContextLocation.other,
+    }
 
     def __init__(self, bot: Bot):
         super().__init__()
@@ -334,10 +339,13 @@ class CommandTranslator(discord.app_commands.Translator):
 
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> Optional[str]:
         locale = locale_to_code(locale)
-        if is_english(locale):
+        if is_default(locale):
             return string.message
         if locale in self._translations and string.message in self._translations[locale]:
-            return self._translations[locale][string.message]
+            translation = self._translations[locale][string.message]
+            if context.location not in self._CACHING_TRANSLATIONS:
+                self._translations[locale].pop(string.message)
+            return translation
 
         logger.warning("Translation of text '%s' not found for locale '%s'", string.message, locale)
         return None
@@ -415,17 +423,17 @@ class CommandTranslator(discord.app_commands.Translator):
             with lock:
                 pbar.total += 1
 
-            translated = Translator(DEFAULT_LOCALE, locale).translate_batch(texts)
+            translated = (Translator(DEFAULT_LOCALE, locale)
+                          .translate_batch(list(map(lambda x: x.replace("_", " "), texts))))
 
-            with lock:
-                for i, text in enumerate(texts):
-                    result = "".join(char for char in translated[i]
-                                     if char.isalnum()).lower().replace(" ", "_"
-                                                                        ) if snake_case[i] else translated[i]
+            for i, text in enumerate(texts):
+                result = "".join(char for char in translated[i]
+                                 if char.isalnum()).lower().replace(" ", "_"
+                                                                    ) if snake_case[i] else translated[i]
+                with lock:
                     translations[locale][text] = result[:int(Limit.COMMAND_DESCRIPTION_LEN)]
-
-                pbar.update()
-                pbar.set_description(f"Translated commands ({locale})")
+                    pbar.update()
+                    pbar.set_description(f"Translated commands ({locale})")
 
         with ThreadPoolExecutor() as executor:
             for locale in locales:

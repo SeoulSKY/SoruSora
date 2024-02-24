@@ -67,6 +67,8 @@ class SoruSora(Bot):
         self.help_command = EmptyHelpCommand()
         self._add_commands()
 
+        self.event(self.on_ready)
+
     def _add_commands(self):
         package_names = ["commands", "context_menus"]
 
@@ -89,7 +91,7 @@ class SoruSora(Bot):
             self.tree.add_command(group_command_class(bot=self))
 
     async def setup_hook(self):
-        await self.tree.set_translator(CommandTranslator(bot))
+        await self.tree.set_translator(CommandTranslator(self))
 
         if IS_DEV_ENV:
             self.tree.copy_global_to(guild=TEST_GUILD)
@@ -99,17 +101,16 @@ class SoruSora(Bot):
             synced_commands = [command.name for command in await self.tree.sync()]
             logging.info("Synced commands to all guilds: %s", str(synced_commands))
 
+    async def on_ready(self):
+        """
+        Executed when the bot becomes ready
+        """
+
+        logging.info("Running in %s environment", "development" if IS_DEV_ENV else "production")
+        logging.info("Logged in as %s (ID: %d)", self.user, self.user.id)
+
 
 bot = SoruSora()
-
-
-@bot.event
-async def on_ready():
-    """
-    Executed when the bot becomes ready
-    """
-    logging.info("Running in %s environment", "development" if IS_DEV_ENV else "production")
-    logging.info("Logged in as %s (ID: %d)", bot.user, bot.user.id)
 
 
 @bot.tree.error

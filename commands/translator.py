@@ -25,7 +25,7 @@ class ChannelLanguageSelect(ui.LanguageSelect):
 
     def __init__(self, locale: Locale):
         self.loc = Localization(locale_to_code(locale), resources)
-        super().__init__(self.loc.format_value("select-channel-languages"), locale)
+        super().__init__(self.loc.format_value_or_translate("select-channel-languages"), locale)
 
     async def callback(self, interaction: Interaction):
         config = await get_channel(interaction.channel_id)
@@ -33,7 +33,7 @@ class ChannelLanguageSelect(ui.LanguageSelect):
         await set_channel(config)
 
         await interaction.response.send_message(
-            success(self.loc.format_value("channel-languages-updated")), ephemeral=True
+            success(self.loc.format_value_or_translate("channel-languages-updated")), ephemeral=True
         )
 
 
@@ -44,7 +44,7 @@ class UserLanguageSelect(ui.LanguageSelect):
 
     def __init__(self, locale: Locale):
         self.loc = Localization(locale_to_code(locale), resources)
-        super().__init__(self.loc.format_value("select-languages"), locale)
+        super().__init__(self.loc.format_value_or_translate("select-languages"), locale)
 
     async def callback(self, interaction: Interaction):
         config = await get_user(interaction.user.id)
@@ -52,7 +52,7 @@ class UserLanguageSelect(ui.LanguageSelect):
         await set_user(config)
 
         await interaction.response.send_message(
-            success(self.loc.format_value("languages-updated")), ephemeral=True
+            success(self.loc.format_value_or_translate("languages-updated")), ephemeral=True
         )
 
 
@@ -170,7 +170,8 @@ class Translator(app_commands.Group):
 
         loc = Localization(locale_to_code(interaction.locale), resources)
 
-        await interaction.response.send_message(success(loc.format_value("languages-cleared")), ephemeral=True)
+        await interaction.response.send_message(success(loc.format_value_or_translate("languages-cleared")),
+                                                ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-channel-languages-name"),
                           description=default_loc.format_value("clear-channel-languages-description"))
@@ -185,4 +186,5 @@ class Translator(app_commands.Group):
 
         loc = Localization(locale_to_code(interaction.locale), resources)
 
-        await interaction.response.send_message(success(loc.format_value("channel-languages-cleared")), ephemeral=True)
+        await interaction.response.send_message(success(loc.format_value_or_translate("channel-languages-cleared")),
+                                                ephemeral=True)

@@ -33,9 +33,9 @@ class LinkPlayView(discord.ui.View):
 
         loc = Localization(locale_to_code(locale), resources)
 
-        self.empty_text = loc.format_value("empty")
-        self.join.label = loc.format_value("join")
-        self.leave.label = loc.format_value("leave")
+        self.empty_text = loc.format_value_or_translate("empty")
+        self.join.label = loc.format_value_or_translate("join")
+        self.leave.label = loc.format_value_or_translate("leave")
 
     async def on_timeout(self) -> None:
         """
@@ -123,10 +123,11 @@ class LinkPlayView(discord.ui.View):
 
             lead_user_mention = embed.fields[0].value
             if user.mention == lead_user_mention:
-                confirm_view = ui.Confirm(loc.format_value("deleted"), loc.format_value("cancelled"),
-                                          interaction.locale)
-                await interaction.response.send_message(templates.warning(loc.format_value("delete-confirm")),
-                                                        view=confirm_view, ephemeral=True)
+                confirm_view = ui.Confirm(loc.format_value_or_translate("deleted"),
+                                          loc.format_value_or_translate("cancelled"), interaction.locale)
+                await interaction.response.send_message(
+                    templates.warning(loc.format_value_or_translate("delete-confirm")),
+                    view=confirm_view, ephemeral=True)
                 await confirm_view.wait()
 
                 if confirm_view.is_confirmed:
@@ -136,12 +137,13 @@ class LinkPlayView(discord.ui.View):
                 await interaction.delete_original_response()
             else:
                 await self._alert_others(interaction.guild, embed, user,
-                                         templates.info(loc.format_value("left-alert", {
+                                         templates.info(loc.format_value_or_translate("left-alert", {
                                              "user": user.mention})))
 
                 embed.set_field_at(index=i, name=embed.fields[i].name, value=self.empty_text)
                 await interaction.message.edit(embed=embed)
-                await interaction.response.send_message(templates.success(loc.format_value("left")), ephemeral=True)
+                await interaction.response.send_message(templates.success(loc.format_value_or_translate("left")),
+                                                        ephemeral=True)
 
             return
 
@@ -170,17 +172,17 @@ class Arcaea(app_commands.Group):
 
         loc = Localization(locale_to_code(interaction.locale), [os.path.join("commands", "arcaea.ftl")])
 
-        embed = discord.Embed(color=templates.color, title=loc.format_value("title"),
-                              description=loc.format_value("embed-description", {"user": user.mention}))
+        embed = discord.Embed(color=templates.color, title=loc.format_value_or_translate("title"),
+                              description=loc.format_value_or_translate("embed-description", {"user": user.mention}))
 
-        embed.add_field(name=loc.format_value("lead"), value=user.mention)
+        embed.add_field(name=loc.format_value_or_translate("lead"), value=user.mention)
 
         num_players = 3
         for _ in range(0, num_players):
-            embed.add_field(name=loc.format_value("player"), value=loc.format_value("empty"))
+            embed.add_field(name=loc.format_value_or_translate("player"), value=loc.format_value_or_translate("empty"))
 
         embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
-        embed.set_footer(text=loc.format_value("embed-roomcode", {"roomcode": roomcode}))
+        embed.set_footer(text=loc.format_value_or_translate("embed-roomcode", {"roomcode": roomcode}))
         embed.set_thumbnail(url="https://user-images.githubusercontent.com/48105703/"
                                 "183126824-ac8d7b05-a8f2-4a7e-997a-24aafa762e24.png")
 

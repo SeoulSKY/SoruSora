@@ -14,7 +14,7 @@ from discord.ext.commands import Bot
 from mongo.user import User, get_user, set_user
 from utils.constants import DEFAULT_LOCALE, BOT_NAME, BUG_REPORT_LINK
 from utils.templates import info, success, error
-from utils.translator import (is_english, languages, Localization, Translator, code_to_language, locale_to_code,
+from utils.translator import (is_default, languages, Localization, Translator, code_to_language, locale_to_code,
                               get_resource)
 
 resources = [os.path.join("commands", "chat.ftl"), get_resource()]
@@ -71,11 +71,11 @@ class Chat(app_commands.Group):
         self.bot.add_listener(on_message)
 
     def _timeout_message(self) -> str:
-        return info(default_loc.format_value("timeout", {"name": self.bot.user.display_name}))
+        return info(default_loc.format_value_or_translate("timeout", {"name": self.bot.user.display_name}))
 
     @staticmethod
     def _error_message() -> str:
-        return error(default_loc.format_value("error", {"link": BUG_REPORT_LINK}))
+        return error(default_loc.format_value_or_translate("error", {"link": BUG_REPORT_LINK}))
 
     async def _create_new_chat(self, user: User, user_name: str):
         response = await self._client.chat.new_chat(os.getenv("CAI_CHAR_ID"))
@@ -86,15 +86,15 @@ class Chat(app_commands.Group):
         await set_user(user)
 
     async def _send_message(self, user: User, text: str) -> str:
-        if not is_english(user.locale):
+        if not is_default(user.locale):
             translator = Translator(user.locale)
             text = await asyncio.to_thread(translator.translate, text)
 
         response = await self._client.chat.send_message(user.chat_history_id, os.getenv("CAI_TGT"), text)
 
         content = response["replies"][0]["text"]
-        if not is_english(user.locale):
-            translator = Translator("en", user.locale)
+        if not is_default(user.locale):
+            translator = Translator(DEFAULT_LOCALE, user.locale)
             content = await asyncio.to_thread(translator.translate, content)
 
         return content
@@ -114,7 +114,7 @@ class Chat(app_commands.Group):
         loc = Localization(locale_to_code(interaction.locale), resources)
 
         await interaction.response.send_message(
-            loc.format_value("updated", {"language": code_to_language(user.locale).title()}),
+            loc.format_value_or_translate("updated", {"language": code_to_language(user.locale).title()}),
             ephemeral=True
         )
 
@@ -130,11 +130,12 @@ class Chat(app_commands.Group):
         user = await get_user(interaction.user.id)
         if user.chat_history_id is None:
             await interaction.response.send_message(
-                error(loc.format_value("no-history", {"name": interaction.client.user.display_name})),
+                error(loc.format_value_or_translate("no-history",
+                                                    {"name": interaction.client.user.display_name})),
                 ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer()
 
         response: dict = await self._client.chat.get_history(user.chat_history_id)
 
@@ -147,6 +148,6 @@ class Chat(app_commands.Group):
         user.chat_history_tgt = None
         await set_user(user)
 
-        await interaction.followup.send(success(loc.format_value("deleted")), ephemeral=True)
+        await interaction.followup.send(success(loc.format_value_or_translate("deleted")), ephemeral=True)
 
     clear.extras["clear-description-name"] = BOT_NAME

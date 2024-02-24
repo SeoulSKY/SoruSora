@@ -5,7 +5,6 @@ classes:
     Confirm
     LanguageSelect
 """
-import asyncio
 import os
 from typing import Union, Optional, Type
 
@@ -15,7 +14,7 @@ from discord.app_commands import Command, Group
 
 from utils.templates import info, success
 from utils.translator import languages, Localization, locale_to_code, get_resource, has_localization, \
-    is_english
+    is_default
 
 
 class Confirm(discord.ui.View):
@@ -76,7 +75,7 @@ class LanguageSelect(discord.ui.Select):
     def __init__(self, placeholder: str, locale: Locale, min_values: int = 1, max_values: int = None):
         loc = Localization(locale_to_code(locale), [get_resource()])
 
-        options = [SelectOption(label=loc.format_value(code), value=code) for code in languages]
+        options = [SelectOption(label=loc.format_value_or_translate(code), value=code) for code in languages]
 
         super().__init__(placeholder=placeholder, min_values=min_values,
                          max_values=max_values if max_values is not None else len(languages), options=options)
@@ -89,12 +88,29 @@ class CommandSelect(discord.ui.Select):
     """
     Select UI to select a command
     """
+
     def __init__(self, interaction: Interaction, hidden: Optional[set[Type[Union[Command, Group]]]] = None, **kwargs):
+        self._interaction = interaction
+        self._hidden = hidden
+        self._kwargs = kwargs
+        super().__init__(placeholder="Not initialized. Call init() method first")
+
+    async def init(self) -> "CommandSelect":
+        """
+        Initialize this select
+        """
+
+        super().__init__(options=await self._get_options(self._interaction, self._hidden), **self._kwargs)
+        return self
+
+    @staticmethod
+    async def _get_options(interaction: Interaction, hidden: Optional[set[Type[Union[Command, Group]]]] = None) \
+            -> list[SelectOption]:
         from main import bot  # pylint: disable=import-outside-toplevel
 
         locale_code = locale_to_code(interaction.locale)
 
-        if is_english(locale_code):
+        if is_default(locale_code):
             options = [SelectOption(label=command.qualified_name) for command in bot.tree.walk_commands()
                        if command not in hidden]
         else:
@@ -105,7 +121,7 @@ class CommandSelect(discord.ui.Select):
                 if not isinstance(command, Command) or command.root_parent.__class__ in hidden:
                     continue
 
-                if is_english(locale_code):
+                if is_default(locale_code):
                     options.append(SelectOption(label=command.qualified_name))
                     continue
 
@@ -116,11 +132,11 @@ class CommandSelect(discord.ui.Select):
                         loc = Localization(locale_code, [os.path.join("commands", f"{root_name}.ftl")])
                         translated_name[i] = loc.format_value(f"{name.lower().replace('_', '-')}-name")
                     else:
-                        translated_name[i] = asyncio.get_event_loop().run_until_complete(interaction.translate(name))
+                        translated_name[i] = await interaction.translate(name)
 
                 options.append(SelectOption(label=" ".join(translated_name), value=command.qualified_name))
 
-        super().__init__(options=options, **kwargs)
+        return options
 
     async def callback(self, interaction: Interaction):
         raise NotImplementedError("This method should be overridden in a subclass")

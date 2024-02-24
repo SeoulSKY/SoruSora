@@ -8,7 +8,7 @@ from discord import app_commands
 
 from utils import translator
 from utils.constants import DEFAULT_LOCALE
-from utils.translator import Localization, locale_to_code
+from utils.translator import Localization
 
 loc = Localization(DEFAULT_LOCALE, [os.path.join("context_menus", "translate_message.ftl")])
 
@@ -17,5 +17,5 @@ loc = Localization(DEFAULT_LOCALE, [os.path.join("context_menus", "translate_mes
 async def translate_message(interaction: discord.Interaction, message: discord.Message):
     """Translate this message into your language"""
     await interaction.response.send_message(
-        translator.translate(message.content, locale_to_code(interaction.locale)), ephemeral=True
+        translator.translate(message.content, interaction.locale), ephemeral=True
     )

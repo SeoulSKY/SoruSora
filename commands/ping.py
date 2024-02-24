@@ -21,8 +21,7 @@ async def ping(interaction: discord.Interaction):
     loc = Localization(locale_to_code(interaction.locale), resources)
 
     await interaction.response.send_message(
-        info(loc.format_value("latency", {"value": round(interaction.client.latency * 1000)})),
-        ephemeral=True
-    )
+        info(loc.format_value_or_translate("latency",
+                                           {"value": round(interaction.client.latency * 1000)})), ephemeral=True)
 
 ping.extras["ping-description-name"] = BOT_NAME
