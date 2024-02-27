@@ -21,7 +21,7 @@ async def main():
     """
 
     if len(sys.argv) != 3:
-        print("Usage: python firestore_to_mongo.py <path/to/service_account.json> <host>")
+        print("Usage: python v103.py <path/to/service_account.json> <host>")
         sys.exit(1)
 
     app = firebase_admin.initialize_app(credentials.Certificate(sys.argv[1]))

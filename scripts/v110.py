@@ -1,5 +1,5 @@
 """
-Replace the translate_to field with language code in MongoDB
+Migrate to v1.1.0
 """
 
 import asyncio
@@ -19,7 +19,7 @@ from mongo.channel import collection as channel_collection
 NAME_TO_CODE = GoogleTranslator().get_supported_languages(as_dict=True)
 
 
-async def replace(collection: AsyncIOMotorCollection):
+async def replace_translate_to(collection: AsyncIOMotorCollection):
     """
     Replace the translate_to field with language code
     """
@@ -37,8 +37,18 @@ async def main():
     """
     Main function
     """
-    await replace(user_collection)
-    await replace(channel_collection)
+    await replace_translate_to(user_collection)
+    await replace_translate_to(channel_collection)
+
+    pbar = tqdm(desc="Updating main_language", total=await user_collection.count_documents({}), unit="doc")
+    async for doc in user_collection.find():
+        pbar.update(1)
+        doc["locale"] = NAME_TO_CODE.get(doc["main_language"], doc["main_language"])
+        doc.pop("main_language", None)
+        doc.pop("chat_history_tgt", None)
+        await user_collection.replace_one({"_id": doc["_id"]}, doc)
+
+    pbar.close()
 
 
 if __name__ == "__main__":
