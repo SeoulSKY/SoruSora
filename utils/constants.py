@@ -36,6 +36,7 @@ CACHE_DIR = ROOT_DIR.parent / "cache"
 ASSETS_DIR = ROOT_DIR.parent / "assets"
 HELP_DIR = ROOT_DIR.parent / "docs" / "help"
 LOCALES_DIR = ROOT_DIR.parent / "locales"
+ABOUT_DIR = ROOT_DIR.parent / "docs" / "about"
 
 
 class Limit(Enum):
@@ -86,4 +87,6 @@ languages = {
 BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
 
-BUG_REPORT_LINK = "https://github.com/SeoulSKY/SoruSora/issues/new?template=bug_report.md"
+INVITE_URL = "https://sorusora.seoulsky.org"
+GITHUB_URL = "https://github.com/SeoulSKY/SoruSora"
+BUG_REPORT_URL = "https://github.com/SeoulSKY/SoruSora/issues/new?template=bug_report.md"

@@ -21,7 +21,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from threading import Lock
-from typing import Iterable, AsyncGenerator, Any, Optional
+from typing import Iterable, AsyncGenerator, Any, Optional, Generator
 
 import argostranslate.package
 import argostranslate.translate
@@ -29,7 +29,7 @@ import babel
 import discord
 from deep_translator import GoogleTranslator as Google
 from discord import Locale, app_commands, AppCommandType
-from discord.app_commands import locale_str, TranslationContextTypes
+from discord.app_commands import locale_str, TranslationContextTypes, Command
 from discord.ext.commands import Bot
 from fluent.runtime import FluentLocalization, FluentResourceLoader
 from tqdm import tqdm
@@ -49,16 +49,15 @@ class Language:
         self._locale = babel.Locale.parse(locale, sep="-")
         self._code = locale
 
-    @staticmethod
-    def trim_territory(code: str) -> str:
+    def trim_territory(self) -> "Language":
         """
         Trim the territory from the language code
 
         :param code: The language code to trim
-        :return: The language code without the territory
+        :return: The language without the territory
         """
 
-        return code.split("-", maxsplit=1)[0]
+        return Language(self.code.split("-", maxsplit=1)[0])
 
     def has_territory(self) -> bool:
         """
@@ -177,11 +176,9 @@ class BaseTranslator(ABC):
         :return: True if the locale is supported by the translator
         """
 
-        code = str(locale)
-        if self.is_code_supported(code):
-            return True
+        language = Language(locale)
 
-        return self.is_code_supported(Language.trim_territory(code))
+        return self.is_language_supported(language) or self.is_language_supported(language.trim_territory())
 
     def is_language_supported(self, language: Language) -> bool:
         """
@@ -203,15 +200,6 @@ class BaseTranslator(ABC):
 
         return code in self._codes_to_names
 
-    def get_supported_languages(self) -> Iterable[Language]:
-        """
-        Get the supported languages of the translator
-
-        :return: The supported languages of the translator
-        """
-
-        return self._languages
-
     def locale_to_language(self, locale: Locale) -> Language:
         """
         Get the language of the locale
@@ -221,13 +209,10 @@ class BaseTranslator(ABC):
         :raises ValueError: If the locale is not supported by the translator
         """
 
-        code = str(locale)
-        if not self.is_code_supported(code):
-            code = Language.trim_territory(code)
-            if not self.is_code_supported(code):
-                raise ValueError(f"Locale {locale} is not supported")
+        if not self.is_locale_supported(locale):
+            raise ValueError(f"Locale {locale} is not supported")
 
-        return Language(code)
+        return Language(locale)
 
     async def translate_targets(self, text: str, targets: Iterable[Language], source: Language = DEFAULT_LANGUAGE) \
             -> AsyncGenerator[Translation, Any]:
@@ -303,16 +288,11 @@ class ArgosTranslator(BaseTranslator):
         super().__init__(ArgosTranslator._LANGUAGES)
 
     def is_code_supported(self, code: str) -> bool:
-        return (super().is_code_supported(code) or
-                super().is_code_supported(Language.trim_territory(code))
-                or code in self._CODE_ALIAS)
-
-    def is_language_supported(self, language: Language) -> bool:
-        return super().is_language_supported(language) or self.is_code_supported(language.code)
+        return self.is_language_supported(Language(code) or code in self._CODE_ALIAS)
 
     def _language_to_code(self, language: Language) -> str:
         return self._ALIAS_TO_CODE[language.code] \
-            if language.code in self._ALIAS_TO_CODE else Language.trim_territory(language.code)
+            if language.code in self._ALIAS_TO_CODE else language.trim_territory().code
 
     async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
         if not self.is_language_supported(target):
@@ -352,7 +332,7 @@ class GoogleTranslator(BaseTranslator):
         super().__init__(self._LANGUAGES)
 
     def _language_to_code(self, language: Language) -> str:
-        return language.code if self.is_language_supported(language) else Language.trim_territory(language.code)
+        return language.code if self.is_language_supported(language) else language.trim_territory().code
 
     async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
         return Translation(
@@ -442,7 +422,7 @@ class Cache:
         with cls._lock:
             code = language.code
             if language.code not in cls._data:
-                code = Language.trim_territory(language.code)
+                code = language.trim_territory().code
 
             return code in cls._data and text in cls._data[code]
 
@@ -465,7 +445,7 @@ class Cache:
             with cls._lock:
                 code = language.code
                 if language.code not in cls._data:
-                    code = Language.trim_territory(language.code)
+                    code = language.trim_territory().code
 
                 return Translation(DEFAULT_LANGUAGE, language, text, cls._data[code][text])
         except KeyError as ex:
@@ -523,7 +503,7 @@ class Localization:
             fallbacks = []
 
         if self._language.has_territory():
-            fallbacks.append(Language.trim_territory(self._language.code))
+            fallbacks.append(self._language.trim_territory().code)
 
         if not self._translator.is_language_supported(self._language):
             fallbacks.append(DEFAULT_LANGUAGE.code)
@@ -549,8 +529,10 @@ class Localization:
         :return: True if the locale has localization
         """
 
-        return (os.path.exists(LOCALES_DIR / str(locale)) or
-                os.path.exists(LOCALES_DIR / Language.trim_territory(str(locale))))
+        language = Language(locale)
+
+        return (os.path.exists(LOCALES_DIR / language.code) or
+                os.path.exists(LOCALES_DIR / language.trim_territory().code))
 
     @property
     def language(self) -> Language:
@@ -644,9 +626,17 @@ class CommandTranslator(discord.app_commands.Translator):
             target = localized if Localization.has(language.code) else non_localized
             target.add(language)
 
-        await self._translate_help_docs(localized.union(non_localized))
-        await self._translate_commands(non_localized)
-        await self._localize_commands(localized)
+        coros = [
+            self._translate_about_docs(non_localized),
+            self._translate_help_docs(non_localized),
+            self._translate_commands(non_localized),
+            self._localize_about_docs(localized),
+            self._localize_help_docs(localized),
+            self._localize_commands(localized)
+        ]
+
+        for coro in coros:
+            await coro
 
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> Optional[str]:
         language = Language(locale)
@@ -659,9 +649,95 @@ class CommandTranslator(discord.app_commands.Translator):
         logger.warning("Translation of text '%s' not found for locale '%s'", string.message, locale)
         return None
 
+    async def _translate_about_docs(self, languages: Iterable[Language]) -> None:
+        # pylint: disable=import-outside-toplevel
+        from commands.about import get_about_dir
+
+        pbar = tqdm(desc="Translating about documents", total=0, unit="language")
+        with open(get_about_dir(DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
+            text = file.read()
+
+        targets = []
+        for language in languages:
+            if not Cache.has(language, text):
+                targets.append(language)
+                pbar.total += 1
+
+        if len(targets) == 0:
+            return
+
+        async for translation in self._translator.translate_targets(text, targets):
+            Cache.set(translation)
+            pbar.update()
+
+        await Cache.save()
+
+    def _get_commands(self) -> Generator[Command, Any, None]:
+        # pylint: disable=import-outside-toplevel
+        from commands.help_ import help_, HIDDEN_COMMANDS
+
+        for command in self.bot.tree.walk_commands():
+            if (command.qualified_name == help_.qualified_name or isinstance(command, app_commands.Group) or
+                    type(command.root_parent if command.root_parent else command) in HIDDEN_COMMANDS):
+                continue
+
+            yield command
+
+    async def _localize_about_docs(self, languages: Iterable[Language]) -> None:
+        # pylint: disable=import-outside-toplevel
+        from commands.about import get_about_dir
+
+        with open(get_about_dir(DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
+            default_text = file.read()
+
+        for language in tqdm(languages, desc="Localizing about documents", total=0, unit="language"):
+            try:
+                with open(get_about_dir(language), "r", encoding="utf-8") as file:
+                    text = file.read()
+            except FileNotFoundError:
+                with open(get_about_dir(language.trim_territory()), "r", encoding="utf-8") as file:
+                    text = file.read()
+
+            if not Cache.has(language, default_text):
+                Cache.set(Translation(
+                    DEFAULT_LANGUAGE,
+                    language,
+                    default_text,
+                    text
+                ))
+
+        await Cache.save()
+
+    async def _localize_help_docs(self, languages: Iterable[Language]) -> None:
+        # pylint: disable=import-outside-toplevel
+        from commands.help_ import get_help_dir
+
+        for language in tqdm(languages, desc="Localizing help documents", total=0, unit="language"):
+            for command in self._get_commands():
+                with open(get_help_dir(command.qualified_name, DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
+                    default_text = file.read()
+
+                try:
+                    with open(get_help_dir(command.qualified_name, language), "r", encoding="utf-8") as file:
+                        text = file.read()
+                except FileNotFoundError:
+                    with (open(get_help_dir(command.qualified_name, language.trim_territory()), "r", encoding="utf-8")
+                          as file):
+                        text = file.read()
+
+                if not Cache.has(language, default_text):
+                    Cache.set(Translation(
+                        DEFAULT_LANGUAGE,
+                        language,
+                        default_text,
+                        text
+                    ))
+
+        await Cache.save()
+
     async def _translate_help_docs(self, languages: Iterable[Language]) -> None:
         # pylint: disable=import-outside-toplevel
-        from commands.help_ import help_, get_help_dir, HIDDEN_COMMANDS
+        from commands.help_ import get_help_dir
 
         async def translate_texts(texts: list[str], language: Language) -> list[Translation]:
             translations = []
@@ -675,11 +751,7 @@ class CommandTranslator(discord.app_commands.Translator):
         for language in languages:
             texts = []
 
-            for command in self.bot.tree.walk_commands():
-                if (command.qualified_name == help_.qualified_name or isinstance(command, app_commands.Group) or
-                        type(command.root_parent if command.root_parent else command) in HIDDEN_COMMANDS):
-                    continue
-
+            for command in self._get_commands():
                 with open(get_help_dir(command.qualified_name, DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
                     text = file.read()
 

@@ -12,7 +12,7 @@ from discord.ext.commands import Bot
 
 from mongo.user import User, get_user, set_user
 from utils import defer_response
-from utils.constants import languages, BOT_NAME, BUG_REPORT_LINK
+from utils.constants import languages, BOT_NAME, BUG_REPORT_URL
 from utils.templates import info, success, error
 from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
 
@@ -76,7 +76,7 @@ class Chat(app_commands.Group):
 
     @staticmethod
     async def _error_message() -> str:
-        return error(await default_loc.format_value_or_translate("error", {"link": BUG_REPORT_LINK}))
+        return error(await default_loc.format_value_or_translate("error", {"link": BUG_REPORT_URL}))
 
     async def _create_new_chat(self, user: User, user_name: str):
         response = await self._client.chat.new_chat(os.getenv("CAI_CHAR_ID"))
