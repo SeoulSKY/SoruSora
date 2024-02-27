@@ -618,7 +618,7 @@ class CommandTranslator(discord.app_commands.Translator):
 
         self._translator: BaseTranslator = GoogleTranslator()
 
-    async def load(self) -> None:
+    async def load(self):
         localized: set[Language] = set()
         non_localized: set[Language] = set()
 

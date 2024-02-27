@@ -268,4 +268,4 @@ class Translator(app_commands.Group):
 
         await send(success(await loc.format_value_or_translate("channel-languages-cleared")), ephemeral=True)
 
-    set_languages.extras["set-channel-languages-description-default"] = str(ALL_CHANNELS_DEFAULT)
+    set_languages.extras["set-languages-all-languages-description-default"] = str(ALL_CHANNELS_DEFAULT)
