@@ -47,8 +47,11 @@ Follow [PEP 8 Guidelines](https://peps.python.org/pep-0008/), which is standard 
 These are the documents that will be helpful to understand the codebase
 
 * [discord.py](https://discordpy.readthedocs.io/en/latest/)
-* [Firestore](https://firebase.google.com/docs/firestore/)
+* [Argos Translate](https://www.argosopentech.com)
+* [PyCAI](https://pycai.gitbook.io/welcome/)
+* [Fluent Runtime](https://projectfluent.org/python-fluent/fluent.runtime/stable/usage.html)
 
+If you have any questions, please don't hesitate to ask. You can contact me via [Discord](https://discord.seoulsky.org) or email: contact@seoulsky.org.
 ## License
 By contributing, you agree that your contributions will be licensed under its MIT License.
 
