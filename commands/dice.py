@@ -7,6 +7,7 @@ from random import choice
 
 import discord
 from discord import app_commands
+
 from utils.translator import Localization, DEFAULT_LANGUAGE
 
 resources = [os.path.join("commands", "dice.ftl")]
