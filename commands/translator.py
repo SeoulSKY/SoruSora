@@ -73,7 +73,7 @@ class UserChannelSelect(ChannelSelect):
         Initialize the channel select UI
         """
         super().__init__(placeholder=await self.loc.format_value_or_translate("select-channels"),
-                         channel_types=list(ChannelType),
+                         channel_types=[x for x in ChannelType if x != ChannelType.category],
                          max_values=int(Limit.SELECT_MAX))
 
         return self

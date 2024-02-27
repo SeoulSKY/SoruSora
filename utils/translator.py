@@ -670,6 +670,8 @@ class CommandTranslator(discord.app_commands.Translator):
             Cache.set(translation)
             pbar.update()
 
+        pbar.close()
+
         await Cache.save()
 
     def _get_commands(self) -> Generator[Command, Any, None]:
@@ -769,6 +771,8 @@ class CommandTranslator(discord.app_commands.Translator):
                 Cache.set(translation)
 
             pbar.update()
+
+        pbar.close()
 
         await Cache.save()
 
@@ -926,5 +930,7 @@ class CommandTranslator(discord.app_commands.Translator):
                 Cache.set(translation)
 
             pbar.update()
+
+        pbar.close()
 
         await Cache.save()
