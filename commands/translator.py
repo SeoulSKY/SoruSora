@@ -2,6 +2,7 @@
 This module implements translator commands
 """
 import os
+from typing import Iterator
 
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale
 from discord.ext.commands import Bot
@@ -9,13 +10,13 @@ from discord.ui import View
 
 from mongo.channel import get_channel, set_channel
 from mongo.user import get_user, set_user
-from utils import templates, ui
-from utils.constants import ErrorCode, Limit, DEFAULT_LOCALE
+from utils import templates, ui, defer_response
+from utils.constants import ErrorCode, Limit, languages
 from utils.templates import success
-from utils.translator import BatchTranslator, locale_to_code, Localization
+from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator
 
 resources = [os.path.join("commands", "translator.ftl")]
-default_loc = Localization(DEFAULT_LOCALE, resources)
+default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
 class ChannelLanguageSelect(ui.LanguageSelect):
@@ -24,17 +25,17 @@ class ChannelLanguageSelect(ui.LanguageSelect):
     """
 
     def __init__(self, locale: Locale):
-        self.loc = Localization(locale_to_code(locale), resources)
+        self.loc = Localization(locale, resources)
         super().__init__(self.loc.format_value_or_translate("select-channel-languages"), locale)
 
     async def callback(self, interaction: Interaction):
+        send = await defer_response(interaction)
+
         config = await get_channel(interaction.channel_id)
         config.translate_to = self.values
         await set_channel(config)
 
-        await interaction.response.send_message(
-            success(self.loc.format_value_or_translate("channel-languages-updated")), ephemeral=True
-        )
+        await send(success(await self.loc.format_value_or_translate("channel-languages-updated")), ephemeral=True)
 
 
 class UserLanguageSelect(ui.LanguageSelect):
@@ -43,17 +44,17 @@ class UserLanguageSelect(ui.LanguageSelect):
     """
 
     def __init__(self, locale: Locale):
-        self.loc = Localization(locale_to_code(locale), resources)
+        self.loc = Localization(locale, resources)
         super().__init__(self.loc.format_value_or_translate("select-languages"), locale)
 
     async def callback(self, interaction: Interaction):
+        send = await defer_response(interaction)
+
         config = await get_user(interaction.user.id)
         config.translate_to = self.values
         await set_user(config)
 
-        await interaction.response.send_message(
-            success(self.loc.format_value_or_translate("languages-updated")), ephemeral=True
-        )
+        await send(success(await self.loc.format_value_or_translate("languages-updated")), ephemeral=True)
 
 
 class Translator(app_commands.Group):
@@ -66,6 +67,8 @@ class Translator(app_commands.Group):
                          description=default_loc.format_value("translator-description"))
         self.bot = bot
 
+        self._translator: BaseTranslator = get_translator()
+
         self._setup_user_listeners()
         self._setup_channel_listeners()
 
@@ -75,7 +78,19 @@ class Translator(app_commands.Group):
             if len(message.content.strip()) == 0 or len(usr.translate_to) == 0:
                 return
 
-            await self._send_translation(message, usr.translate_to)
+            failed = False
+            for code in usr.translate_to:
+                if code not in languages:
+                    usr.translate_to.remove(code)
+                    failed = True
+
+            if failed:
+                await set_user(usr)
+
+            if len(usr.translate_to) == 0:
+                return
+
+            await self._send_translation(message, map(Language, usr.translate_to))
 
         self.bot.add_listener(on_message)
 
@@ -88,12 +103,23 @@ class Translator(app_commands.Group):
             if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
                 return
 
-            await self._send_translation(message, chan.translate_to)
+            failed = False
+            for code in chan.translate_to:
+                if code not in languages:
+                    chan.translate_to.remove(code)
+                    failed = True
+
+            if failed:
+                await set_channel(chan)
+
+            if len(chan.translate_to) == 0:
+                return
+
+            await self._send_translation(message, map(Language, chan.translate_to))
 
         self.bot.add_listener(on_message)
 
-    @staticmethod
-    async def _send_translation(message: Message, dest_langs: list[str]):
+    async def _send_translation(self, message: Message, dest_langs: Iterator[Language]) -> None:
         async with message.channel.typing():
             text = message.content
 
@@ -106,9 +132,8 @@ class Translator(app_commands.Group):
                 text = text.removesuffix("\n\n")
 
             description = ""
-            translator = BatchTranslator(dest_langs)
-            async for target, translated in translator.translate(text):
-                description += f"**__{target.title()}__**\n{translated}\n\n"
+            async for translation in self._translator.translate_targets(text, dest_langs):
+                description += f"**__{translation.target.name}__**\n{translation.text}\n\n"
 
             description.removesuffix("\n\n")
 
@@ -143,9 +168,10 @@ class Translator(app_commands.Group):
         """
         Set languages to be translated for your messages
         """
-        view = View()
-        view.add_item(UserLanguageSelect(interaction.locale))
-        await interaction.response.send_message(view=view, ephemeral=True)
+
+        send = await defer_response(interaction)
+
+        await send(view=View().add_item(await UserLanguageSelect(interaction.locale).init()), ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("set-channel-languages-name"),
                           description=default_loc.format_value("set-channel-languages-description"))
@@ -154,9 +180,10 @@ class Translator(app_commands.Group):
         """
         Set languages to be translated for this channel
         """
-        view = View()
-        view.add_item(ChannelLanguageSelect(interaction.locale))
-        await interaction.response.send_message(view=view, ephemeral=True)
+
+        send = await defer_response(interaction)
+
+        await send(view=View().add_item(await ChannelLanguageSelect(interaction.locale).init()), ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-languages-name"),
                           description=default_loc.format_value("clear-languages-description"))
@@ -164,14 +191,16 @@ class Translator(app_commands.Group):
         """
         Clear languages to be translated for your messages
         """
+
+        send = await defer_response(interaction)
+
         user = await get_user(interaction.user.id)
         user.translate_to = []
         await set_user(user)
 
-        loc = Localization(locale_to_code(interaction.locale), resources)
+        loc = Localization(interaction.locale, resources)
 
-        await interaction.response.send_message(success(loc.format_value_or_translate("languages-cleared")),
-                                                ephemeral=True)
+        await send(success(await loc.format_value_or_translate("languages-cleared")), ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-channel-languages-name"),
                           description=default_loc.format_value("clear-channel-languages-description"))
@@ -180,11 +209,13 @@ class Translator(app_commands.Group):
         """
         Clear languages to be translated for this channel
         """
+
+        send = await defer_response(interaction)
+
         channel = await get_channel(interaction.channel_id)
         channel.translate_to = []
         await set_channel(channel)
 
-        loc = Localization(locale_to_code(interaction.locale), resources)
+        loc = Localization(interaction.locale, resources)
 
-        await interaction.response.send_message(success(loc.format_value_or_translate("channel-languages-cleared")),
-                                                ephemeral=True)
+        await send(success(await loc.format_value_or_translate("channel-languages-cleared")), ephemeral=True)

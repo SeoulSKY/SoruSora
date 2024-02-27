@@ -17,6 +17,7 @@ Constants:
 
 import os
 from enum import Enum
+from pathlib import Path
 
 
 class ErrorCode(Enum):
@@ -30,10 +31,11 @@ class ErrorCode(Enum):
         return self.value == other
 
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-CACHE_DIR = os.path.join(ROOT_DIR, "..", "cache")
-ASSETS_DIR = os.path.join(ROOT_DIR, "..", "assets")
-HELP_DIR = os.path.join(ROOT_DIR, "..", "docs", "help")
+ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
+CACHE_DIR = ROOT_DIR.parent / "cache"
+ASSETS_DIR = ROOT_DIR.parent / "assets"
+HELP_DIR = ROOT_DIR.parent / "docs" / "help"
+LOCALES_DIR = ROOT_DIR.parent / "locales"
 
 
 class Limit(Enum):
@@ -41,6 +43,7 @@ class Limit(Enum):
     Provides limits from discord API
     """
     EMBED_DESCRIPTION_LEN = 4096
+    COMMAND_NAME_LEN = 32
     COMMAND_DESCRIPTION_LEN = 100
     NUM_EMBEDS_IN_MESSAGE = 10
 
@@ -54,9 +57,33 @@ class Limit(Enum):
         return self.value
 
 
+languages = {
+    "zh-CN",
+    "zh-TW",
+    "nl",
+    "en",
+    "tl",
+    "fr",
+    "de",
+    "el",
+    "hi",
+    "id",
+    "it",
+    "ja",
+    "ko",
+    "ms",
+    "pl",
+    "pt",
+    "ro",
+    "ru",
+    "es",
+    "sv",
+    "th",
+    "uk",
+}
+
+
 BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
-
-DEFAULT_LOCALE = "en"
 
 BUG_REPORT_LINK = "https://github.com/SeoulSKY/SoruSora/issues/new?template=bug_report.md"

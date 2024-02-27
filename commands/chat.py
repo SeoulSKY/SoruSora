@@ -2,7 +2,6 @@
 Implements a commands relate to AI chat
 """
 
-import asyncio
 import logging
 import os
 
@@ -12,13 +11,13 @@ from discord.app_commands import Choice
 from discord.ext.commands import Bot
 
 from mongo.user import User, get_user, set_user
-from utils.constants import DEFAULT_LOCALE, BOT_NAME, BUG_REPORT_LINK
+from utils import defer_response
+from utils.constants import languages, BOT_NAME, BUG_REPORT_LINK
 from utils.templates import info, success, error
-from utils.translator import (is_default, languages, Localization, Translator, code_to_language, locale_to_code,
-                              get_resource)
+from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
 
-resources = [os.path.join("commands", "chat.ftl"), get_resource()]
-default_loc = Localization(DEFAULT_LOCALE, resources)
+resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
+default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
 class Chat(app_commands.Group):
@@ -50,11 +49,11 @@ class Chat(app_commands.Group):
                     try:
                         await self._create_new_chat(user, message.author.display_name)
                     except IOError:
-                        await message.reply(self._timeout_message())
+                        await message.reply(await self._timeout_message())
                         return
                     except RuntimeError as ex:
                         self._logger.exception(ex)
-                        await message.reply(self._error_message())
+                        await message.reply(await self._error_message())
                         return
 
                 try:
@@ -70,12 +69,14 @@ class Chat(app_commands.Group):
 
         self.bot.add_listener(on_message)
 
-    def _timeout_message(self) -> str:
-        return info(default_loc.format_value_or_translate("timeout", {"name": self.bot.user.display_name}))
+    async def _timeout_message(self) -> str:
+        return info(
+            await default_loc.format_value_or_translate("timeout", {"name": self.bot.user.display_name})
+        )
 
     @staticmethod
-    def _error_message() -> str:
-        return error(default_loc.format_value_or_translate("error", {"link": BUG_REPORT_LINK}))
+    async def _error_message() -> str:
+        return error(await default_loc.format_value_or_translate("error", {"link": BUG_REPORT_LINK}))
 
     async def _create_new_chat(self, user: User, user_name: str):
         response = await self._client.chat.new_chat(os.getenv("CAI_CHAR_ID"))
@@ -86,37 +87,34 @@ class Chat(app_commands.Group):
         await set_user(user)
 
     async def _send_message(self, user: User, text: str) -> str:
-        if not is_default(user.locale):
-            translator = Translator(user.locale)
-            text = await asyncio.to_thread(translator.translate, text)
+        language = Language(user.locale if user.locale is not None else DEFAULT_LANGUAGE.code)
 
         response = await self._client.chat.send_message(user.chat_history_id, os.getenv("CAI_TGT"), text)
 
         content = response["replies"][0]["text"]
-        if not is_default(user.locale):
-            translator = Translator(DEFAULT_LOCALE, user.locale)
-            content = await asyncio.to_thread(translator.translate, content)
+        if language != DEFAULT_LANGUAGE:
+            content = (await get_translator().translate(content, language)).text
 
         return content
 
-    @app_commands.command(name=default_loc.format_value("update-language-name"),
-                          description=default_loc.format_value("update-language-description"))
+    @app_commands.command(name=default_loc.format_value("set-language-name"),
+                          description=default_loc.format_value("set-language-description"))
     @app_commands.choices(language=[Choice(name=default_loc.format_value(code), value=code) for code in languages])
-    @app_commands.describe(language=default_loc.format_value("update-language-language-description"))
-    async def update_language(self, interaction: Interaction, language: str = None):
+    @app_commands.describe(language=default_loc.format_value("set-language-language-description"))
+    async def set_language(self, interaction: Interaction, language: str = None):
         """
-        Update the chat language to the current discord language
+        Set the chat language to the current discord language
         """
+        send = await defer_response(interaction)
+
         user = await get_user(interaction.user.id)
         user.locale = language if language is not None else str(interaction.locale)
         await set_user(user)
 
-        loc = Localization(locale_to_code(interaction.locale), resources)
+        loc = Localization(interaction.locale, resources)
 
-        await interaction.response.send_message(
-            loc.format_value_or_translate("updated", {"language": code_to_language(user.locale).title()}),
-            ephemeral=True
-        )
+        await send(await loc.format_value_or_translate("updated", {"language": loc.language.name}),
+                   ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-name"),
                           description=default_loc.format_value("clear-description",
@@ -125,12 +123,12 @@ class Chat(app_commands.Group):
         """
         Clear the chat history between you and this bot
         """
-        loc = Localization(locale_to_code(interaction.locale), resources)
+        loc = Localization(interaction.locale, resources)
 
         user = await get_user(interaction.user.id)
         if user.chat_history_id is None:
             await interaction.response.send_message(
-                error(loc.format_value_or_translate("no-history",
+                error(await loc.format_value_or_translate("no-history",
                                                     {"name": interaction.client.user.display_name})),
                 ephemeral=True)
             return
@@ -148,6 +146,6 @@ class Chat(app_commands.Group):
         user.chat_history_tgt = None
         await set_user(user)
 
-        await interaction.followup.send(success(loc.format_value_or_translate("deleted")), ephemeral=True)
+        await interaction.followup.send(success(await loc.format_value_or_translate("deleted")), ephemeral=True)
 
     clear.extras["clear-description-name"] = BOT_NAME

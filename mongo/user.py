@@ -26,9 +26,7 @@ class User(Document):
                  locale: str = None):
         self.user_id = user_id
         self.chat_history_id = chat_history_id
-        if translate_to is None:
-            translate_to = []
-        self.translate_to: list[str] = translate_to
+        self.translate_to: list[str] = translate_to if translate_to is not None else []
         self.locale = locale
 
     @staticmethod

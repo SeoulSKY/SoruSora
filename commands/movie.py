@@ -17,15 +17,15 @@ from moviepy.video.fx import resize as resizer
 from tqdm import tqdm
 
 from utils import templates, constants
-from utils.constants import ErrorCode, DEFAULT_LOCALE
-from utils.translator import Localization
+from utils.constants import ErrorCode
+from utils.translator import Localization, DEFAULT_LANGUAGE
 
-DESKTOP_CACHE_PATH = os.path.join(constants.CACHE_DIR, "movie", "desktop")
+DESKTOP_CACHE_PATH = constants.CACHE_DIR / "movie" / "desktop"
 """
 Path to the cache directory for desktop
 """
 
-MOBILE_CACHE_PATH = os.path.join(constants.CACHE_DIR, "movie", "mobile")
+MOBILE_CACHE_PATH = constants.CACHE_DIR / "movie" /"mobile"
 """
 Path to the cache directory for mobile
 """
@@ -70,7 +70,7 @@ PIXEL_VALUE_RANGE = 255
 Maximum value of RGB for each pixel
 """
 
-loc = Localization(DEFAULT_LOCALE, [os.path.join("commands", "movie.ftl")])
+loc = Localization(DEFAULT_LANGUAGE, [os.path.join("commands", "movie.ftl")])
 
 
 class Movie(app_commands.Group):
@@ -94,8 +94,8 @@ class Movie(app_commands.Group):
         if not os.path.exists(DESKTOP_CACHE_PATH) or not os.path.exists(MOBILE_CACHE_PATH):
             self._cache_movies()
 
-    @staticmethod
-    def _cache_movies():
+    @classmethod
+    def _cache_movies(cls):
         os.makedirs(constants.CACHE_DIR, exist_ok=True)
 
         movie_names = [file for file in os.listdir(constants.ASSETS_DIR) if file.endswith(".mp4")]
@@ -103,11 +103,11 @@ class Movie(app_commands.Group):
             os.makedirs(MOBILE_CACHE_PATH if is_on_mobile else DESKTOP_CACHE_PATH, exist_ok=True)
 
             for movie_name in movie_names:
-                movie = Movie._resize(VideoFileClip(os.path.join(constants.ASSETS_DIR, movie_name),
-                                                    audio=False), is_on_mobile)
+                movie = cls._resize(VideoFileClip(os.path.join(constants.ASSETS_DIR, movie_name),
+                                                  audio=False), is_on_mobile)
 
                 buffer = []
-                with (open(Movie._get_cache_path(movie_name.removesuffix(".mp4"), is_on_mobile), "w", encoding="utf-8")
+                with (open(cls._get_cache_path(movie_name.removesuffix(".mp4"), is_on_mobile), "w", encoding="utf-8")
                       as file):
                     for frame in tqdm(movie.iter_frames(), desc=f"Caching {movie_name} for "
                                                                 f"{'mobile' if is_on_mobile else 'desktop'}",

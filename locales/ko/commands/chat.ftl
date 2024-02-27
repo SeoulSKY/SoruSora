@@ -2,10 +2,10 @@
 chat-name = 채팅
 chat-description = AI 채팅과 관련된 명령어 입니다
 
-update-language-name = 언어변경
-update-language-description = 현재 디스코드 언어로 채팅 언어를 변경합니다
-update-language-language-name = 언어
-update-language-language-description = 변경할 언어. 기본값은 현재 디스코드 언어입니다
+set-language-name = 언어변경
+set-language-description = 현재 디스코드 언어로 채팅 언어를 변경합니다
+set-language-language-name = 언어
+set-language-language-description = 변경할 언어. 기본값은 현재 디스코드 언어입니다
 
 clear-name = 삭제
 clear-description = { $clear-description-name }와(과) 당신 사이의 채팅 기록을 삭제합니다

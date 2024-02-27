@@ -2,208 +2,507 @@
 Provides translator functionality
 
 Classes:
+    Language
+    Translation
     Localization
     CommandTranslator
-    BatchTranslator
+    BaseTranslator
+    ArgosTranslator
+    GoogleTranslator
 
 Functions:
-    has_localization
     get_resource
-    translate
-    is_default
-    language_to_code
-    code_to_language
-    locale_to_code
-    locale_to_language
-
-Constants:
-    languages
-    Translator
-    locales
 """
-import concurrent
+
+import asyncio
 import itertools
+import json
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
+from abc import ABC, abstractmethod
 from threading import Lock
-from typing import Type, Optional, Any, Union, Iterable
+from typing import Iterable, AsyncGenerator, Any, Optional
 
+import argostranslate.package
+import argostranslate.translate
+import babel
 import discord
-import langid
-from deep_translator import GoogleTranslator
-from deep_translator.base import BaseTranslator
+from deep_translator import GoogleTranslator as Google
 from discord import Locale, app_commands, AppCommandType
 from discord.app_commands import locale_str, TranslationContextTypes
-from discord.app_commands.translator import TranslationContextLocation
 from discord.ext.commands import Bot
-from fluent.runtime import FluentResourceLoader, FluentLocalization
+from fluent.runtime import FluentLocalization, FluentResourceLoader
 from tqdm import tqdm
 
-from utils.constants import DEFAULT_LOCALE, Limit
-
-languages = [
-    "zh-CN",
-    "zh-TW",
-    "nl",
-    "en",
-    "tl",
-    "fr",
-    "de",
-    "el",
-    "hi",
-    "id",
-    "it",
-    "ja",
-    "ko",
-    "ms",
-    "no",
-    "pl",
-    "pt",
-    "ro",
-    "ru",
-    "es",
-    "sv",
-    "th",
-    "uk",
-    "vi",
-]
-
-
-Translations = dict[str, dict[str, str]]
-Translator: Type[BaseTranslator] = GoogleTranslator
-_translator = Translator()
-
-for lang in languages:
-    assert _translator.is_language_supported(lang), f"'{lang}' is not a supported language"
-
-_LANGUAGES_TO_CODES = _translator.get_supported_languages(as_dict=True)
-_CODES_TO_LANGUAGES = {v: k for k, v in _LANGUAGES_TO_CODES.items()}
+from utils.constants import Limit, CACHE_DIR, LOCALES_DIR
 
 logger = logging.getLogger(__name__)
 
 
-def translator_code(code: str) -> str:
+class Language:
     """
-    Convert the language code to the code for translators
-
-    :param code: The language code to convert
-    :return: The translator code
+    Represents a language
     """
 
-    return code.split("-")[0]
+    def __init__(self, locale: Locale | str):
+        locale = str(locale)
+        self._locale = babel.Locale.parse(locale, sep="-")
+        self._code = locale
+
+    @staticmethod
+    def trim_territory(code: str) -> str:
+        """
+        Trim the territory from the language code
+
+        :param code: The language code to trim
+        :return: The language code without the territory
+        """
+
+        return code.split("-", maxsplit=1)[0]
+
+    def has_territory(self) -> bool:
+        """
+        Check if the language has a territory
+
+        :return: True if the language has a territory
+        """
+
+        return "-" in self._code
+
+    @property
+    def code(self) -> str:
+        """
+        Get the language code
+        """
+        return self._code
+
+    @property
+    def name(self) -> str:
+        """
+        Get the language name
+        """
+        return self._locale.english_name
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Language):
+            return False
+
+        return self._locale.language == other._locale.language
+
+    def __str__(self):
+        return self.code
+
+    def __hash__(self):
+        return hash(self.code)
+
+    def __repr__(self):
+        return f"Language({self.code})"
 
 
-def has_localization(locale: str) -> bool:
+DEFAULT_LANGUAGE = Language("en")
+
+
+class Translation:
     """
-    Check if the locale has localization
-
-    :param locale: The locale to check
-    :return: True if the locale has localization
-    """
-
-    return os.path.exists(os.path.join("locales", locale))
-
-
-def get_resource() -> str:
-    """
-    Get the resource for the translator
-    """
-
-    return os.path.join("utils", "translator.ftl")
-
-
-def translate(text: str, target: Union[str, Locale], source: str = "auto") -> str:
-    """
-    Translate the text to the target language
-
-    :param text: The text to translate
-    :param target: The language to translate to
-    :param source: The language to translate from
-    :return: The translated text
-    """
-
-    if isinstance(target, Locale):
-        target = locale_to_code(target)
-
-    return Translator(source, target).translate(text)
-
-
-def is_default(code: str) -> bool:
-    """
-    Check if the language code is a default locale
-
-    :param code: The language code to check
-    :return: True if the language code is a default locale
-    """
-
-    return code.startswith(DEFAULT_LOCALE)
-
-
-def language_to_code(language: str) -> str:
-    """
-    Get the language code of the language
-
-    :param language: The language to get the code of
-    :return: The language code of the language
-    :raises ValueError: If the language is not supported by the translator
-    """
-
-    if language not in _LANGUAGES_TO_CODES:
-        raise ValueError(f"Language {language} is not supported")
-
-    return _LANGUAGES_TO_CODES[language]
-
-
-def code_to_language(code: str) -> str:
-    """
-    Get the language of the language code
-
-    :param code: The language code to get the language of
-    :return: The language of the language code
-    :raises ValueError: If the language code is not supported by the translator
+    Represents a translation result
     """
 
-    if code not in _CODES_TO_LANGUAGES:
-        code = translator_code(code)
+    def __init__(self, source: Language, target: Language, original_text: str, translated_text: str):
+        self._source = source
+        self._target = target
+        self._original_text = original_text
+        self._translated_text = translated_text
 
-        if code not in _CODES_TO_LANGUAGES:
-            raise ValueError(f"Language code {code} is not supported")
+    @property
+    def source(self) -> Language:
+        """
+        Get the source language
+        """
+        return self._source
 
-    return _CODES_TO_LANGUAGES[code]
+    @property
+    def target(self) -> Language:
+        """
+        Get the target language
+        """
+        return self._target
+
+    @property
+    def original_text(self) -> str:
+        """
+        Get the original text
+        """
+        return self._original_text
+
+    @original_text.setter
+    def original_text(self, value: str) -> None:
+        """
+        Set the original text
+        """
+        self._original_text = value
+
+    @property
+    def text(self) -> str:
+        """
+        Get the translated text
+        """
+        return self._translated_text
+
+    @text.setter
+    def text(self, value: str) -> None:
+        """
+        Set the translated text
+        """
+        self._translated_text = value
+
+    def __str__(self) -> str:
+        return self._translated_text
 
 
-def locale_to_code(locale: Locale) -> str:
+class BaseTranslator(ABC):
     """
-    Get the language code of the locale
-
-    :param locale: The locale to get the string representation
-    :return: The language code of the locale
-    :raises ValueError: If the locale is not supported by the translator
+    Abstract base class for translators
     """
 
-    language_code = str(locale)
-    if _translator.is_language_supported(language_code):
-        return language_code
+    def __init__(self, supported_languages: Iterable[Language]):
+        self._languages = set(supported_languages)
+        self._names_to_codes = {language.name: language.code for language in supported_languages}
+        self._codes_to_names = {language.code: language.name for language in supported_languages}
 
-    language_code = translator_code(language_code)
+    def is_locale_supported(self, locale: Locale) -> bool:
+        """
+        Check if the locale is supported by the translator
 
-    if _translator.is_language_supported(language_code):
-        return language_code
+        :param locale: The locale to check
+        :return: True if the locale is supported by the translator
+        """
 
-    raise ValueError(f"Locale {locale} is not supported")
+        code = str(locale)
+        if self.is_code_supported(code):
+            return True
+
+        return self.is_code_supported(Language.trim_territory(code))
+
+    def is_language_supported(self, language: Language) -> bool:
+        """
+        Check if the language is supported by the translator
+
+        :param language: The language to check
+        :return: True if the language is supported by the translator
+        """
+
+        return language in self._languages
+
+    def is_code_supported(self, code: str) -> bool:
+        """
+        Check if the language code is supported by the translator
+
+        :param code: The language code to check
+        :return: True if the language code is supported by the translator
+        """
+
+        return code in self._codes_to_names
+
+    def get_supported_languages(self) -> Iterable[Language]:
+        """
+        Get the supported languages of the translator
+
+        :return: The supported languages of the translator
+        """
+
+        return self._languages
+
+    def locale_to_language(self, locale: Locale) -> Language:
+        """
+        Get the language of the locale
+
+        :param locale: The locale to get the language of
+        :return: The language of the locale
+        :raises ValueError: If the locale is not supported by the translator
+        """
+
+        code = str(locale)
+        if not self.is_code_supported(code):
+            code = Language.trim_territory(code)
+            if not self.is_code_supported(code):
+                raise ValueError(f"Locale {locale} is not supported")
+
+        return Language(code)
+
+    async def translate_targets(self, text: str, targets: Iterable[Language], source: Language = DEFAULT_LANGUAGE) \
+            -> AsyncGenerator[Translation, Any]:
+        """
+        Translate the text to the target languages
+
+        :param text: The text to translate
+        :param targets: The languages to translate to
+        :param source: The language to translate from
+
+        :return: The translation
+        """
+        for target in targets:
+            yield await self.translate(text, target, source)
+
+    async def translate_texts(self, texts: Iterable[str], target: Language, source: Language = DEFAULT_LANGUAGE) \
+            -> AsyncGenerator[Translation, Any]:
+        """
+        Translate the texts to the target language
+
+        :param texts: The texts to translate
+        :param target: The language to translate to
+        :param source: The language to translate from
+
+        :return: The translations
+        """
+        tasks = []
+        for text in texts:
+            tasks.append(asyncio.create_task(self.translate(text, target, source)))
+
+        for task in asyncio.as_completed(tasks):
+            yield await task
+
+    @abstractmethod
+    async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
+        """
+        Translate the text to the target language
+
+        :param text: The text to translate
+        :param target: The language to translate to
+        :param source: The language to translate from
+
+        :return: The translation
+        :raises ValueError: If the target or source language is not supported by the translator
+        """
 
 
-def locale_to_language(locale: Locale) -> str:
+class ArgosTranslator(BaseTranslator):
     """
-    Get the language of the locale
-
-    :param locale: The locale to get the language of
-    :return: The language of the locale
-    :raises ValueError: If the locale is not supported by the translator
+    Translator using Argos Translate
     """
 
-    return _CODES_TO_LANGUAGES[locale_to_code(locale)]
+    _CODE_ALIAS = {
+        "zt": "zh-TW",
+    }
+
+    _ALIAS_TO_CODE = {v: k for k, v in _CODE_ALIAS.items()}
+
+    _LANGUAGES = None
+
+    argostranslate.package.update_package_index()
+    available_packages = argostranslate.package.get_available_packages()
+    for package in tqdm(available_packages, "Installing Argos Translate packages", unit="package"):
+        argostranslate.package.install_from_path(package.download())
+
+    def __init__(self):
+        if ArgosTranslator._LANGUAGES is None:
+            ArgosTranslator._LANGUAGES = [
+                Language(ArgosTranslator._CODE_ALIAS[lang.code]
+                         if lang.code in ArgosTranslator._CODE_ALIAS else lang.code)
+                for lang in argostranslate.translate.get_installed_languages()
+            ]
+        super().__init__(ArgosTranslator._LANGUAGES)
+
+    def is_code_supported(self, code: str) -> bool:
+        return (super().is_code_supported(code) or
+                super().is_code_supported(Language.trim_territory(code))
+                or code in self._CODE_ALIAS)
+
+    def is_language_supported(self, language: Language) -> bool:
+        return super().is_language_supported(language) or self.is_code_supported(language.code)
+
+    def _language_to_code(self, language: Language) -> str:
+        return self._ALIAS_TO_CODE[language.code] \
+            if language.code in self._ALIAS_TO_CODE else Language.trim_territory(language.code)
+
+    async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
+        if not self.is_language_supported(target):
+            raise ValueError(f"Language {target} is not supported")
+        if not self.is_language_supported(source):
+            raise ValueError(f"Language {source} is not supported")
+
+        if source == target or text.isspace():
+            result = text
+        else:
+            try:
+                result = await asyncio.to_thread(
+                    argostranslate.translate.translate,
+                    text,
+                    self._language_to_code(source),
+                    self._language_to_code(target)
+                )
+            except Exception as ex:
+                raise ValueError(f"Failed to translate text '{text}' from `{source}` to `{target}`") from ex
+
+        return Translation(source, target, text, result)
+
+
+class GoogleTranslator(BaseTranslator):
+    """
+    Translator using Google Translate
+    """
+
+    _LANGUAGES = set()
+    for code in Google().get_supported_languages(as_dict=True).values():
+        try:
+            _LANGUAGES.add(Language(code))
+        except babel.core.UnknownLocaleError:
+            pass
+
+    def __init__(self):
+        super().__init__(self._LANGUAGES)
+
+    def _language_to_code(self, language: Language) -> str:
+        return language.code if self.is_language_supported(language) else Language.trim_territory(language.code)
+
+    async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
+        return Translation(
+            source,
+            target,
+            text,
+            await asyncio.to_thread(
+                Google(self._language_to_code(source), self._language_to_code(target)).translate,
+                text
+            )
+        )
+
+    async def translate_texts(self, texts: Iterable[str], target: Language, source: Language = DEFAULT_LANGUAGE
+                              ) -> AsyncGenerator[Translation, Any]:
+        texts = list(texts)
+        translations = await asyncio.to_thread(
+            Google(self._language_to_code(source), self._language_to_code(target)).translate_batch,
+            texts
+        )
+        for i, translation in enumerate(translations):
+            yield Translation(source, target, texts[i], translation)
+
+
+def get_translator() -> BaseTranslator:
+    """
+    Create a translator
+    """
+
+    return ArgosTranslator()
+
+
+class Cache:
+    """
+    Provides caching functionality
+    """
+    # pylint: disable=unsupported-membership-test
+    # pylint: disable=unsubscriptable-object
+    # pylint: disable=unsupported-assignment-operation
+
+    PATH = CACHE_DIR / "translations.json"
+
+    _data: Optional[dict[str, dict[str, str]]] = None
+    _lock = Lock()
+
+    def __init__(self):
+        raise TypeError("This class cannot be instantiated")
+
+    @classmethod
+    def _load(cls) -> None:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+
+        with cls._lock:
+            try:
+                with open(cls.PATH, "r", encoding="utf-8") as file:
+                    cls._data = json.load(file)
+            except (FileNotFoundError, json.JSONDecodeError):
+                cls._data = {}
+
+    @classmethod
+    async def save(cls) -> None:
+        """
+        Save the cache to the file
+        """
+
+        if cls._data is None:
+            return
+
+        with cls._lock:
+            with open(cls.PATH, "w", encoding="utf-8") as file:
+                await asyncio.to_thread(json.dump, cls._data, file)
+
+        cls._data = None
+
+    @classmethod
+    def has(cls, language: Language, text: str) -> bool:
+        """
+        Check if the translation is in the cache
+
+        :param language: The language of the translation
+        :param text: The text to translate
+        :return: True if the translation is in the cache
+        """
+
+        if cls._data is None:
+            cls._load()
+
+        with cls._lock:
+            code = language.code
+            if language.code not in cls._data:
+                code = Language.trim_territory(language.code)
+
+            return code in cls._data and text in cls._data[code]
+
+    @classmethod
+    def get(cls, language: Language, text: str) -> Translation:
+        """
+        Get the translation from the cache
+
+        :param language: The language of the translation
+        :param text: The text to translate
+        :raises ValueError: If the translation is not found
+
+        :return: The translation
+        """
+
+        if cls._data is None:
+            cls._load()
+
+        try:
+            with cls._lock:
+                code = language.code
+                if language.code not in cls._data:
+                    code = Language.trim_territory(language.code)
+
+                return Translation(DEFAULT_LANGUAGE, language, text, cls._data[code][text])
+        except KeyError as ex:
+            raise ValueError(f"Translation of text '{text}' not found for language '{language}'") from ex
+
+    @classmethod
+    def set(cls, translation: Translation) -> None:
+        """
+        Set the translation to the cache
+
+        :param translation: The translation to set
+        """
+
+        if cls._data is None:
+            cls._load()
+
+        with cls._lock:
+            if translation.target.code not in cls._data:
+                cls._data[translation.target.code] = {}
+
+            cls._data[translation.target.code][translation.original_text] = translation.text
+
+    @classmethod
+    def remove(cls, language: Language, text: str) -> None:
+        """
+        Remove the translation from the cache
+
+        :param language: The language of the translation
+        :param text: The text to translate
+        """
+
+        if cls._data is None:
+            cls._load()
+
+        with cls._lock:
+            if language.code in cls._data:
+                cls._data[language.code].pop(text, None)
 
 
 class Localization:
@@ -211,23 +510,55 @@ class Localization:
     Provides localization functionality
     """
 
-    _loader = FluentResourceLoader(os.path.join("locales", "{locale}"))
+    _loader = FluentResourceLoader(os.path.join(LOCALES_DIR, "{locale}"))
 
-    _cache = {}
-    _cache_lock = Lock()
+    _translator: BaseTranslator = GoogleTranslator()
 
-    def __init__(self, locale: Union[str, Locale], resources: list[str], fallbacks: Optional[list[str]] = None):
-        if len(resources) == 0:
-            raise ValueError("At least one resource must be provided")
+    def __init__(self, locale: Locale | Language, resources: list[str] = None, fallbacks: Optional[list[str]] = None):
+        self._language = Language(str(locale)) if isinstance(locale, Locale) else locale
 
-        if isinstance(locale, Locale):
-            locale = locale_to_code(locale)
+        if resources is None or len(resources) == 0:
+            resources = [self.get_resource()]
+        if fallbacks is None:
+            fallbacks = []
 
-        locales = [locale]
-        if fallbacks is not None:
-            locales.extend(fallbacks)
+        if self._language.has_territory():
+            fallbacks.append(Language.trim_territory(self._language.code))
 
-        self._loc = FluentLocalization(locales, resources, self._loader)
+        if not self._translator.is_language_supported(self._language):
+            fallbacks.append(DEFAULT_LANGUAGE.code)
+
+        self._loc = FluentLocalization([self._language.code] + fallbacks, resources, self._loader)
+
+    @staticmethod
+    def get_resource() -> str:
+        """
+        Get the resource of the localization
+
+        :return: The resources of the localization
+        """
+
+        return os.path.join("utils", "translator.ftl")
+
+    @staticmethod
+    def has(locale: Locale | str) -> bool:
+        """
+        Check if the locale has localization
+
+        :param locale: The locale or code to check
+        :return: True if the locale has localization
+        """
+
+        return (os.path.exists(LOCALES_DIR / str(locale)) or
+                os.path.exists(LOCALES_DIR / Language.trim_territory(str(locale))))
+
+    @property
+    def language(self) -> Language:
+        """
+        Get the language of the localization
+        """
+
+        return self._language
 
     def _format_value(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> Optional[str]:
         result = self._loc.format_value(msg_id, args)
@@ -250,30 +581,28 @@ class Localization:
 
         return result
 
-    def format_value_or_translate(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> str:
+    async def format_value_or_translate(self, msg_id: str, args: Optional[dict[str, Any]] = None) -> str:
         """
-        Format the value of the message id with the arguments, or translate the message id if not found
+        Format the value of the message id with the arguments, or translate the value if message id is not found
 
         :param msg_id: The message id to format
         :param args: The arguments to format the message with
         :return: The formatted message
         """
 
-        with self._cache_lock:
-            if msg_id in self._cache:
-                return self._cache[msg_id]
-
         result = self._format_value(msg_id, args)
         if result is not None:
             return result
 
-        loc = Localization(DEFAULT_LOCALE, self._loc.resource_ids)
-        translated = translate(loc.format_value(msg_id, args), self._loc.locales[0], DEFAULT_LOCALE)
+        loc = Localization(DEFAULT_LANGUAGE, self.resources)
+        text = loc.format_value(msg_id, args)
 
-        with self._cache_lock:
-            self._cache[msg_id] = translated
+        if not Cache.has(self._language, text):
+            translation = await self._translator.translate(text, self._language)
+            Cache.set(translation)
+            await Cache.save()
 
-        return translated
+        return Cache.get(self._language, text).text
 
     @property
     def locales(self) -> list[str]:
@@ -301,211 +630,229 @@ class CommandTranslator(discord.app_commands.Translator):
     Translator for the commands
     """
 
-    _CACHING_TRANSLATIONS = {
-        TranslationContextLocation.command_name,
-        TranslationContextLocation.command_description,
-        TranslationContextLocation.group_name,
-        TranslationContextLocation.group_description,
-        TranslationContextLocation.other,
-    }
-
     def __init__(self, bot: Bot):
         super().__init__()
         self.bot = bot
 
-        self._translations = {}
+        self._translator: BaseTranslator = GoogleTranslator()
 
     async def load(self) -> None:
-        localized = set()
-        non_localized = set()
+        localized: set[Language] = set()
+        non_localized: set[Language] = set()
 
-        for locale in map(locale_to_code, Locale):
-            if locale == DEFAULT_LOCALE:
-                continue
+        for language in map(lambda x: Language(str(x)), Locale):
+            target = localized if Localization.has(language.code) else non_localized
+            target.add(language)
 
-            if has_localization(locale):
-                localized.add(locale)
-            else:
-                non_localized.add(locale)
-
-        self._translations = self._translate_commands(non_localized)
-        localizations = self._localize_commands(localized)
-
-        for locale, localization in localizations.items():
-            self._translations[locale] = localization
-
-    async def unload(self) -> None:
-        self._translations.clear()
+        await self._translate_help_docs(localized.union(non_localized))
+        await self._translate_commands(non_localized)
+        await self._localize_commands(localized)
 
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContextTypes) -> Optional[str]:
-        locale = locale_to_code(locale)
-        if is_default(locale):
+        language = Language(locale)
+        if language == DEFAULT_LANGUAGE:
             return string.message
-        if locale in self._translations and string.message in self._translations[locale]:
-            translation = self._translations[locale][string.message]
-            if context.location not in self._CACHING_TRANSLATIONS:
-                self._translations[locale].pop(string.message)
-            return translation
+
+        if Cache.has(language, string.message):
+            return Cache.get(language, string.message).text
 
         logger.warning("Translation of text '%s' not found for locale '%s'", string.message, locale)
         return None
 
-    def _localize_commands(self, locales: Iterable[str]) -> Translations:
-        localizations = {}
+    async def _translate_help_docs(self, languages: Iterable[Language]) -> None:
+        # pylint: disable=import-outside-toplevel
+        from commands.help_ import help_, get_help_dir, HIDDEN_COMMANDS
 
-        def localize(loc: Localization, args: dict, msg_id: str, snake_case: bool) -> str:
+        async def translate_texts(texts: list[str], language: Language) -> list[Translation]:
+            translations = []
+            async for translation in self._translator.translate_texts(texts, language):
+                translations.append(translation)
+
+            return translations
+
+        tasks = []
+        pbar = tqdm(desc="Translating help documents", total=0, unit="language")
+        for language in languages:
+            texts = []
+
+            for command in self.bot.tree.walk_commands():
+                if (command.qualified_name == help_.qualified_name or isinstance(command, app_commands.Group) or
+                        type(command.root_parent if command.root_parent else command) in HIDDEN_COMMANDS):
+                    continue
+
+                with open(get_help_dir(command.qualified_name, DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
+                    text = file.read()
+
+                if not Cache.has(language, text):
+                    texts.append(text)
+
+            if len(texts) == 0:
+                continue
+
+            tasks.append(asyncio.create_task(translate_texts(texts, language)))
+            pbar.total += 1
+
+        for task in asyncio.as_completed(tasks):
+            for translation in await task:
+                Cache.set(translation)
+
+            pbar.update()
+
+        await Cache.save()
+
+    async def _localize_commands(self, languages: Iterable[Language]) -> None:
+        def localize(loc: Localization, args: dict, msg_id: str, is_name: bool) -> str:
             result = loc.format_value(msg_id, args)
             transformed = "".join(char for char in result
                                   if char.isalnum()).lower().replace(" ", "_") \
-                if snake_case else result
+                if is_name else result
 
             return transformed[:int(Limit.COMMAND_DESCRIPTION_LEN)]
 
-        for locale in tqdm(locales, desc="Localizing commands", unit="locale"):
-            localization = {}
-
+        for language in tqdm(languages, desc="Localizing commands", total=0, unit="language"):
             for command in self.bot.tree.walk_commands():
-                loc = Localization(locale, [
+                loc = Localization(language, [
                     os.path.join("commands",
                                  f"{command.root_parent.name if command.root_parent else command.name}.ftl"),
-                    get_resource()
+                    Localization.get_resource()
                 ])
 
                 command_prefix = command.name.replace('_', '-')
 
-                localization[command.name] = localize(loc, command.extras,
-                                                      f"{command_prefix}-name", True)
-                localization[command.description] = localize(loc, command.extras,
-                                                             f"{command_prefix}-description", False)
+                Cache.set(Translation(
+                    DEFAULT_LANGUAGE,
+                    language,
+                    command.name,
+                    localize(loc, command.extras, f"{command_prefix}-name", True)
+                ))
+
+                Cache.set(Translation(
+                    DEFAULT_LANGUAGE,
+                    language,
+                    command.description,
+                    localize(loc, command.extras, f"{command_prefix}-description", False)
+                ))
 
                 if isinstance(command, app_commands.Group):
                     continue
 
                 for name, description, choices in [(param.name, param.description, param.choices)
                                                    for param in command.parameters]:
-                    replaced_name = name.replace('_', '-')
-                    localization[name] = localize(loc, command.extras, f"{command_prefix}-{replaced_name}-name",
-                                                  True)
-                    localization[description] = localize(loc, command.extras,
-                                                         f"{command_prefix}-{replaced_name}-description",
-                                                         False)
+                    replaced_name = name.replace("_", "-")
+
+                    Cache.set(Translation(
+                        DEFAULT_LANGUAGE,
+                        language,
+                        name,
+                        localize(loc, command.extras, f"{command_prefix}-{replaced_name}-name", True)
+                    ))
+
+                    Cache.set(Translation(
+                        DEFAULT_LANGUAGE,
+                        language,
+                        description,
+                        localize(loc, command.extras, f"{command_prefix}-{replaced_name}-description",
+                                 False)
+                    ))
 
                     for choice in choices:
-                        if choice.name.isnumeric():
-                            localization[choice.name] = choice.value
-                        else:
-                            localization[choice.name] = localize(loc, command.extras, choice.value, False)
+                        Cache.set(Translation(
+                            DEFAULT_LANGUAGE,
+                            language,
+                            choice.name,
+                            choice.value if choice.name.isnumeric() else localize(loc, command.extras, choice.value,
+                                                                                  False)
+                        ))
 
             for context_menu in itertools.chain(self.bot.tree.walk_commands(type=AppCommandType.message),
                                                 self.bot.tree.walk_commands(type=AppCommandType.user)):
-                loc = Localization(locale, [os.path.join(
+                loc = Localization(language, [os.path.join(
                     "context_menus", f"{context_menu.name.lower().replace(' ', '_')}.ftl"
                 )])
+                Cache.set(Translation(
+                    DEFAULT_LANGUAGE,
+                    language,
+                    context_menu.name,
+                    localize(loc, context_menu.extras,
+                             f"{context_menu.name.lower().replace(' ', '-')}-name", False)
+                ))
 
-                localization[context_menu.name] = localize(loc, context_menu.extras,
-                                                           f"{context_menu.name.lower().replace(' ', '-')}-name",
-                                                           False)
+        await Cache.save()
 
-            localizations[locale] = localization
-
-        return localizations
-
-    def _translate_commands(self, locales: Iterable[str]) -> Translations:
+    async def _translate_commands(self, languages: Iterable[Language]) -> None:
+        #pylint: disable=too-many-locals
         """
         Translate the commands to given locales
         """
 
-        translations = {}
-        lock = Lock()
-        pbar = tqdm(total=0, desc="Translating commands", unit="locale")
+        async def translate_texts(language: Language, texts: list[str], is_name: list[bool]
+                                  ) -> Iterable[Translation]:
+            translations = []
+            async for translation in self._translator.translate_texts(
+                    map(lambda x: x.replace("_", " "), texts), language):
+                translations.append(translation)
 
-        def translate_batch(locale: str, texts: list[str], snake_case: list[bool]) -> None:
-            with lock:
-                pbar.total += 1
+            for i, translation in enumerate(translations):
+                if is_name[i]:
+                    translation.original_text = texts[i]
+                    translation.text = ("".join(char for char in translation.text if char.isalnum())
+                                        .lower().replace(" ", "_")[:int(Limit.COMMAND_NAME_LEN)])
+                else:
+                    translation.text = translation.text[:int(Limit.COMMAND_DESCRIPTION_LEN)]
 
-            translated = (Translator(DEFAULT_LOCALE, locale)
-                          .translate_batch(list(map(lambda x: x.replace("_", " "), texts))))
+            return translations
+
+        tasks = []
+        pbar = tqdm(desc="Translating commands", total=0, unit="language")
+
+        for language in languages:
+            texts = []
+            is_name = []
+
+            for command in self.bot.tree.walk_commands():
+                texts.append(command.name)
+                is_name.append(True)
+
+                texts.append(command.description)
+                is_name.append(False)
+
+                if isinstance(command, app_commands.Group):
+                    continue
+
+                for param in command.parameters:
+                    texts.append(param.name)
+                    is_name.append(True)
+
+                    texts.append(param.description)
+                    is_name.append(False)
+
+                    for choice in param.choices:
+                        texts.append(choice.name)
+                        is_name.append(False)
+
+            for context_menu in itertools.chain(self.bot.tree.walk_commands(type=AppCommandType.message),
+                                                self.bot.tree.walk_commands(type=AppCommandType.user)):
+                texts.append(context_menu.name)
+                is_name.append(False)
 
             for i, text in enumerate(texts):
-                result = "".join(char for char in translated[i]
-                                 if char.isalnum()).lower().replace(" ", "_"
-                                                                    ) if snake_case[i] else translated[i]
-                with lock:
-                    translations[locale][text] = result[:int(Limit.COMMAND_DESCRIPTION_LEN)]
-                    pbar.update()
-                    pbar.set_description(f"Translated commands ({locale})")
+                if Cache.has(language, text):
+                    texts[i], texts[-1] = texts[-1], texts[i]
+                    is_name[i], is_name[-1] = is_name[-1], is_name[i]
 
-        with ThreadPoolExecutor() as executor:
-            for locale in locales:
-                translations[locale] = {}
+                    texts.pop()
+                    is_name.pop()
 
-                batch = []
-                snake_cases = []
-                for command in self.bot.tree.walk_commands():
-                    batch.append(command.name)
-                    snake_cases.append(True)
-
-                    batch.append(command.description)
-                    snake_cases.append(False)
-
-                    if isinstance(command, app_commands.Group):
-                        continue
-
-                    for param in command.parameters:
-                        batch.append(param.name)
-                        snake_cases.append(True)
-
-                        batch.append(param.description)
-                        snake_cases.append(False)
-
-                        batch.extend(choice.name for choice in param.choices)
-                        snake_cases.extend(itertools.repeat(False, len(param.choices)))
-
-                for context_menu in itertools.chain(self.bot.tree.walk_commands(type=AppCommandType.message),
-                                                    self.bot.tree.walk_commands(type=AppCommandType.user)):
-                    batch.append(context_menu.name)
-                    snake_cases.append(False)
-
-                executor.submit(translate_batch, locale, batch, snake_cases)
-
-            executor.shutdown(wait=True)
-
-        return translations
-
-
-# pylint: disable=too-few-public-methods
-class BatchTranslator:
-    """
-    Translator that can translate a text to multiple languages concurrently
-    """
-
-    def __init__(self, targets: list[str]):
-        self._translators = (Translator(target=target) for target in targets)
-        self._executor = ThreadPoolExecutor(max_workers=len(targets))
-
-    async def translate(self, text: str, source: Optional[str] = None):
-        """
-        Translate the text to target languages
-
-        :param text: The text to translate
-        :param source: The language of the text
-        :return: List of tuples containing translated language and text
-        """
-
-        if source is None:
-            source, _ = langid.classify(text)
-
-        futures = []
-        for translator in self._translators:
-            if source == translator.target:
+            if len(texts) == 0:
                 continue
 
-            translator.source = source
-            futures.append(self._executor.submit(self._translate, text, translator))
+            tasks.append(asyncio.create_task(translate_texts(language, texts, is_name)))
+            pbar.total += 1
 
-        for future in concurrent.futures.as_completed(futures):
-            yield future.result()
+        for task in asyncio.as_completed(tasks):
+            for translation in await task:
+                Cache.set(translation)
 
-    @staticmethod
-    def _translate(text: str, translator: Translator) -> tuple[str, str]:
-        return _CODES_TO_LANGUAGES[translator.target], translator.translate(text)
+            pbar.update()
+
+        await Cache.save()

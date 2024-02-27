@@ -1,7 +1,6 @@
 """
 Main script where the program starts
 """
-
 import logging
 import os
 from importlib import import_module
@@ -14,10 +13,8 @@ from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
 
 from commands.movie import Movie
-from utils import translator
-from utils.constants import DEFAULT_LOCALE
 from utils.templates import forbidden
-from utils.translator import locale_to_code, Localization, CommandTranslator, has_localization
+from utils.translator import Localization, CommandTranslator
 
 load_dotenv()
 
@@ -122,17 +119,11 @@ async def on_app_command_error(interaction: Interaction, error: AppCommandError)
     if not isinstance(error, MissingPermissions):
         raise error
 
-    locale = locale_to_code(interaction.locale)
-    resources = ["main.ftl"]
-
-    if has_localization(locale):
-        loc = Localization(locale, resources)
-        message = loc.format_value("missing-permission")
-    else:
-        loc = Localization(DEFAULT_LOCALE, resources)
-        message = translator.translate(loc.format_value("missing-permission"), locale, DEFAULT_LOCALE)
-
-    await interaction.response.send_message(forbidden(message), ephemeral=True)
+    loc = Localization(interaction.locale, ["main.ftl"])
+    await interaction.response.send_message(
+        forbidden(await loc.format_value_or_translate("missing-permission")),
+        ephemeral=True
+    )
 
 
 if __name__ == "__main__":

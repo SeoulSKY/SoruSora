@@ -23,3 +23,7 @@ languages-updated = Your languages to be translated have been updated
 channel-languages-updated = This channel's languages to be translated have been updated
 languages-cleared = Your languages to be translated have been cleared
 channel-languages-cleared = This channel's languages to be translated have been cleared
+
+# Errors
+invalid-user-settings = Your languages settings are invalid. Please set them again
+invalid-channel-settings = This channel's languages settings are invalid. Please set them again

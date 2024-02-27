@@ -7,6 +7,8 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./cache:/app/cache
+      - ./cache/algos_packages:~/.local/share/argos-translate/packages/
+      - ./cache/algos_cache:~/.local/cache/argos-translate/
     env_file:
       - .env
 
