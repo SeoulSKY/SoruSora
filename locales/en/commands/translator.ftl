@@ -4,6 +4,8 @@ translator-description = Commands related to translation
 
 set-languages-name = set_languages
 set-languages-description = Set languages to be translated for your messages
+set-languages-all-channels-name = all_channels
+set-languages-all-channels-description = Set languages to be translated for your messages in all channels. Default is { $set-languages-all-channels-description-default }
 
 set-channel-languages-name = set_channel_languages
 set-channel-languages-description = [Admins only] Set languages to be translated for this channel
@@ -16,6 +18,7 @@ clear-channel-languages-description = [Admins only] Clear languages to be transl
 
 # Select UI
 select-languages = Select the languages you want to translate your messages to
+select-channels = Select the channels you want to translate messages in
 select-channel-languages = Select the languages you want to translate messages in this channel to
 
 # Successes

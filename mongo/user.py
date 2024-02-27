@@ -21,12 +21,17 @@ class User(Document):
     """
     A wrapper class to represent user in the database
     """
+    # pylint: disable=too-many-arguments
 
-    def __init__(self, user_id: int = -1, chat_history_id: str = None, translate_to: list[str] = None,
+    def __init__(self, user_id: int = -1,
+                 chat_history_id: str = None,
+                 translate_to: list[str] = None,
+                 translate_in: list[int] = None,
                  locale: str = None):
         self.user_id = user_id
         self.chat_history_id = chat_history_id
         self.translate_to: list[str] = translate_to if translate_to is not None else []
+        self.translate_in: list[str] = translate_in if translate_in is not None else []
         self.locale = locale
 
     @staticmethod
