@@ -4,8 +4,9 @@ chat-description = Commands related to AI chats
 
 set-language-name = set_language
 set-language-description = Set the chat language to the current discord language
-set-language-language-name = language
-set-language-language-description = The new chat language. Defaults to your current discord language
+set-language-current-language-name = current_language
+set-language-current-language-description = Set your chat language to your current discord language. Defaults to { $set-language-current-language-description-default}
+set-language-select = Select your chat language
 
 clear-name = clear
 clear-description = Clear the chat history between you and { $clear-description-name }

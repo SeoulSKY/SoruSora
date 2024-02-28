@@ -1,9 +1,12 @@
-# /chat update_language
+# /chat set_language
 
-Update the chat language to the current discord language.
+Update the chat language to the current discord language. Updating the language doesn't affect the chat history.
 
-If the parameter `language` is provided, update the chat language to the provided language.
+
+## Usage
+
+* If the parameter `current_language` is set to `False`, you can select the language you want.
 
 ## Parameters
 
-* `language` (Optional): The new chat language. Defaults to your current discord language.
+* `current_language` (Optional): Set your chat language to your current discord language. Defaults to True.

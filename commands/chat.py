@@ -7,17 +7,50 @@ import os
 
 from characterai import PyAsyncCAI
 from discord import app_commands, Message, Interaction
-from discord.app_commands import Choice
 from discord.ext.commands import Bot
 
 from mongo.user import User, get_user, set_user
 from utils import defer_response
-from utils.constants import languages, BOT_NAME, BUG_REPORT_URL
+from utils.constants import BOT_NAME, BUG_REPORT_URL
 from utils.templates import info, success, error
 from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
+from utils.ui import LanguageSelectView
 
 resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
+
+CURRENT_LANGUAGE_DEFAULT = True
+
+
+async def _select_language(interaction: Interaction, language: Language, send: callable):
+    user = await get_user(interaction.user.id)
+    user.locale = language.code
+    await set_user(user)
+
+    loc = Localization(interaction.locale, resources)
+
+    await send(await loc.format_value_or_translate("updated", {"language": loc.language.name}),
+               ephemeral=True)
+
+
+class ChatLanguageSelectView(LanguageSelectView):
+    """
+    A view to select a language for the chat
+    """
+
+    def __init__(self, interaction: Interaction):
+        loc = Localization(interaction.locale, resources)
+        super().__init__(loc.format_value_or_translate("set-language-select"), interaction.locale, max_values=1)
+
+    async def callback(self, interaction: Interaction):
+        await super().callback(interaction)
+
+        send = await defer_response(interaction)
+
+        await _select_language(interaction, Language(list(self.selected)[0]), send)
+
+        self.clear_items()
+        self.stop()
 
 
 class Chat(app_commands.Group):
@@ -99,22 +132,23 @@ class Chat(app_commands.Group):
 
     @app_commands.command(name=default_loc.format_value("set-language-name"),
                           description=default_loc.format_value("set-language-description"))
-    @app_commands.choices(language=[Choice(name=default_loc.format_value(code), value=code) for code in languages])
-    @app_commands.describe(language=default_loc.format_value("set-language-language-description"))
-    async def set_language(self, interaction: Interaction, language: str = None):
+    @app_commands.describe(
+        current_language=default_loc.format_value(
+            "set-language-current-language-description",
+            {"set-language-current-language-description-default": str(CURRENT_LANGUAGE_DEFAULT)}
+        )
+    )
+    async def set_language(self, interaction: Interaction, current_language: bool = CURRENT_LANGUAGE_DEFAULT):
         """
         Set the chat language to the current discord language
         """
         send = await defer_response(interaction)
 
-        user = await get_user(interaction.user.id)
-        user.locale = language if language is not None else str(interaction.locale)
-        await set_user(user)
+        if current_language:
+            await _select_language(interaction, Language(interaction.locale), send)
+            return
 
-        loc = Localization(interaction.locale, resources)
-
-        await send(await loc.format_value_or_translate("updated", {"language": loc.language.name}),
-                   ephemeral=True)
+        await send(view=await ChatLanguageSelectView(interaction).init(), ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-name"),
                           description=default_loc.format_value("clear-description",
@@ -129,7 +163,7 @@ class Chat(app_commands.Group):
         if user.chat_history_id is None:
             await interaction.response.send_message(
                 error(await loc.format_value_or_translate("no-history",
-                                                    {"name": interaction.client.user.display_name})),
+                                                          {"name": interaction.client.user.display_name})),
                 ephemeral=True)
             return
 
@@ -148,4 +182,5 @@ class Chat(app_commands.Group):
 
         await interaction.followup.send(success(await loc.format_value_or_translate("deleted")), ephemeral=True)
 
+    set_language.extras["set-language-current-language-description-default"] = CURRENT_LANGUAGE_DEFAULT
     clear.extras["clear-description-name"] = BOT_NAME

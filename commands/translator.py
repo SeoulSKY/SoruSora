@@ -6,14 +6,15 @@ from typing import Iterator
 
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale, ChannelType
 from discord.ext.commands import Bot
-from discord.ui import View, ChannelSelect
+from discord.ui import ChannelSelect
 
 from mongo.channel import get_channel, set_channel
 from mongo.user import get_user, set_user
-from utils import templates, ui, defer_response
-from utils.constants import ErrorCode, Limit, languages
+from utils import defer_response, templates
+from utils.constants import ErrorCode, Limit
 from utils.templates import success
 from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator
+from utils.ui import LanguageSelectView
 
 resources = [os.path.join("commands", "translator.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
@@ -21,7 +22,8 @@ default_loc = Localization(DEFAULT_LANGUAGE, resources)
 ALL_CHANNELS_DEFAULT = True
 
 
-class ChannelLanguageSelect(ui.LanguageSelect):
+class ChannelLanguageSelectView(LanguageSelectView):
+
     """
     Select UI to select available languages for a channel
     """
@@ -31,16 +33,19 @@ class ChannelLanguageSelect(ui.LanguageSelect):
         super().__init__(self.loc.format_value_or_translate("select-channel-languages"), locale)
 
     async def callback(self, interaction: Interaction):
+        await super().callback(interaction)
+
         send = await defer_response(interaction)
 
         config = await get_channel(interaction.channel_id)
-        config.translate_to = self.values
+        config.translate_to = list(self.selected)
         await set_channel(config)
 
         await send(success(await self.loc.format_value_or_translate("channel-languages-updated")), ephemeral=True)
 
 
-class UserLanguageSelect(ui.LanguageSelect):
+class UserLanguageSelectView(LanguageSelectView):
+    # pylint: disable=too-few-public-methods
     """
     Select UI to select available languages for a user
     """
@@ -50,10 +55,12 @@ class UserLanguageSelect(ui.LanguageSelect):
         super().__init__(self.loc.format_value_or_translate("select-languages"), locale)
 
     async def callback(self, interaction: Interaction):
+        await super().callback(interaction)
+
         send = await defer_response(interaction)
 
         config = await get_user(interaction.user.id)
-        config.translate_to = self.values
+        config.translate_to = list(self.selected)
         await set_user(config)
 
         await send(success(await self.loc.format_value_or_translate("languages-updated")), ephemeral=True)
@@ -113,15 +120,6 @@ class Translator(app_commands.Group):
             ):
                 return
 
-            failed = False
-            for code in usr.translate_to:
-                if code not in languages:
-                    usr.translate_to.remove(code)
-                    failed = True
-
-            if failed:
-                await set_user(usr)
-
             if len(usr.translate_to) == 0:
                 return
 
@@ -138,14 +136,14 @@ class Translator(app_commands.Group):
             if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
                 return
 
-            failed = False
-            for code in chan.translate_to:
-                if code not in languages:
-                    chan.translate_to.remove(code)
-                    failed = True
+            # failed = False
+            # for code in chan.translate_to:
+            #     if code not in languages:
+            #         chan.translate_to.remove(code)
+            #         failed = True
 
-            if failed:
-                await set_channel(chan)
+            # if failed:
+            #     await set_channel(chan)
 
             if len(chan.translate_to) == 0:
                 return
@@ -210,7 +208,7 @@ class Translator(app_commands.Group):
 
         send = await defer_response(interaction)
 
-        view = View().add_item(await UserLanguageSelect(interaction.locale).init())
+        view = await UserLanguageSelectView(interaction.locale).init()
         if all_channels:
             user = await get_user(interaction.user.id)
             user.translate_in = []
@@ -230,7 +228,7 @@ class Translator(app_commands.Group):
 
         send = await defer_response(interaction)
 
-        await send(view=View().add_item(await ChannelLanguageSelect(interaction.locale).init()), ephemeral=True)
+        await send(view=await ChannelLanguageSelectView(interaction.locale).init(), ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-languages-name"),
                           description=default_loc.format_value("clear-languages-description"))

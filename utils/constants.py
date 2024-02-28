@@ -59,32 +59,6 @@ class Limit(Enum):
         return self.value
 
 
-languages = {
-    "zh-CN",
-    "zh-TW",
-    "nl",
-    "en",
-    "tl",
-    "fr",
-    "de",
-    "el",
-    "hi",
-    "id",
-    "it",
-    "ja",
-    "ko",
-    "ms",
-    "pl",
-    "pt",
-    "ro",
-    "ru",
-    "es",
-    "sv",
-    "th",
-    "uk",
-}
-
-
 BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
 

@@ -87,7 +87,7 @@ async def help_(interaction: Interaction):
         else:
             text += f"* `{await interaction.translate(context_menu.name)}`\n"
 
-    await send(text, view=View().add_item(await HelpSelect(interaction).init()))
+    await send(text, view=View().add_item(await HelpSelect(interaction).init()), ephemeral=True)
 
 
 help_.extras["help-description-name"] = BOT_NAME

@@ -53,7 +53,6 @@ class Language:
         """
         Trim the territory from the language code
 
-        :param code: The language code to trim
         :return: The language without the territory
         """
 
@@ -190,6 +189,15 @@ class BaseTranslator(ABC):
 
         return language in self._languages
 
+    def get_supported_languages(self) -> Iterable[Language]:
+        """
+        Get the supported languages of the translator
+
+        :return: The supported languages of the translator
+        """
+
+        return self._languages
+
     def is_code_supported(self, code: str) -> bool:
         """
         Check if the language code is supported by the translator
@@ -266,6 +274,7 @@ class ArgosTranslator(BaseTranslator):
     """
 
     _CODE_ALIAS = {
+        "zh": "zh-CN",
         "zt": "zh-TW",
     }
 
@@ -911,18 +920,19 @@ class CommandTranslator(discord.app_commands.Translator):
                 texts.append(context_menu.name)
                 is_name.append(False)
 
-            for i, text in enumerate(texts):
+            target_texts = []
+            target_is_name = []
+            for text, name in zip(texts, is_name):
                 if Cache.has(language, text):
-                    texts[i], texts[-1] = texts[-1], texts[i]
-                    is_name[i], is_name[-1] = is_name[-1], is_name[i]
+                    continue
 
-                    texts.pop()
-                    is_name.pop()
+                target_texts.append(text)
+                target_is_name.append(name)
 
-            if len(texts) == 0:
+            if len(target_texts) == 0:
                 continue
 
-            tasks.append(asyncio.create_task(translate_texts(language, texts, is_name)))
+            tasks.append(asyncio.create_task(translate_texts(language, target_texts, target_is_name)))
             pbar.total += 1
 
         for task in asyncio.as_completed(tasks):

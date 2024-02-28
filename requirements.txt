@@ -1,6 +1,5 @@
 deep-translator==1.11.4
 discord.py==2.3.2
-firebase-admin==6.2.0
 imageio==2.31.1
 imageio-ffmpeg==0.4.8
 langid==1.1.6

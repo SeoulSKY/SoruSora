@@ -3,21 +3,22 @@ Provides list of ui elements
 
 classes:
     Confirm
-    LanguageSelect
+    LanguageSelectView
+    CommandSelect
 """
 import os
-from typing import Union, Optional, Type, Coroutine, Any
+from typing import Union, Optional, Type, Coroutine, Any, Iterable
 
-import discord
-from discord import SelectOption, Interaction, Locale
+from discord import SelectOption, Interaction, Locale, ButtonStyle, Button
 from discord.app_commands import Command, Group
+from discord.ui import Select, View, button
 
-from utils.constants import languages
+from utils.constants import Limit
 from utils.templates import info, success
-from utils.translator import Localization, Language, DEFAULT_LANGUAGE
+from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator
 
 
-class Confirm(discord.ui.View):
+class Confirm(View):
     """
     Buttons for confirmation
     """
@@ -46,8 +47,8 @@ class Confirm(discord.ui.View):
         False: The user cancelled
         """
 
-    @discord.ui.button(style=discord.ButtonStyle.green)
-    async def confirm(self, interaction: discord.Interaction, _: discord.ui.Button):
+    @button(style=ButtonStyle.green)
+    async def confirm(self, interaction: Interaction, _: Button):
         """
         Confirm when pressed
         """
@@ -56,8 +57,8 @@ class Confirm(discord.ui.View):
         self.stop()
         self.clear_items()
 
-    @discord.ui.button(style=discord.ButtonStyle.grey)
-    async def cancel(self, interaction: discord.Interaction, _: discord.ui.Button):
+    @button(style=ButtonStyle.grey)
+    async def cancel(self, interaction: Interaction, _: Button):
         """
         Cancel when pressed
         """
@@ -67,18 +68,20 @@ class Confirm(discord.ui.View):
         self.clear_items()
 
 
-class LanguageSelect(discord.ui.Select):
+class LanguageSelectView(View):
     """
     Select UI to select available languages for a user
     """
 
     def __init__(self, placeholder: Coroutine[Any, Any, str], locale: Locale, max_values: int = None, **kwargs):
+        super().__init__()
+
         self._placeholder = placeholder
         self._locale = locale
         self._max_values = max_values
         self._kwargs = kwargs
 
-        super().__init__(placeholder="Not initialized. Call init() method first")
+        self._selected = set()
 
     async def init(self):
         """
@@ -87,18 +90,44 @@ class LanguageSelect(discord.ui.Select):
 
         loc = Localization(self._locale)
 
-        options = [SelectOption(label=await loc.format_value_or_translate(code), value=code) for code in languages]
-        super().__init__(placeholder=await self._placeholder, max_values=len(options),
-                         options=sorted(options, key=lambda option: option.label.lower()),
-                         **self._kwargs)
+        languages = get_translator().get_supported_languages()
+        placeholder = await self._placeholder
+
+        all_options = sorted([SelectOption(label=await loc.format_value_or_translate(lang.code), value=lang.code)
+                              for lang in languages], key=lambda x: x.label.lower())
+
+        for i in range(0, len(all_options), int(Limit.SELECT_MAX)):
+            options = all_options[i:i + int(Limit.SELECT_MAX)]
+            select = Select(
+                placeholder=placeholder,
+                max_values=min(len(options), int(Limit.SELECT_MAX)) if self._max_values is None else self._max_values,
+                options=options,
+                **self._kwargs
+            )
+            select.callback = self.callback
+            self.add_item(select)
 
         return self
 
-    async def callback(self, interaction: Interaction):
-        raise NotImplementedError("This method should be overridden in a subclass")
+    async def callback(self, _: Interaction):
+        """
+        Callback for the select
+        """
+
+        select: Select
+        for select in self.children:
+            self._selected.update(select.values)
+
+    @property
+    def selected(self) -> Iterable[str]:
+        """
+        Get the selected languages
+        """
+
+        return self._selected
 
 
-class CommandSelect(discord.ui.Select):
+class CommandSelect(Select):
     """
     Select UI to select a command
     """
