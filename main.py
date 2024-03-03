@@ -103,6 +103,8 @@ class SoruSora(Bot):
         Executed when the bot becomes ready
         """
 
+        await self.change_presence(activity=discord.CustomActivity(name="Type /help"))
+
         logging.info("Running in %s environment", "development" if IS_DEV_ENV else "production")
         logging.info("Logged in as %s (ID: %d)", self.user, self.user.id)
 
