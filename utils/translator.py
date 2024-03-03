@@ -12,6 +12,7 @@ Classes:
 
 Functions:
     get_resource
+    get_translator
 """
 
 import asyncio
@@ -28,6 +29,7 @@ import argostranslate.translate
 import babel
 import discord
 from deep_translator import GoogleTranslator as Google
+from deep_translator.exceptions import TooManyRequests
 from discord import Locale, app_commands, AppCommandType
 from discord.app_commands import locale_str, TranslationContextTypes, Command
 from discord.ext.commands import Bot
@@ -282,13 +284,13 @@ class ArgosTranslator(BaseTranslator):
 
     _LANGUAGES = None
 
-    argostranslate.package.update_package_index()
-    available_packages = argostranslate.package.get_available_packages()
-    for package in tqdm(available_packages, "Installing Argos Translate packages", unit="package"):
-        argostranslate.package.install_from_path(package.download())
-
     def __init__(self):
         if ArgosTranslator._LANGUAGES is None:
+            argostranslate.package.update_package_index()
+            available_packages = argostranslate.package.get_available_packages()
+            for package in tqdm(available_packages, "Installing Argos Translate packages", unit="package"):
+                argostranslate.package.install_from_path(package.download())
+
             ArgosTranslator._LANGUAGES = [
                 Language(ArgosTranslator._CODE_ALIAS[lang.code]
                          if lang.code in ArgosTranslator._CODE_ALIAS else lang.code)
@@ -340,27 +342,51 @@ class GoogleTranslator(BaseTranslator):
     def __init__(self):
         super().__init__(self._LANGUAGES)
 
+        self._fallback_translator = ArgosTranslator()
+
+    def get_supported_languages(self) -> Iterable[Language]:
+        return self._languages.intersection(self._fallback_translator.get_supported_languages())
+
+    def is_code_supported(self, code: str) -> bool:
+        return super().is_code_supported(code) and self._fallback_translator.is_code_supported(code)
+
+    def is_locale_supported(self, locale: Locale) -> bool:
+        return super().is_locale_supported(locale) and self._fallback_translator.is_locale_supported(locale)
+
+    def is_language_supported(self, language: Language) -> bool:
+        return super().is_language_supported(language) and self._fallback_translator.is_language_supported(language)
+
     def _language_to_code(self, language: Language) -> str:
         return language.code if self.is_language_supported(language) else language.trim_territory().code
 
     async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
-        return Translation(
-            source,
-            target,
-            text,
-            await asyncio.to_thread(
-                Google(self._language_to_code(source), self._language_to_code(target)).translate,
-                text
+        try:
+            return Translation(
+                source,
+                target,
+                text,
+                await asyncio.to_thread(
+                    Google(self._language_to_code(source), self._language_to_code(target)).translate,
+                    text
+                )
             )
-        )
+        except TooManyRequests:
+            return await self._fallback_translator.translate(text, target, source)
 
     async def translate_texts(self, texts: Iterable[str], target: Language, source: Language = DEFAULT_LANGUAGE
                               ) -> AsyncGenerator[Translation, Any]:
         texts = list(texts)
-        translations = await asyncio.to_thread(
-            Google(self._language_to_code(source), self._language_to_code(target)).translate_batch,
-            texts
-        )
+        try:
+            translations = await asyncio.to_thread(
+                Google(self._language_to_code(source), self._language_to_code(target)).translate_batch,
+                texts
+            )
+        except TooManyRequests:
+            async for translation in self._fallback_translator.translate_texts(texts, target, source):
+                yield translation
+
+            return
+
         for i, translation in enumerate(translations):
             yield Translation(source, target, texts[i], translation)
 
@@ -370,7 +396,7 @@ def get_translator() -> BaseTranslator:
     Create a translator
     """
 
-    return ArgosTranslator()
+    return GoogleTranslator()
 
 
 class Cache:

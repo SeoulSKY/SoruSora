@@ -136,15 +136,6 @@ class Translator(app_commands.Group):
             if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
                 return
 
-            # failed = False
-            # for code in chan.translate_to:
-            #     if code not in languages:
-            #         chan.translate_to.remove(code)
-            #         failed = True
-
-            # if failed:
-            #     await set_channel(chan)
-
             if len(chan.translate_to) == 0:
                 return
 

@@ -78,27 +78,19 @@ class Chat(app_commands.Group):
             async with message.channel.typing():
                 user = await get_user(message.author.id)
 
-                if user.chat_history_id is None:
-                    try:
-                        await self._create_new_chat(user, message.author.display_name)
-                    except IOError:
-                        await message.reply(await self._timeout_message())
-                        return
-                    except RuntimeError as ex:
-                        self._logger.exception(ex)
-                        await message.reply(await self._error_message())
-                        return
-
                 try:
+                    if user.chat_history_id is None:
+                        await self._create_new_chat(user, message.author.display_name)
                     content = await self._send_message(user,
                                                        message.content.removeprefix(self.bot.user.mention).strip())
+                    await message.reply(content)
                 except IOError:
-                    content = self._timeout_message()
-                except RuntimeError as ex:
-                    self._logger.exception(ex)
-                    content = self._error_message()
-
-                await message.reply(content)
+                    await message.reply(await self._timeout_message())
+                except Exception as ex:
+                    await message.reply(error(await default_loc.format_value_or_translate("error",
+                                                                                      {"link": BUG_REPORT_URL})),
+                                        suppress_embeds=True)
+                    raise RuntimeError("Failed to send a message to AI") from ex
 
         self.bot.add_listener(on_message)
 
@@ -111,7 +103,7 @@ class Chat(app_commands.Group):
     async def _error_message() -> str:
         return error(await default_loc.format_value_or_translate("error", {"link": BUG_REPORT_URL}))
 
-    async def _create_new_chat(self, user: User, user_name: str):
+    async def _create_new_chat(self, user: User, user_name: str) -> None:
         response = await self._client.chat.new_chat(os.getenv("CAI_CHAR_ID"))
         user.chat_history_id = response["external_id"]
 
