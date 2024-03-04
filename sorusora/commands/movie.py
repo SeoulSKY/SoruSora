@@ -25,7 +25,7 @@ DESKTOP_CACHE_PATH = constants.CACHE_DIR / "movie" / "desktop"
 Path to the cache directory for desktop
 """
 
-MOBILE_CACHE_PATH = constants.CACHE_DIR / "movie" /"mobile"
+MOBILE_CACHE_PATH = constants.CACHE_DIR / "movie" / "mobile"
 """
 Path to the cache directory for mobile
 """

@@ -31,7 +31,7 @@ class TempBot(Bot):
 
 
 if __name__ == "__main__":
-    load_dotenv()
+    assert load_dotenv()
 
     bot = TempBot(command_prefix="!", intents=discord.Intents.all())
     bot.run(os.getenv("BOT_TOKEN"))

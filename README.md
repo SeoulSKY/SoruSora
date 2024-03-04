@@ -38,22 +38,20 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 | CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://pycai.gitbook.io/welcome/api/values) to learn how to acquire it.                                                                          |
 | CAI_TGT                              | ID for the target in the Character AI. Its value starts with `internal_id:`. Run `scripts/cai_tgt.py` to get it.                                                                                               |
 
-
 ### Running with [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/install/) (Recommended)
 
 Run the following command:
 
-```
-docker-compose pull && docker-compose up
+```bash
+docker-compose pull && docker-compose up -d
 ```
 
 Optionally, you can add `-d` flag to run the docker container in detached mode.
 
-
 If you want to build the docker image by yourself and run it, use the following commands:
 
-```
-docker-compose -f docker-compose-dev.yml up --build
+```bash
+docker-compose -f docker-compose-dev.yml up --build -d
 ```
 
 ### Running without [Docker](https://www.docker.com)

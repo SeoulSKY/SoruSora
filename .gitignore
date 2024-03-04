@@ -1,10 +1,10 @@
 /venv/
-.idea
+**.idea
 /.env
 **__pycache__
 **.DS_Store
-**.pytest_cache/
-/logs/
-/cache/
+**.pytest_cache
+**logs/
+**cache/
 
 service_account.json
