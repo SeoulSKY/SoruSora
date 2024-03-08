@@ -25,7 +25,7 @@ Localizing the application is easy and __doesn't require coding__. Follow these 
 
 1. Go to `sorusora/locales`, copy the `en` folder and paste it (actually, you can copy any folders other than `en` if you would like).
 2. Rename the copied folder with one of the [two-letter ISO 639 codes](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes). For Chinese, it will be `zh-CN` for `Chinese (Simplified)` and `zh-TW` for `Chinese (Traditional)`
-3. Translate the sentences after the `=` signs. The expression that looks like `{ $link }` will be replaced with the actual value when the application runs. Place it anywhere in the sentence where it makes sense.
+3. For each `.ftl` file in the new folder, translate the sentences after the `=` signs. The expression that looks like `{ $link }` will be replaced with the actual value when the application runs. Place it anywhere in the sentence where it makes sense.
 4. For each folder in `sorusora/docs`, navigate to the deepest folder where you can find `.md` files. Add a new file named `<two-letter ISO 639 code>.md` and translate what's written in `en.md` (or any other `.md` file).
 
 ## Report bugs using Github's issues
