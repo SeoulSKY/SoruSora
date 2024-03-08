@@ -16,5 +16,3 @@ rules:
   quotes:
     - error
     - double
-ignorePatterns:
-  - node_modules
