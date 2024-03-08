@@ -29,4 +29,4 @@ jobs:
       - name: Run ESLint
         run: |
           cd $ROOT_PATH
-          npm run lint
+          npm run lint -- --ignore-pattern node_modules/
