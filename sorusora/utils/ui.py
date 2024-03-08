@@ -13,6 +13,7 @@ from discord import SelectOption, Interaction, Locale, ButtonStyle, Button
 from discord.app_commands import Command, Group
 from discord.ui import Select, View, button
 
+from utils import defer_response
 from utils.constants import Limit
 from utils.templates import info, success
 from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator
@@ -23,22 +24,20 @@ class Confirm(View):
     Buttons for confirmation
     """
 
-    def __init__(self, confirmed_message: str, cancelled_message: str, locale: Locale):
+    def __init__(self, confirmed_message: str, cancelled_message: str, locale: Locale = DEFAULT_LANGUAGE):
         """
         View to get a confirmation from a user. When the confirm button is pressed, set the is_confirmed to `True` and
         stop the View from listening to more input
         :param confirmed_message: A message to send when the user confirmed
         :param cancelled_message: A message to send when the user cancelled
         """
-        super().__init__()
 
-        self._loc = Localization(locale, [os.path.join("utils", "ui.ftl")])
+        super().__init__()
 
         self._confirmed_message = success(confirmed_message)
         self._cancelled_message = info(cancelled_message)
 
-        self.confirm.label = self._loc.format_value_or_translate("confirm")
-        self.cancel.label = self._loc.format_value_or_translate("cancel")
+        self._locale = locale
 
         self.is_confirmed = None
         """
@@ -47,13 +46,28 @@ class Confirm(View):
         False: The user cancelled
         """
 
+    async def init(self) -> "Confirm":
+        """
+        Initialize the view
+        """
+
+        loc = Localization(self._locale, [os.path.join("utils", "ui.ftl")])
+
+        self.confirm.label = await loc.format_value_or_translate("confirm")
+        self.cancel.label = await loc.format_value_or_translate("cancel")
+
+        return self
+
     @button(style=ButtonStyle.green)
     async def confirm(self, interaction: Interaction, _: Button):
         """
         Confirm when pressed
         """
+
+        send = await defer_response(interaction)
+
         self.is_confirmed = True
-        await interaction.response.send_message(self._confirmed_message, ephemeral=True)
+        await send(self._confirmed_message, ephemeral=True)
         self.stop()
         self.clear_items()
 
@@ -62,8 +76,11 @@ class Confirm(View):
         """
         Cancel when pressed
         """
+
+        send = await defer_response(interaction)
+
         self.is_confirmed = False
-        await interaction.response.send_message(self._cancelled_message, ephemeral=True)
+        await send(self._cancelled_message, ephemeral=True)
         self.stop()
         self.clear_items()
 

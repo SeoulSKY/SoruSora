@@ -149,17 +149,17 @@ class LinkPlayView(discord.ui.View):
 
             lead_user_mention = embed.fields[0].value
             if user.mention == lead_user_mention:
-                confirm_view = ui.Confirm(await loc.format_value_or_translate("deleted"),
-                                          await loc.format_value_or_translate("cancelled"), interaction.locale)
+                confirm_view = await ui.Confirm(
+                    await loc.format_value_or_translate("deleted"),
+                    await loc.format_value_or_translate("cancelled"),
+                    interaction.locale
+                ).init()
                 await send(warning(await loc.format_value_or_translate("delete-confirm")), view=confirm_view,
                            ephemeral=True)
                 await confirm_view.wait()
 
                 if confirm_view.is_confirmed:
                     await interaction.message.delete()
-
-                # delete confirmation message
-                await interaction.delete_original_response()
             else:
                 await self._alert_others(interaction.guild, embed, user,
                                          info(await loc.format_value_or_translate("left-alert", {

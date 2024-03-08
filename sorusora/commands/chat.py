@@ -29,7 +29,7 @@ async def _select_language(interaction: Interaction, language: Language, send: c
 
     loc = Localization(interaction.locale, resources)
 
-    await send(await loc.format_value_or_translate("updated", {"language": language.name}),
+    await send(success(await loc.format_value_or_translate("updated", {"language": language.name})),
                ephemeral=True)
 
 
@@ -90,7 +90,7 @@ class Chat(app_commands.Group):
                     loc = Localization(Language(user.locale) if user.locale is not None else DEFAULT_LANGUAGE,
                                        resources)
                     await message.reply(error(await loc.format_value_or_translate("error",
-                                                                                      {"link": BUG_REPORT_URL})),
+                                                                                  {"link": BUG_REPORT_URL})),
                                         suppress_embeds=True)
                     raise RuntimeError("Failed to send a message to AI") from ex
 
