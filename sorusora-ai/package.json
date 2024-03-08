@@ -8,7 +8,7 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint . --ext .ts --ignore-pattern dist/ --ignore-pattern node_modules/",
     "lint-and-fix": "eslint . --ext .ts --fix"
   },
   "keywords": [],
