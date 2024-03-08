@@ -12,6 +12,12 @@ services:
     env_file:
       - .env
 
+  sorusora-ai:
+    build: ./sorusora-ai
+    container_name: sorusora-ai
+    env_file:
+      - .env
+
   mongo:
     image: mongo:7.0.5
     container_name: mongo

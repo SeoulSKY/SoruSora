@@ -1,9 +1,14 @@
 name: Pylint
 
-on: [push]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
 
 jobs:
-  build:
+  pylint:
     runs-on: ubuntu-latest
     env:
       ROOT_PATH: sorusora

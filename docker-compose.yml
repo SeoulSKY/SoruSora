@@ -12,6 +12,12 @@ services:
     env_file:
       - .env
 
+  sorusora-ai:
+    image: ghcr.io/seoulsky/sorusora-ai:latest
+    container_name: sorusora-ai
+    env_file:
+      - .env
+
   mongo:
     image: mongo:7.0.5
     container_name: mongo
