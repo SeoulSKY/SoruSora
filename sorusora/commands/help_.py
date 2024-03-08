@@ -7,7 +7,6 @@ from discord import app_commands, Interaction, AppCommandType
 from discord.ui import View
 
 from commands.movie import Movie
-from main import bot
 from utils import defer_response
 from utils.constants import BOT_NAME, HELP_DIR
 from utils.translator import Cache
@@ -51,6 +50,9 @@ async def help_(interaction: Interaction):
     """
     Show the help message
     """
+
+    # pylint: disable=import-outside-toplevel
+    from main import bot
 
     send = await defer_response(interaction)
 
