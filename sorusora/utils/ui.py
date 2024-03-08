@@ -37,8 +37,8 @@ class Confirm(View):
         self._confirmed_message = success(confirmed_message)
         self._cancelled_message = info(cancelled_message)
 
-        self.confirm.label = self._loc.format_value("confirm")
-        self.cancel.label = self._loc.format_value("cancel")
+        self.confirm.label = self._loc.format_value_or_translate("confirm")
+        self.cancel.label = self._loc.format_value_or_translate("cancel")
 
         self.is_confirmed = None
         """
