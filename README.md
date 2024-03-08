@@ -46,8 +46,6 @@ Run the following command:
 docker-compose pull && docker-compose up -d
 ```
 
-Optionally, you can add `-d` flag to run the docker container in detached mode.
-
 If you want to build the docker image by yourself and run it, use the following commands:
 
 ```bash
@@ -66,7 +64,7 @@ docker-compose -f docker-compose-dev.yml up --build -d
 pyenv install 3.11.7
 ```
 
-* Setup and activate virtual environment
+* Setup and activate the virtual environment
 
 ```bash
 pyenv virtualenv 3.11.7 sorusora
