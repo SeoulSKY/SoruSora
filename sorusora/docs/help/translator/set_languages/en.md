@@ -1,4 +1,4 @@
-# /translator set_language
+# /translator set_languages
 
 Set languages to be translated for your messages.
 

@@ -1,3 +1,3 @@
-# /translator clear_channel_language（僅管理員可用）
+# /翻譯訊息 清除頻道翻譯
 
 解除翻譯此頻道的訊息(SoruSora將不再翻譯此頻道的訊息)

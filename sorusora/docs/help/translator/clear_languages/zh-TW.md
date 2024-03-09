@@ -1,3 +1,3 @@
-# /translator clear_languages
+# /翻譯訊息 清除翻譯
 
 解除對於您的訊息的翻譯(SoruSora將不再翻譯您的訊息)

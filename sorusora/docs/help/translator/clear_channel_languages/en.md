@@ -1,4 +1,4 @@
-# /translator clear_channel_language
+# /translator clear_channel_languages
 
 Clear languages to be translated for this channel.
 

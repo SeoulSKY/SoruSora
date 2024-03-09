@@ -41,6 +41,7 @@ th = Thai
 tl = Filipino
 tr = Turkish
 uk = Ukrainian
+ur = Urdu
 vi = Vietnamese
 zh-CN = Chinese (Simplified)
 zh-TW = Chinese (Traditional)
