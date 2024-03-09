@@ -14,4 +14,7 @@ async def test_setup_hook():
     Test setup_hook() of the bot
     """
 
-    await bot.login(os.getenv("BOT_TOKEN"))
+    token = os.getenv("BOT_TOKEN")
+    assert token is not None and len(token) != 0
+
+    await bot.login(token)
