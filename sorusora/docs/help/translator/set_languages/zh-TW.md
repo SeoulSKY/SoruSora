@@ -1,14 +1,11 @@
 # /translator set_language
 
-Set languages to be translated for your messages.
-
-When this command is used, it will send a dropdown menu to this channel. You can select the languages you want to translate your messages into. You can select multiple languages.
-
-For every message you send, SoruSora will translate the message into the selected languages and reply with the translations.
+設定要翻譯此頻道的語言。使用此命令時，它會發送下拉選單到此頻道。您可以選擇要翻譯的語言(可以選擇多個)。
+對於此頻道中發送的每條消息，SoruSora將把消息翻譯成所選的語言並回覆翻譯。
 
 ## Usages
-* If you want to translate your messages in specific channels, set `all_channels` to `False`. Then, there will be an additional dropdown menu to select the channels you want to translate your messages in.
+* 若要只在特定頻道翻譯您的訊息，請將 `所有頻道` 設為 `False`。並在下拉選單來選擇您想要翻譯訊息的頻道。
 
 ## Parameters
 
-* `all_channels` (Optional): Translate your messages in all channels. Defaults to `True`.
+* `所有頻道` (可選): 在所有頻道翻譯您的訊息。預設為 `True`。

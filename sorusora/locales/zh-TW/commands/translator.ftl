@@ -1,32 +1,32 @@
 # Commands
-translator-name = translator
-translator-description = Commands related to translation
+translator-name = 翻譯訊息
+translator-description = 翻譯您的訊息到其他語言
 
-set-languages-name = set_languages
-set-languages-description = Set languages to be translated for your messages
-set-languages-all-channels-name = all_channels
-set-languages-all-channels-description = Set languages to be translated for your messages in all channels. Default is { $set-languages-all-channels-description-default }
+set-languages-name = 設定語言
+set-languages-description = 設定要翻譯訊息的語言
+set-languages-all-channels-name = 所有頻道
+set-languages-all-channels-description = 應用至所有頻道，預設為 { $set-languages-all-channels-description-default }
 
-set-channel-languages-name = set_channel_languages
-set-channel-languages-description = [Admins only] Set languages to be translated for this channel
+set-channel-languages-name = 設定頻道語言
+set-channel-languages-description = [管理員專用] 設定要翻譯此頻道訊息的語言
 
-clear-languages-name = clear_languages
-clear-languages-description = Clear languages to be translated for your messages
+clear-languages-name = 清除翻譯
+clear-languages-description = 清除要翻譯訊息的語言
 
-clear-channel-languages-name = clear_channel_languages
-clear-channel-languages-description = [Admins only] Clear languages to be translated for this channel
+clear-channel-languages-name = 清除頻道翻譯
+clear-channel-languages-description = [管理員專用] 清除要翻譯此頻道訊息的語言
 
 # Select UI
-select-languages = Select the languages you want to translate your messages to
-select-channels = Select the channels you want to translate messages in
-select-channel-languages = Select the languages you want to translate messages in this channel to
+select-languages = 選擇要翻譯的語言
+select-channels = 選擇要翻譯訊息的頻道
+select-channel-languages = 選擇要翻譯此頻道訊息的語言
 
 # Successes
-languages-updated = Your languages to be translated have been updated
-channel-languages-updated = This channel's languages to be translated have been updated
-languages-cleared = Your languages to be translated have been cleared
-channel-languages-cleared = This channel's languages to be translated have been cleared
+languages-updated = 成功更新翻譯
+channel-languages-updated = 成功更新頻道翻譯
+languages-cleared = 成功清除翻譯
+channel-languages-cleared = 成功清除頻道翻譯
 
 # Errors
-invalid-user-settings = Your languages settings are invalid. Please set them again
-invalid-channel-settings = This channel's languages settings are invalid. Please set them again
+invalid-user-settings = 語言設定無效。請重新設定
+invalid-channel-settings = 此頻道的語言設定無效。請重新設定

@@ -2,9 +2,9 @@
 arcaea-name = arcaea
 arcaea-description = Arcaea（韻律源點）的相關指令
 linkplay-name = linkplay
-linkplay-description = 建立嵌入式訊息以邀請他人進入你的Link Play房間. 該訊息將保留 { $linkplay-description-duration } 分鐘。
+linkplay-description = 建立嵌入式訊息以邀請他人進入您的Link Play房間. 該訊息將保留 { $linkplay-description-duration } 分鐘。
 linkplay-roomcode-name = 房間號碼
-linkplay-roomcode-description = 你的Link Play房間號碼
+linkplay-roomcode-description = 您的Link Play房間號碼
 
 # Embed
 title = Arcaea Link Play
@@ -32,6 +32,6 @@ left-alert = { $user } 離開了Link Play
 delete-confirm = 即將刪除Link Play房間。確定要繼續嗎？
 
 # Errors
-already-joined = 你已經加入了Link Play
+already-joined = 您已經加入了Link Play
 full = 房間已滿
-not-joined = 你並未加入Link Play
+not-joined = 您並未加入Link Play

@@ -1,9 +1,4 @@
-# /translator set_channel_languages (僅限管理員)
+# /translator set_channel_languages (僅管理員可用)
 
-設定要翻譯此頻道的語言。
-
-When this command is used, it will send a dropdown menu to this channel. You can select the languages you want to translate messages into. You can select multiple languages.
-
-For every message sent in this channel, SoruSora will translate the message into the selected languages and reply with the translations.
-
-This command is only available for server admins.
+設定要翻譯此頻道的語言。使用此命令時，它會發送下拉選單到此頻道。您可以選擇要翻譯的語言(可以選擇多個)。
+對於此頻道中發送的每條消息，SoruSora將把消息翻譯成所選的語言並回覆翻譯。

@@ -1,15 +1,15 @@
 # Commands
-movie-name = movie
-movie-description = Commands related to Movie
+movie-name = 影片
+movie-description = 影片相關指令
 
-play-name = play
-play-description= Play a movie
-play-title-name = title
-play-title-description = Title of the movie to play
+play-name = 播放
+play-description= 播放影片
+play-title-name = 標題
+play-title-description = 影片標題
 play-fps-name = fps
-play-fps-description = Number of frames to display per second. Range from { $play-fps-description-min } to { $play-fps-description-max } (inclusive). Default value is { $default }
-play-original-speed-name = original_speed
-play-original-speed-description = Play the movie at the original speed by skipping some frames. Default value is { $play-original-speed-description-default }
+play-fps-description = 每秒顯示的幀數。範圍從 { $play-fps-description-min } 到 { $play-fps-description-max }。預設為 { $default }
+play-original-speed-name = 原始速度
+play-original-speed-description = 透過跳過一些幀來以原始速度播放影片。預設值為 { $play-original-speed-description-default }
 
 # Choices
 bad_apple = Bad Apple!!

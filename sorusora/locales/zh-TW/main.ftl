@@ -1,1 +1,1 @@
-missing-permission = 你沒有權限進行這個操作
+missing-permission = 您沒有權限進行這個操作

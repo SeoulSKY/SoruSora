@@ -1,11 +1,11 @@
 # Commands
-help-name = help
-help-description = Teach you how to use { $help-description-name }
+help-name = 幫助
+help-description = { $help-description-name } 指令列表
 
 # Texts
-commands = Commands
+commands = 可用指令
 context-menus = 指令選單
-context-menus-description = Commands that can be used without typing anything. To use them,
-context-menus-description-pc = hover the mouse cursor on a message and navigate to `More ➜ Apps`.
-context-menus-description-mobile = long press on a message and navigate to `Apps`.
-select-command = Select a command to learn more about it.
+context-menus-description = 您可以不用輸入任何指令，只需透過
+context-menus-description-pc = 滑鼠右鍵點擊訊息並選擇 `應用程式`
+context-menus-description-mobile = 長按訊息並選擇 `應用程式`
+select-command = 選擇一個指令以了解更多。
