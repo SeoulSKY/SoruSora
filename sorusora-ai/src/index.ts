@@ -1,4 +1,7 @@
 import dotenv from "dotenv";
+import {Server, ServerCredentials} from "@grpc/grpc-js";
+import {GreeterService} from "./protos/hello_grpc_pb";
+import {GreeterServer} from "./hello";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const CharacterAI = require("node_characterai");
@@ -7,7 +10,12 @@ import dotenv from "dotenv";
 async function main() {
   dotenv.config({ path: "../.env" });
 
-  console.log("hello world!");
+  const server = new Server();
+  server.addService(GreeterService, new GreeterServer());
+
+  server.bindAsync("0.0.0.0:50051", ServerCredentials.createInsecure(), () => {
+    console.log("Server running at 0.0.0.0:50051");
+  });
 
   // const characterAI = new CharacterAI();
   // await characterAI.authenticateWithToken(process.env.CAI_TOKEN);

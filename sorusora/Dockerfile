@@ -12,5 +12,6 @@ COPY . .
 RUN pip install -r requirements.txt && \
     pip install typing-extensions
 
+RUN source build.sh
 
 CMD ["python", "main.py"]

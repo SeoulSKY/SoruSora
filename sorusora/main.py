@@ -3,6 +3,7 @@ Main script where the program starts
 """
 import logging
 import os
+import sys
 from importlib import import_module
 from logging.handlers import TimedRotatingFileHandler
 
@@ -18,7 +19,10 @@ from utils.translator import Localization, CommandTranslator
 
 load_dotenv()
 
+
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.append(os.path.join(ROOT_DIR, "protos"))  # Add protos directory to the path
 
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ERROR_DIR = os.path.join(LOGS_DIR, "error")

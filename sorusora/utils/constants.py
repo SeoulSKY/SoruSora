@@ -62,6 +62,8 @@ class Limit(Enum):
 BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
 
+CHAT_AI_URL = "localhost:50051"
+
 INVITE_URL = "https://sorusora.seoulsky.org"
 GITHUB_URL = "https://github.com/SeoulSKY/SoruSora"
 BUG_REPORT_URL = "https://github.com/SeoulSKY/SoruSora/issues/new?template=bug_report.md"

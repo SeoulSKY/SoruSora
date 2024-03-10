@@ -29,4 +29,5 @@ jobs:
       - name: Analysing the code with pylint
         run: |
           cd $ROOT_PATH
-          pylint $(find . -name '*.py' | grep -v '/scripts/')
+          pylint $(find . -name '*.py' | grep -v -E '/(scripts|protos)/')
+
