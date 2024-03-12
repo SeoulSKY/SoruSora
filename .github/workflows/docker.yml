@@ -59,7 +59,7 @@ jobs:
       - name: Build and push sorusora
         uses: docker/build-push-action@v4
         with:
-          context: ./sorusora
+          context: "${{ github.server_url }}/${{ github.repository }}.git#${{ github.ref }}:sorusora"
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -75,15 +75,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ needs.setup.outputs.repo-name }}-ai
 
-      - name: Debug
-        run: |
-          ls
-          pwd
-
       - name: Build and push sorusora-ai
         uses: docker/build-push-action@v4
         with:
-          context: ./sorusora-ai
+          context: "${{ github.server_url }}/${{ github.repository }}.git#${{ github.ref }}:sorusora-ai"
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: ${{ steps.meta.outputs.tags }}
