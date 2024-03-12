@@ -11,7 +11,6 @@ env:
   PROTO_BUILD_SCRIPT: "build-protos.sh"
 
 runs:
-  shell: bash
   steps:
   - name: Free Disk Space (Ubuntu)
     uses: jlumbroso/free-disk-space@main
@@ -38,6 +37,7 @@ runs:
       images: ${{ env.REGISTRY }}/${{ inputs.context }}
 
   - name: Build Proto files
+    shell: bash
     run: |
       cd ${{ inputs.context }}
       chmod +x ${{ env.PROTO_BUILD_SCRIPT }}
