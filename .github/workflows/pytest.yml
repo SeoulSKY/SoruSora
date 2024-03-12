@@ -9,9 +9,6 @@ on:
   pull_request:
     branches: [ "master" ]
 
-permissions:
-  contents: read
-
 jobs:
   pytest:
     environment: soru-sora
@@ -20,7 +17,6 @@ jobs:
 
     env:
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      TEST_GUILD_ID: ${{ secrets.TEST_GUILD_ID }}
       ROOT_PATH: sorusora
 
     steps:

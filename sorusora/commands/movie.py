@@ -12,8 +12,7 @@ from discord import app_commands, Interaction, Embed, HTTPException, Message, No
 from discord.app_commands import Choice
 from discord.ext import tasks
 from discord.ext.commands import Bot
-from moviepy.editor import VideoFileClip
-from moviepy.video.fx import resize as resizer
+import cv2
 from tqdm import tqdm
 
 from utils import templates, constants
@@ -70,7 +69,7 @@ PIXEL_VALUE_RANGE = 255
 Maximum value of RGB for each pixel
 """
 
-loc = Localization(DEFAULT_LANGUAGE, [os.path.join("commands", "movie.ftl")])
+default_loc = Localization(DEFAULT_LANGUAGE, [os.path.join("commands", "movie.ftl")])
 
 
 class Movie(app_commands.Group):
@@ -88,7 +87,8 @@ class Movie(app_commands.Group):
     _lock = threading.Lock()
 
     def __init__(self, bot: Bot):
-        super().__init__(name=loc.format_value("movie-name"), description=loc.format_value("movie-description"))
+        super().__init__(name=default_loc.format_value("movie-name"),
+                         description=default_loc.format_value("movie-description"))
         self.bot = bot
 
         if not os.path.exists(DESKTOP_CACHE_PATH) or not os.path.exists(MOBILE_CACHE_PATH):
@@ -99,22 +99,46 @@ class Movie(app_commands.Group):
         os.makedirs(constants.CACHE_DIR, exist_ok=True)
 
         movie_names = [file for file in os.listdir(constants.ASSETS_DIR) if file.endswith(".mp4")]
-        for is_on_mobile in (True, False):
-            os.makedirs(MOBILE_CACHE_PATH if is_on_mobile else DESKTOP_CACHE_PATH, exist_ok=True)
+        for is_mobile in (True, False):
+            os.makedirs(MOBILE_CACHE_PATH if is_mobile else DESKTOP_CACHE_PATH, exist_ok=True)
 
             for movie_name in movie_names:
-                movie = cls._resize(VideoFileClip(os.path.join(constants.ASSETS_DIR, movie_name),
-                                                  audio=False), is_on_mobile)
+                movie = cv2.VideoCapture(str(constants.ASSETS_DIR / movie_name))
 
+                _, frame = movie.read()
+                if frame is None:
+                    raise ValueError(f"Movie '{movie_name}' has no frames")
+
+                height, width, _ = frame.shape
+                aspect_ratio = width / height
+
+                if abs(aspect_ratio - 4 / 3) < 0.05:
+                    if is_mobile:
+                        new_resolution = MOBILE_MOVIE_RESOLUTION
+                    else:
+                        new_resolution = MOVIE_RESOLUTION
+                else:
+                    if is_mobile:
+                        new_resolution = MOBILE_MOVIE_RESOLUTION_16_9
+                    else:
+                        new_resolution = MOVIE_RESOLUTION_16_9
+
+                qbar = tqdm(desc=f"Caching {movie_name} for {'mobile' if is_mobile else 'desktop'}",
+                            total=int(movie.get(cv2.CAP_PROP_FRAME_COUNT)), unit="frame")
                 buffer = []
-                with (open(cls._get_cache_path(movie_name.removesuffix(".mp4"), is_on_mobile), "w", encoding="utf-8")
-                      as file):
-                    for frame in tqdm(movie.iter_frames(), desc=f"Caching {movie_name} for "
-                                                                f"{'mobile' if is_on_mobile else 'desktop'}",
-                                      total=movie.reader.nframes, unit="frame"):
-                        buffer.append(Movie._create_text(frame, is_on_mobile))
+                while frame is not None:
+                    frame = cv2.resize(frame, new_resolution)
+                    buffer.append(cls._create_text(frame, is_mobile))
 
+                    _, frame = movie.read()
+                    qbar.update()
+
+                with (open(cls._get_cache_path(movie_name.removesuffix(".mp4"), is_mobile), "w", encoding="utf-8")
+                      as file):
                     file.write(json.dumps(buffer))
+
+                qbar.close()
+                movie.release()
 
     @staticmethod
     def _get_cache_path(name: str, is_on_mobile: bool) -> str:
@@ -133,14 +157,15 @@ class Movie(app_commands.Group):
 
         return Movie._cache[path]
 
-    @app_commands.command(name=loc.format_value("play-name"), description=loc.format_value("play-description"))
-    @app_commands.describe(title=loc.format_value("play-title-description"))
-    @app_commands.describe(fps=loc.format_value("play-fps-description", {
+    @app_commands.command(name=default_loc.format_value("play-name"),
+                          description=default_loc.format_value("play-description"))
+    @app_commands.describe(title=default_loc.format_value("play-title-description"))
+    @app_commands.describe(fps=default_loc.format_value("play-fps-description", {
         "play-fps-description-min": FPS_MIN,
         "play-fps-description-max": FPS_MAX,
         "play-fps-description-default": FPS_DEFAULT
     }))
-    @app_commands.describe(original_speed=loc.format_value("play-original-speed-description", {
+    @app_commands.describe(original_speed=default_loc.format_value("play-original-speed-description", {
         "play-original-speed-description-default": str(ORIGINAL_SPEED_DEFAULT)
     }))
     @app_commands.choices(title=[
@@ -207,33 +232,18 @@ class Movie(app_commands.Group):
         display.start()
 
     @staticmethod
-    def _resize(video: VideoFileClip, is_on_mobile: bool) -> VideoFileClip:
-        if abs(video.aspect_ratio - 4 / 3) < 0.05:
-            if is_on_mobile:
-                new_resolution = MOBILE_MOVIE_RESOLUTION
-            else:
-                new_resolution = MOVIE_RESOLUTION
-        else:
-            if is_on_mobile:
-                new_resolution = MOBILE_MOVIE_RESOLUTION_16_9
-            else:
-                new_resolution = MOVIE_RESOLUTION_16_9
-
-        return resizer.resize(video, new_resolution)
-
-    @staticmethod
-    def _create_text(frame: np.ndarray, is_on_mobile: bool) -> str:
+    def _create_text(frame: np.ndarray, is_mobile: bool) -> str:
         grayscale_frame = np.dot(frame, (0.2989, 0.5870, 0.1140))
         grayscale_frame: np.ndarray = np.floor(grayscale_frame).astype(int)
 
-        char_length = len(MOBILE_CHARS) if is_on_mobile else len(CHARS)
+        char_length = len(MOBILE_CHARS) if is_mobile else len(CHARS)
         normalized_frame: np.ndarray = grayscale_frame * char_length / PIXEL_VALUE_RANGE
         normalized_frame = np.floor(normalized_frame).astype(int)
 
         text = ""
         for vector in normalized_frame:
             for brightness in vector:
-                text += (MOBILE_CHARS[brightness] if is_on_mobile else CHARS[brightness]) * 2
+                text += (MOBILE_CHARS[brightness] if is_mobile else CHARS[brightness]) * 2
             text += "\n"
 
         return text.removesuffix("\n")

@@ -18,6 +18,8 @@ services:
   sorusora-ai:
     image: ghcr.io/seoulsky/sorusora-ai:latest
     container_name: sorusora-ai
+    volumes:
+      - ./sorusora-ai/logs:/app/logs
     env_file:
       - .env
     restart: always

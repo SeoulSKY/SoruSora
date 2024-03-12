@@ -17,6 +17,8 @@ services:
   sorusora-ai:
     build: ./sorusora-ai
     container_name: sorusora-ai
+    volumes:
+      - ./sorusora-ai/logs:/app/logs
     env_file:
       - .env
     ports:

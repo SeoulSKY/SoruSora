@@ -15,7 +15,7 @@
 | <img style="width: 500px; height: auto" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/b20ed72f-55e0-4787-9428-c1f925ab3a0a"> |
 
 | `/chat` |
-|--------------|
+|--------------|int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
 | <img style="width: 500px; height: auto" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/7f3eacda-87ac-45e0-a80a-6e6458752c82"> |
 
 | `/translator`  |
