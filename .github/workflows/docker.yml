@@ -13,6 +13,9 @@ jobs:
   sorusora:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Build sorusora
         uses: ./.github/workflows/build-push
         with:
@@ -21,6 +24,9 @@ jobs:
   sorusora-ai:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Build sorusora-ai
         uses: ./.github/workflows/build-push
         with:
