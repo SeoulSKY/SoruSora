@@ -160,6 +160,9 @@ class Translator(app_commands.Group):
 
             description = ""
             async for translation in self._translator.translate_targets(text, dest_langs, source):
+                if translation.source == translation.target:
+                    continue
+
                 description += f"**__{translation.target.name}__**\n{translation.text}\n\n"
 
             description.removesuffix("\n\n")

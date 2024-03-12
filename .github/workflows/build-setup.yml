@@ -5,6 +5,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  PROTO_BUILD_SCRIPT: build_proto.sh
 
 jobs:
   login:
@@ -30,3 +31,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Proto files
+        run: |
+          chmod +x ${{ env.PROTO_BUILD_SCRIPT }} && ./${{ env.PROTO_BUILD_SCRIPT }}
