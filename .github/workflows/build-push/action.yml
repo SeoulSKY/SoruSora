@@ -3,7 +3,9 @@ name: Build and Push Docker Image
 inputs:
   context:
     required: true
-  token:
+  username:
+    required: true
+  password:
     required: true
 
 env:
@@ -22,8 +24,8 @@ runs:
     uses: docker/login-action@v2
     with:
       registry: ${{ env.REGISTRY }}
-      username: ${{ github.repository_owner }}
-      password: ${{ inputs.token }}
+      username: ${{ inputs.username }}
+      password: ${{ inputs.password }}
 
   - name: Set up QEMU
     uses: docker/setup-qemu-action@v2

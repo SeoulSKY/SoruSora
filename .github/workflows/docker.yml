@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+env:
+  USERNAME: ${{ github.repository_owner }}
+  PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   sorusora:
     runs-on: ubuntu-latest
@@ -16,7 +20,8 @@ jobs:
         uses: ./.github/workflows/build-push
         with:
           context: sorusora
-          token: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ env.USERNAME }}
+          password: ${{ env.PASSWORD }}
 
   sorusora-ai:
     runs-on: ubuntu-latest
@@ -28,4 +33,5 @@ jobs:
         uses: ./.github/workflows/build-push
         with:
           context: sorusora-ai
-          token: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ env.USERNAME }}
+          password: ${{ env.PASSWORD }}
