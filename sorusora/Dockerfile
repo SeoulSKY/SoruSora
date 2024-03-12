@@ -4,14 +4,12 @@ WORKDIR /app
 
 ENV DOCKER 1
 
-RUN apt update && \
-    apt install ffmpeg -y
+RUN apt-get update && \
+    apt-get install ffmpeg -y --no-install-recommends
 
 COPY . .
 
 RUN pip install -r requirements.txt && \
     pip install typing-extensions
-
-RUN source build.sh
 
 CMD ["python", "main.py"]

@@ -1,37 +1,58 @@
 import dotenv from "dotenv";
+import log4js from "log4js";
 import {Server, ServerCredentials} from "@grpc/grpc-js";
-import {GreeterService} from "./protos/hello_grpc_pb";
-import {GreeterServer} from "./hello";
+import {ChatAIService} from "./protos/chatAI_grpc_pb";
+import {ChatAIServer} from "./chatAI";
+import path from "path";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-// const CharacterAI = require("node_characterai");
+const URL: string = "0.0.0.0:50051";
+const logger = log4js.getLogger();
 
+const LOGS_DIR = "logs";
 
 async function main() {
   dotenv.config({ path: "../.env" });
 
-  const server = new Server();
-  server.addService(GreeterService, new GreeterServer());
-
-  server.bindAsync("0.0.0.0:50051", ServerCredentials.createInsecure(), () => {
-    console.log("Server running at 0.0.0.0:50051");
+  log4js.configure({
+    appenders: {
+      console: { type: "console" },
+      error: {
+        type: "dateFile",
+        filename: path.join(LOGS_DIR, "error.log"),
+        pattern: ".yyyy-MM-dd",
+        keepFileExt: true,
+        level: "error"
+      },
+      warning: {
+        type: "dateFile",
+        filename: path.join(LOGS_DIR, "warning.log"),
+        pattern: ".yyyy-MM-dd",
+        keepFileExt: true,
+        level: "warn"
+      }
+    },
+    categories: {
+      default: {
+        appenders: ["console"],
+        level: "info"
+      },
+      error: {
+        appenders: ["console", "error"],
+        level: "error"
+      },
+      warning: {
+        appenders: ["console", "warning"],
+        level: "warn"
+      }
+    }
   });
 
-  // const characterAI = new CharacterAI();
-  // await characterAI.authenticateWithToken(process.env.CAI_TOKEN);
-  //
-  // // Place your character's id here
-  // const characterId = "8_1NyR8w1dOXmI1uWaieQcd147hecbdIK7CeEAIrdJw";
-  //
-  // const chat = await characterAI.createOrContinueChat(characterId);
-  //
-  // // Send a message
-  // const response = await chat.sendAndAwaitResponse(
-  //     "Hello discord mod!",
-  //     true
-  // );
-  //
-  // console.log(response);
+  const server = new Server();
+  server.addService(ChatAIService, new ChatAIServer());
+
+  server.bindAsync(URL, ServerCredentials.createInsecure(), () => {
+    logger.info(`Server running at ${URL}`);
+  });
 }
 
 (async () => {

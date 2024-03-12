@@ -9,29 +9,11 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  build:
+  sorusora:
     runs-on: ubuntu-latest
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          docker-images: false
-
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup the build environment
+        uses: ./.github/workflows/build-setup
 
       - name: Get Repository Name in Lowercase
         id: repo-name
@@ -39,17 +21,11 @@ jobs:
         with:
           string: ${{ github.repository }}
 
-      - name: Extract metadata for sorusora image
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ steps.repo-name.outputs.lowercase }}
-
-      - name: Extract metadata for sorusora-ai image
-        id: meta-ai
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ steps.repo-name.outputs.lowercase }}-ai
 
       - name: Build and push sorusora
         uses: docker/build-push-action@v4
@@ -60,11 +36,29 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  sorusora-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup the build environment
+        uses: ./.github/workflows/build-setup
+
+      - name: Get Repository Name in Lowercase
+        id: repo-name
+        uses: ASzc/change-string-case-action@v5
+        with:
+          string: ${{ github.repository }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.repo-name.outputs.lowercase }}-ai
+
       - name: Build and push sorusora-ai
         uses: docker/build-push-action@v4
         with:
           context: ./sorusora-ai
           platforms: linux/amd64,linux/arm64/v8
           push: true
-          tags: ${{ steps.meta-ai.outputs.tags }}
-          labels: ${{ steps.meta-ai.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

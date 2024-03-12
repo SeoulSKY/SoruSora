@@ -11,12 +11,18 @@ services:
       - ./sorusora/cache/algos_cache:${HOME}/.local/cache/argos-translate/
     env_file:
       - .env
+    restart: always
+    environment:
+      - CHAT_AI_HOST=sorusora-ai
 
   sorusora-ai:
     image: ghcr.io/seoulsky/sorusora-ai:latest
     container_name: sorusora-ai
     env_file:
       - .env
+    restart: always
+    ports:
+      - "50051:50051"
 
   mongo:
     image: mongo:7.0.5

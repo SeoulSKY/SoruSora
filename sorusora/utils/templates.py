@@ -10,10 +10,28 @@ Functions:
     warning()
     error()
 """
+import os
 
 import discord
+from discord import Locale
+
+from utils import Localization
+from utils.constants import BUG_REPORT_URL
+from utils.translator import Language
 
 color = discord.Color(0xffd0cf)
+
+
+async def unknown_error(locale: Locale | Language) -> str:
+    """
+    Get the message for the unknown error
+
+    :param locale: The language to use
+    :return: The message for the unknown error
+    """
+
+    loc = Localization(locale, [os.path.join("utils", "templates.ftl")])
+    return error(await loc.format_value_or_translate("unknown-error", {"link": BUG_REPORT_URL}))
 
 
 def info(message: str):

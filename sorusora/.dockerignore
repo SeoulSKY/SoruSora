@@ -277,4 +277,3 @@ cython_debug/
 logs
 .env*
 cache
-protos

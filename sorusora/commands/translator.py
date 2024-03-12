@@ -1,9 +1,11 @@
 """
 This module implements translator commands
 """
+import asyncio
 import os
 from typing import Iterator
 
+import langid
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale, ChannelType
 from discord.ext.commands import Bot
 from discord.ui import ChannelSelect
@@ -146,6 +148,7 @@ class Translator(app_commands.Group):
     async def _send_translation(self, message: Message, dest_langs: Iterator[Language]) -> None:
         async with message.channel.typing():
             text = message.content
+            source = Language((await asyncio.to_thread(langid.classify, text))[0])
 
             if len(message.embeds) != 0:
                 text += "\n\n"
@@ -156,7 +159,7 @@ class Translator(app_commands.Group):
                 text = text.removesuffix("\n\n")
 
             description = ""
-            async for translation in self._translator.translate_targets(text, dest_langs):
+            async for translation in self._translator.translate_targets(text, dest_langs, source):
                 description += f"**__{translation.target.name}__**\n{translation.text}\n\n"
 
             description.removesuffix("\n\n")
