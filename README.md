@@ -1,13 +1,13 @@
-<div style="text-align:center;">
+<div align="center">
     <img width="250" src="https://github.com/SeoulSKY/SoruSora/assets/48105703/08369937-4e80-4acf-b979-164f39dff5d7">
     <h1>SoruSora</h1>
 </div>
 
-<blockquote style="text-align:center;">
+<blockquote align="center">
     AI-Powered Versatile Discord Bot - AI chat, Translator and more with a user-friendly and fully localized interface!
 </blockquote>
 
-<div style="text-align:center;">
+<div align="center">
     <img src="https://img.shields.io/badge/Python-v3.11-blue">
     <img src="https://img.shields.io/badge/Node.js-v21.6-84ba64">
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg">
@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord">
 </div>
 
-<div style="text-align:center;">
+<div align="center">
     <a href="https://discord.gg/kQZDJJB">
         <img src="http://invidget.switchblade.xyz/kQZDJJB">
     </a>
@@ -221,6 +221,8 @@ npm start
 
 SoruSora is built with a microservices architecture, consisting of a Python and a Node.js backends. The two servers
 communicate with each other using gRPC, a high-performance, open-source universal RPC framework. Database is managed by MongoDB server. Each server runs in a separate Docker container, and they are orchestrated using Docker Compose.
+
+![Architecture](https://github.com/SeoulSKY/SoruSora/assets/48105703/bc1b2042-a14c-48c0-b968-91b881d735de)
 
 ## How to Contribute
 
