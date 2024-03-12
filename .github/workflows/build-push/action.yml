@@ -1,0 +1,53 @@
+name: Build and Push Docker Image
+
+inputs:
+  context:
+    required: true
+
+env:
+  REGISTRY: "ghcr.io"
+  PROTO_BUILD_SCRIPT: "build-protos.sh"
+
+runs:
+  steps:
+  - name: Free Disk Space (Ubuntu)
+    uses: jlumbroso/free-disk-space@main
+    with:
+      docker-images: false
+
+  - name: Checkout
+    uses: actions/checkout@v3
+
+  - name: Login to GitHub Container Registry
+    uses: docker/login-action@v2
+    with:
+      registry: ${{ env.REGISTRY }}
+      username: ${{ github.repository_owner }}
+      password: ${{ secrets.GITHUB_TOKEN }}
+
+  - name: Set up QEMU
+    uses: docker/setup-qemu-action@v2
+
+  - name: Set up Docker Buildx
+    uses: docker/setup-buildx-action@v2
+
+  - name: Extract metadata
+    id: meta
+    uses: docker/metadata-action@v5
+    with:
+      images: ${{ env.REGISTRY }}/${{ inputs.context }}
+
+  - name: Build Proto files
+    run: |
+      cd ${{ inputs.context }}
+      chmod +x ${{ env.PROTO_BUILD_SCRIPT }}
+      ./${{ env.PROTO_BUILD_SCRIPT }}
+
+  - name: Build and push ${{ inputs.context }}
+    uses: docker/build-push-action@v4
+    with:
+      context: "{{defaultContext}}:${{ inputs.context }}"
+      platforms: linux/amd64,linux/arm64/v8
+      push: true
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
