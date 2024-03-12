@@ -31,6 +31,8 @@ jobs:
       - name: Analysing the code with pylint
         run: |
           cd $ROOT_PATH
+          pwd
+          ls
           chmod +x ${{ env.PROTO_BUILD_SCRIPT }} && ./${{ env.PROTO_BUILD_SCRIPT }}
           pylint $(find . -name '*.py' | grep -v -E '/(scripts|protos)/')
 
