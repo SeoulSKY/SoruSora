@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  PROTO_BUILD_SCRIPT: "build_proto.sh"
+
 jobs:
   pytest:
     environment: soru-sora
@@ -20,7 +23,6 @@ jobs:
       ROOT_PATH: sorusora
 
     steps:
-
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@v1.3.1
         with:
@@ -55,4 +57,5 @@ jobs:
       - name: Test with pytest
         run: |
           cd $ROOT_PATH
+          chmod +x ${{ env.PROTO_BUILD_SCRIPT }} && ./${{ env.PROTO_BUILD_SCRIPT }}
           pytest

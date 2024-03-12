@@ -76,6 +76,7 @@ class Movie(app_commands.Group):
     """
     Commands related to Movie
     """
+    # pylint: disable=no-member
 
     FPS_MIN = 1
     FPS_MAX = 2
