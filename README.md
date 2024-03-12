@@ -49,7 +49,6 @@
   - [Dice](#dice)
   - [Help](#help)
   - [Ping](#ping)
-    - [/ping](#ping-1)
   - [Translator](#translator)
     - [/translator set\_languages](#translator-set_languages)
     - [/translator set\_channel\_languages](#translator-set_channel_languages)
@@ -103,8 +102,6 @@ Roll some dice. The result is a random number between 1 and 6 with equal probabi
 Teach you how to use SoruSora.
 
 ### Ping
-
-#### /ping
 
 Check the response time of SoruSora.
 
