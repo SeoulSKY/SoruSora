@@ -3,6 +3,7 @@ help-name = 도움말
 help-description = { $help-description-name }을(를) 사용하는 방법을 알려줍니다.
 
 # Texts
+help-header = { $help-header-name }과(와) 대화하려면, 그녀를 언급하거나 그녀가 보낸 메세지에 답장을 보내세요.
 commands = 명령어 목록
 context-menus = 컨텍스트 메뉴 목록
 context-menus-description = 타이핑 할 필요 없이 사용할 수 있는 명령어 입니다. 사용하려면

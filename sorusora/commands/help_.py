@@ -60,7 +60,10 @@ async def help_(interaction: Interaction):
 
     command_name = (interaction.command.name
                     if loc.language == DEFAULT_LANGUAGE else await interaction.translate(interaction.command.name))
-    text = f"# /{command_name}\n## {await loc.format_value_or_translate('commands')}\n"
+
+    text = f"# /{command_name}\n"
+    text += await loc.format_value_or_translate("help-header", {"help-header-name": BOT_NAME}) + "\n"
+    text += f"## {await loc.format_value_or_translate('commands')}\n"
 
     for command in bot.tree.walk_commands():
         if isinstance(command, app_commands.Group) or command.root_parent.__class__ in HIDDEN_COMMANDS:
@@ -93,3 +96,4 @@ async def help_(interaction: Interaction):
 
 
 help_.extras["help-description-name"] = BOT_NAME
+help_.extras["help-header-name"] = BOT_NAME
