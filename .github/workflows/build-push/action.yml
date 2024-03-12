@@ -35,14 +35,14 @@ runs:
     with:
       images: ghcr.io/${{ inputs.username }}/${{ inputs.context }}
 
-  - name: Build Protocol Buffers
+  - name: Build ${{ inputs.context }}
     shell: bash
     run: |
       cd ${{ inputs.context }}
       chmod +x build.sh
       ./build.sh
 
-  - name: Build and push ${{ inputs.context }}
+  - name: Build Docker image and push ${{ inputs.context }}
     uses: docker/build-push-action@v4
     with:
       context: "{{defaultContext}}:${{ inputs.context }}"
