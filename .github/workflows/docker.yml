@@ -12,6 +12,9 @@ jobs:
   sorusora:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup the build environment
         uses: ./.github/workflows/build-setup
 
@@ -39,6 +42,9 @@ jobs:
   sorusora-ai:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup the build environment
         uses: ./.github/workflows/build-setup
 
