@@ -59,7 +59,7 @@ jobs:
       - name: Build and push sorusora
         uses: docker/build-push-action@v4
         with:
-          context: "{{defaultContext}}:sorusora"
+          context: sorusora
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -78,7 +78,7 @@ jobs:
       - name: Build and push sorusora-ai
         uses: docker/build-push-action@v4
         with:
-          context: "{{defaultContext}}:sorusora-ai"
+          context: sorusora-ai
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: ${{ steps.meta.outputs.tags }}
