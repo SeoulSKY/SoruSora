@@ -9,9 +9,10 @@ import grpc
 from discord import app_commands, Message, Interaction
 from discord.ext.commands import Bot
 
-from mongo.user import User, get_user, set_user
 from protos import chatAI_pb2
 from protos.chatAI_pb2_grpc import ChatAIStub
+
+from mongo.user import User, get_user, set_user
 from utils import defer_response
 from utils.constants import BOT_NAME
 from utils.templates import success, error, unknown_error
