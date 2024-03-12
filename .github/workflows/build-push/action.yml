@@ -3,12 +3,15 @@ name: Build and Push Docker Image
 inputs:
   context:
     required: true
+  token:
+    required: true
 
 env:
   REGISTRY: "ghcr.io"
   PROTO_BUILD_SCRIPT: "build-protos.sh"
 
 runs:
+  shell: bash
   steps:
   - name: Free Disk Space (Ubuntu)
     uses: jlumbroso/free-disk-space@main
@@ -20,7 +23,7 @@ runs:
     with:
       registry: ${{ env.REGISTRY }}
       username: ${{ github.repository_owner }}
-      password: ${{ secrets.GITHUB_TOKEN }}
+      password: ${{ inputs.token }}
 
   - name: Set up QEMU
     uses: docker/setup-qemu-action@v2
