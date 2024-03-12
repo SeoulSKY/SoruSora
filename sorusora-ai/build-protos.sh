@@ -5,7 +5,7 @@ OUT_DIR=src/protos
 
 PATH=${PATH}:./node_modules/.bin
 
-npm install
+npm install grpc-tools grpc_tools_node_protoc_ts
 
 mkdir -p "${OUT_DIR}"
 
