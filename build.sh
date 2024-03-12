@@ -4,10 +4,10 @@ PATHS=("sorusora" "sorusora-ai")
 
 # Function to build protos in a directory
 build_protos() {
-  echo "Building protos in $1"
+  echo "Building project in $1"
   pushd "$1" > /dev/null || return
-  chmod +x build-protos.sh
-  ./build-protos.sh
+  chmod +x build.sh
+  ./build.sh
   popd > /dev/null || return
 }
 

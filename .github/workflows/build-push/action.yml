@@ -35,13 +35,12 @@ runs:
     with:
       images: ghcr.io/${{ inputs.username }}/${{ inputs.context }}
 
-  - name: Build Node.js
+  - name: Build Protocol Buffers
     shell: bash
     run: |
       cd ${{ inputs.context }}
-      npm install -D
-      npm run build-protos
-      npm run build
+      chmod +x build.sh
+      ./build.sh
 
   - name: Build and push ${{ inputs.context }}
     uses: docker/build-push-action@v4
