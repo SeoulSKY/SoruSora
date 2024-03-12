@@ -5,7 +5,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  PROTO_BUILD_SCRIPT: build_protos.sh
+  PROTO_BUILD_SCRIPT: build-protos.sh
 
 jobs:
   login:
