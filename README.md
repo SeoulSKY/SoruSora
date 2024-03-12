@@ -12,6 +12,7 @@
     <img src="https://img.shields.io/badge/Node.js-v21.6-84ba64">
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg">
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg">
+    <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/eslint.yml/badge.svg">
     <img src="https://img.shields.io/github/license/SeoulSKY/SoruSora">
     <img src="https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord">
 </div>
