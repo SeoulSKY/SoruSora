@@ -75,6 +75,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ needs.setup.outputs.repo-name }}-ai
 
+      - name: Debug
+        run: |
+          ls
+          pwd
+
       - name: Build and push sorusora-ai
         uses: docker/build-push-action@v4
         with:
