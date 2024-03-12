@@ -8,9 +8,6 @@ inputs:
   password:
     required: true
 
-env:
-  PROTO_BUILD_SCRIPT: build-protos.sh
-
 runs:
   using: composite
   steps:
@@ -42,8 +39,8 @@ runs:
     shell: bash
     run: |
       cd ${{ inputs.context }}
-      chmod +x ${{ env.PROTO_BUILD_SCRIPT }}
-      ./${{ env.PROTO_BUILD_SCRIPT }}
+      chmod +x build-protos.sh
+      ./build-protos.sh
 
   - name: Build and push ${{ inputs.context }}
     uses: docker/build-push-action@v4
