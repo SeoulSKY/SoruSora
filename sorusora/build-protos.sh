@@ -13,7 +13,7 @@ then
     EXEC=""
 fi
 
-${EXEC} pip install -r requirements.txt
+${EXEC} pip install grpcio-tools
 
 ${EXEC} python -m grpc_tools.protoc \
     -I "${PROTO_DIR}" \
