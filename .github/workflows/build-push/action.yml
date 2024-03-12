@@ -9,8 +9,8 @@ inputs:
     required: true
 
 env:
-  REGISTRY: "ghcr.io"
-  PROTO_BUILD_SCRIPT: "build-protos.sh"
+  REGISTRY: ghcr.io
+  PROTO_BUILD_SCRIPT: build-protos.sh
 
 runs:
   using: composite
