@@ -10,14 +10,13 @@
 <div align="center">
     <img src="https://img.shields.io/badge/Python-v3.11-blue">
     <img src="https://img.shields.io/badge/Node.js-v21.6-84ba64">
+    <img src="https://img.shields.io/github/license/SeoulSKY/SoruSora">
+    <img src="https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord">
+    <br>
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg">
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/pylint.yml/badge.svg">
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/eslint.yml/badge.svg">
-    <img src="https://img.shields.io/github/license/SeoulSKY/SoruSora">
-    <img src="https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord">
-</div>
-
-<div align="center">
+    <br>
     <a href="https://discord.gg/kQZDJJB">
         <img src="http://invidget.switchblade.xyz/kQZDJJB">
     </a>
