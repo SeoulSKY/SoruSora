@@ -6,7 +6,6 @@ else
     PROTO_DIR=../protos
 fi
 
-PROTO_DIR=$1
 OUT_DIR=src/protos
 
 PATH=${PATH}:./node_modules/.bin

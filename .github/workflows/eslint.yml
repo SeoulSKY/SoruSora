@@ -32,5 +32,6 @@ jobs:
       - name: Run ESLint
         run: |
           cd $ROOT_PATH
-          chmod +x ${{ env.PROTO_BUILD_SCRIPT }} && ./${{ env.PROTO_BUILD_SCRIPT }}
+          chmod +x ${{ env.PROTO_BUILD_SCRIPT }}
+          ./${{ env.PROTO_BUILD_SCRIPT }}
           npm run lint
