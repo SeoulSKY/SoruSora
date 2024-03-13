@@ -10,7 +10,7 @@ on:
     branches: [ "master" ]
 
 env:
-  BUILD_SCRIPT: build.sh
+  BUILD_SCRIPT: build-protos.sh
 
 jobs:
   pytest:
