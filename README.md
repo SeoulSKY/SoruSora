@@ -191,7 +191,7 @@ nvm use 21.6
 npm install
 ```
 
-* Build gRPC proto files
+* Build Protocol Buffer files
 
 ```bash
 chmod +x ./build-protos.sh && ./build-protos.sh
