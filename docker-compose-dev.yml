@@ -2,7 +2,9 @@ version: "3"
 
 services:
   sorusora:
-    build: ./sorusora
+    build:
+      context: .
+      dockerfile: docker/sorusora/Dockerfile
     container_name: sorusora
     volumes:
       - ./sorusora/logs:/app/logs
@@ -15,7 +17,9 @@ services:
       - CHAT_AI_HOST=sorusora-ai
 
   sorusora-ai:
-    build: ./sorusora-ai
+    build:
+      context: .
+      dockerfile: docker/sorusora-ai/Dockerfile
     container_name: sorusora-ai
     volumes:
       - ./sorusora-ai/logs:/app/logs
