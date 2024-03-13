@@ -1,8 +1,9 @@
 #!/bin/bash
 
-if [[ $# -ne 1 ]]; then
-    echo "Usage: $0 <path-to-protos-dir>"
-    exit 1
+if [[ $# -eq 1 ]]; then
+    PROTO_DIR=$1
+else
+    PROTO_DIR=../protos
 fi
 
 OUT_DIR=protos
@@ -20,7 +21,7 @@ fi
 ${EXEC} pip install grpcio-tools
 
 ${EXEC} python -m grpc_tools.protoc \
-    -I "$1" \
+    -I "${PROTO_DIR}" \
     --python_out="${OUT_DIR}" \
     --grpc_python_out="${OUT_DIR}" \
-    "$1"/*.proto
+    "${PROTO_DIR}"/*.proto

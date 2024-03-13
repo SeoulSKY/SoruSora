@@ -4,7 +4,7 @@ services:
   sorusora:
     build:
       context: .
-      dockerfile: docker/sorusora/Dockerfile
+      dockerfile: sorusora/Dockerfile
     container_name: sorusora
     volumes:
       - ./sorusora/logs:/app/logs
@@ -19,7 +19,7 @@ services:
   sorusora-ai:
     build:
       context: .
-      dockerfile: docker/sorusora-ai/Dockerfile
+      dockerfile: sorusora-ai/Dockerfile
     container_name: sorusora-ai
     volumes:
       - ./sorusora-ai/logs:/app/logs

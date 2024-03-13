@@ -6,7 +6,9 @@ SHELL ["/bin/bash", "-c"]
 
 ENV NODE_VERSION=21.6
 
-ENV ROOT_PATH ../../sorusora-ai
+ENV ROOT_PATH sorusora-ai
+
+ENV PROTO_PATH protos
 
 RUN wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
     && export NVM_DIR="$HOME/.nvm" \
@@ -24,10 +26,15 @@ COPY ${ROOT_PATH}/package.json .
 
 RUN npm install
 
-COPY ${ROOT_PATH} .
+COPY ${PROTO_PATH} ${PROTO_PATH}
+
+COPY ${ROOT_PATH}/build-protos.sh .
 
 RUN chmod +x build-protos.sh \
-    && ./build-protos.sh \
-    && npm run build
+    && ./build-protos.sh ${PROTO_PATH}
+
+COPY ${ROOT_PATH} .
+
+RUN npm run build
 
 CMD ["npm", "start"]
