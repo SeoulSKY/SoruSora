@@ -22,6 +22,6 @@ COPY package.json .
 
 RUN npm install --omit=dev
 
-COPY . .
+COPY dist dist
 
 CMD ["npm", "start"]
