@@ -7,9 +7,11 @@ ENV DOCKER 1
 RUN apt-get update && \
     apt-get install ffmpeg -y --no-install-recommends
 
-COPY . .
+COPY requirements.txt .
 
-RUN pip install -r requirements.txt && \
-    pip install typing-extensions
+RUN pip install -r requirements.txt \
+    && pip install typing-extensions
+
+COPY . .
 
 CMD ["python", "main.py"]
