@@ -41,6 +41,7 @@ runs:
       cd ${{ inputs.context }}
       chmod +x build.sh
       ./build.sh
+      ls
 
   - name: Build Docker image and push ${{ inputs.context }}
     uses: docker/build-push-action@v4
