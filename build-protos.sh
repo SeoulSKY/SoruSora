@@ -2,12 +2,14 @@
 
 PATHS=("sorusora" "sorusora-ai")
 
+EXEC=build-protos.sh
+
 # Function to build protos in a directory
 build_protos() {
   echo "Building project in $1"
   pushd "$1" > /dev/null || return
-  chmod +x build.sh
-  ./build.sh
+  chmod +x "${EXEC}"
+  ${EXEC}
   popd > /dev/null || return
 }
 
