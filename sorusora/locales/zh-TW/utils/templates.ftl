@@ -1,1 +1,1 @@
-unknown-error = 某部份出了點問題，請至[這裡]({ $link })回報
+unknown-error = 出問題了。 請與錯誤日誌共享此問題 [此處]({ $link })

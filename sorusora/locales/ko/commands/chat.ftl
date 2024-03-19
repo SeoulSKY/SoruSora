@@ -18,3 +18,4 @@ deleted = 삭제되었습니다!
 # Errors
 no-history = { $name }와(과)의 채팅 기록이 없습니다
 timeout = { $name }이(가) 방해 금지 모드를 켠 것 같습니다. 나중에 다시 이야기해요
+server-unavailable = 서버와의 연결에 실패했습니다. 나중에 다시 시도해주세요

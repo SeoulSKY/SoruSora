@@ -4,9 +4,12 @@ Implements a commands relate to AI chat
 import asyncio
 import logging
 import os
+import io
+import traceback
 
 import grpc
-from discord import app_commands, Message, Interaction
+from grpc import RpcError, StatusCode
+from discord import app_commands, Message, Interaction, File
 from discord.ext.commands import Bot
 
 from protos import chatAI_pb2
@@ -14,8 +17,8 @@ from protos.chatAI_pb2_grpc import ChatAIStub
 
 from mongo.user import User, get_user, set_user
 from utils import defer_response
-from utils.constants import BOT_NAME
-from utils.templates import success, error, unknown_error
+from utils.constants import BOT_NAME, UNKNOWN_ERROR_FILENAME
+from utils.templates import success, error, unknown_error, info
 from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
 from utils.ui import LanguageSelectView
 
@@ -88,11 +91,27 @@ class Chat(app_commands.Group):
                         await self._create_new_chat(user, message.author.display_name)
                         user = await get_user(message.author.id)
                     text = await self._send_message(user,
-                                                       message.content.removeprefix(self.bot.user.mention).strip())
+                                                    message.content.removeprefix(self.bot.user.mention).strip())
                     await message.reply(text)
-                except Exception as ex:
+                except RpcError as ex:
                     language = Language(user.locale) if user.locale is not None else DEFAULT_LANGUAGE
-                    await message.reply(await unknown_error(language), suppress_embeds=True)
+                    loc = Localization(language, resources)
+
+                    status = ex.code()
+                    if status == StatusCode.DEADLINE_EXCEEDED:
+                        await message.reply(
+                            info(await loc.format_value_or_translate("timeout", {"name": BOT_NAME})),
+                            suppress_embeds=True
+                        )
+                        return
+                    if status == StatusCode.UNAVAILABLE:
+                        await message.reply(
+                            error(await loc.format_value_or_translate("server-unavailable")),
+                            suppress_embeds=True
+                        )
+                        return
+
+                    await message.reply(await unknown_error(language), file=_get_error_log(), suppress_embeds=True)
                     raise ex
 
         self.bot.add_listener(on_message)
@@ -100,11 +119,8 @@ class Chat(app_commands.Group):
     @staticmethod
     async def _create_new_chat(user: User, user_name: str) -> None:
         with grpc.insecure_channel(Chat.CHAT_AI_URL) as channel:
-            try:
-                response = await asyncio.to_thread(ChatAIStub(channel).Create,
-                                                   chatAI_pb2.CreateRequest(name=user_name))
-            except Exception as ex:
-                raise RuntimeError("Failed to create a new chat") from ex
+            response = await asyncio.to_thread(ChatAIStub(channel).Create,
+                                               chatAI_pb2.CreateRequest(name=user_name))
 
         user.chat_history_id = response.chatId
         await set_user(user)
@@ -112,11 +128,8 @@ class Chat(app_commands.Group):
     @staticmethod
     async def _send_message(user: User, text: str) -> None:
         with grpc.insecure_channel(Chat.CHAT_AI_URL) as channel:
-            try:
-                response = await asyncio.to_thread(ChatAIStub(channel).Send,
-                                                   chatAI_pb2.SendRequest(chatId=user.chat_history_id, text=text))
-            except Exception as ex:
-                raise RuntimeError("Failed to send a message to AI") from ex
+            response = await asyncio.to_thread(ChatAIStub(channel).Send,
+                                               chatAI_pb2.SendRequest(chatId=user.chat_history_id, text=text))
 
         language = Language(user.locale) if user.locale is not None else DEFAULT_LANGUAGE
         text = response.text
@@ -158,7 +171,7 @@ class Chat(app_commands.Group):
 
         if user.chat_history_id is None:
             await interaction.response.send_message(
-                error(await loc.format_value_or_translate("no-history",{"name": BOT_NAME})),
+                error(await loc.format_value_or_translate("no-history", {"name": BOT_NAME})),
                 ephemeral=True)
             return
 
@@ -169,18 +182,21 @@ class Chat(app_commands.Group):
 
             try:
                 await asyncio.to_thread(stub.Clear, chatAI_pb2.ClearRequest(chatId=user.chat_history_id))
-            except grpc.RpcError as ex:
-                if ex.code() == grpc.StatusCode.NOT_FOUND:
+            except RpcError as ex:
+                status = ex.code()
+                if status == StatusCode.NOT_FOUND:
                     await interaction.followup.send(
-                        error(await loc.format_value_or_translate("no-history",{"name": BOT_NAME})),
+                        error(await loc.format_value_or_translate("no-history", {"name": BOT_NAME})),
+                        ephemeral=True)
+                    return
+                if status == StatusCode.UNAVAILABLE:
+                    await interaction.followup.send(
+                        error(await loc.format_value_or_translate("server-unavailable")),
                         ephemeral=True)
                     return
 
-                await interaction.followup.send(await unknown_error(interaction.locale), ephemeral=True)
-                raise RuntimeError("Failed to clear chat history") from ex
-
-            except Exception as ex:
-                await interaction.followup.send(await unknown_error(interaction.locale), ephemeral=True)
+                await interaction.followup.send(await unknown_error(interaction.locale), file=_get_error_log(),
+                                                ephemeral=True)
                 raise RuntimeError("Failed to clear chat history") from ex
 
         user.chat_history_id = None
@@ -189,3 +205,7 @@ class Chat(app_commands.Group):
 
     set_language.extras["set-language-current-language-description-default"] = CURRENT_LANGUAGE_DEFAULT
     clear.extras["clear-description-name"] = BOT_NAME
+
+
+def _get_error_log() -> File:
+    return File(io.BytesIO(traceback.format_exc().encode("utf-8")), UNKNOWN_ERROR_FILENAME)

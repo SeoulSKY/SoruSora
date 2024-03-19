@@ -18,3 +18,4 @@ deleted = 成功刪除您跟{ $name }的聊天歷史紀錄
 # Errors
 no-history = 您尚未與{ $name }進行交談
 timeout = 看來{ $name }已經開啟勿擾模式。我們稍後再跟她聊天吧
+server-unavailable = 伺服器連線失敗。請稍後再試
