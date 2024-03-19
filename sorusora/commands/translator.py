@@ -3,7 +3,7 @@ This module implements translator commands
 """
 import asyncio
 import os
-from typing import Iterator
+from typing import Iterable
 
 import langid
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale, ChannelType
@@ -125,7 +125,12 @@ class Translator(app_commands.Group):
             if len(usr.translate_to) == 0:
                 return
 
-            await self._send_translation(message, map(Language, usr.translate_to))
+            languages = []
+            for code in usr.translate_to:
+                if self._translator.is_code_supported(code):
+                    languages.append(Language(code))
+
+            await self._send_translation(message, languages)
 
         self.bot.add_listener(on_message)
 
@@ -141,11 +146,16 @@ class Translator(app_commands.Group):
             if len(chan.translate_to) == 0:
                 return
 
-            await self._send_translation(message, map(Language, chan.translate_to))
+            languages = []
+            for code in chan.translate_to:
+                if self._translator.is_code_supported(code):
+                    languages.append(Language(code))
+
+            await self._send_translation(message, languages)
 
         self.bot.add_listener(on_message)
 
-    async def _send_translation(self, message: Message, dest_langs: Iterator[Language]) -> None:
+    async def _send_translation(self, message: Message, dest_langs: Iterable[Language]) -> None:
         async with message.channel.typing():
             text = message.content
             source = Language((await asyncio.to_thread(langid.classify, text))[0])
