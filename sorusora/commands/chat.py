@@ -12,6 +12,7 @@ from grpc import RpcError, StatusCode
 from discord import app_commands, Message, Interaction, File
 from discord.ext.commands import Bot
 
+import google.protobuf.empty_pb2
 from protos import chatAI_pb2
 from protos.chatAI_pb2_grpc import ChatAIStub
 
@@ -21,6 +22,8 @@ from utils.constants import BOT_NAME, UNKNOWN_ERROR_FILENAME
 from utils.templates import success, error, unknown_error, info
 from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
 from utils.ui import LanguageSelectView
+
+_ = google.protobuf.empty_pb2  # create an instance to not be removed when optimizing imports
 
 resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)

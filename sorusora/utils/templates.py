@@ -21,6 +21,8 @@ from utils.translator import Language
 
 color = discord.Color(0xffd0cf)
 
+resources = [os.path.join("utils", "templates.ftl")]
+
 
 async def unknown_error(locale: Locale | Language) -> str:
     """
@@ -30,7 +32,7 @@ async def unknown_error(locale: Locale | Language) -> str:
     :return: The message for the unknown error
     """
 
-    loc = Localization(locale, [os.path.join("utils", "templates.ftl")])
+    loc = Localization(locale, resources)
     return error(await loc.format_value_or_translate("unknown-error", {"link": BUG_REPORT_URL}))
 
 

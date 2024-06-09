@@ -6,9 +6,8 @@ import os
 from typing import Iterable
 
 import langid
-from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale, ChannelType
+from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale
 from discord.ext.commands import Bot
-from discord.ui import ChannelSelect
 
 from mongo.channel import get_channel, set_channel
 from mongo.user import get_user, set_user
@@ -16,34 +15,29 @@ from utils import defer_response, templates
 from utils.constants import ErrorCode, Limit
 from utils.templates import success
 from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator
-from utils.ui import LanguageSelectView
+from utils.ui import LanguageSelectView, ChannelSelect, SubmitButton
 
 resources = [os.path.join("commands", "translator.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 ALL_CHANNELS_DEFAULT = True
+THIS_CHANNEL_DEFAULT = True
 
 
 class ChannelLanguageSelectView(LanguageSelectView):
-
     """
     Select UI to select available languages for a channel
     """
 
     def __init__(self, locale: Locale):
-        self.loc = Localization(locale, resources)
-        super().__init__(self.loc.format_value_or_translate("select-channel-languages"), locale)
+        """
+        Create a view to select languages for a channel
+        :param locale: The locale of the user
+        """
 
-    async def callback(self, interaction: Interaction):
-        await super().callback(interaction)
+        loc = Localization(locale, resources)
 
-        send = await defer_response(interaction)
-
-        config = await get_channel(interaction.channel_id)
-        config.translate_to = list(self.selected)
-        await set_channel(config)
-
-        await send(success(await self.loc.format_value_or_translate("channel-languages-updated")), ephemeral=True)
+        super().__init__(loc.format_value_or_translate("select-channels"), locale)
 
 
 class UserLanguageSelectView(LanguageSelectView):
@@ -69,25 +63,17 @@ class UserLanguageSelectView(LanguageSelectView):
 
 
 class UserChannelSelect(ChannelSelect):
+    # pylint: disable=too-few-public-methods
     """
     Select UI to select a channel for a user
     """
 
     def __init__(self, locale: Locale):
         self.loc = Localization(locale, resources)
-        super().__init__(placeholder="Not initialized. Call init() first")
-
-    async def init(self):
-        """
-        Initialize the channel select UI
-        """
-        super().__init__(placeholder=await self.loc.format_value_or_translate("select-channels"),
-                         channel_types=[x for x in ChannelType if x != ChannelType.category],
-                         max_values=int(Limit.SELECT_MAX))
-
-        return self
+        super().__init__(placeholder=self.loc.format_value_or_translate("select-channels"))
 
     async def callback(self, interaction: Interaction):
+        # pylint: disable=missing-function-docstring
         send = await defer_response(interaction)
 
         config = await get_user(interaction.user.id)
@@ -95,6 +81,35 @@ class UserChannelSelect(ChannelSelect):
         await set_user(config)
 
         await send(success(await self.loc.format_value_or_translate("languages-updated")), ephemeral=True)
+
+
+class TranslatorLanguageSelectView(LanguageSelectView):
+    """
+    Select UI to select available languages for a translator
+    """
+
+    def __init__(self, locale: Locale):
+        """
+        Create a view to select languages for a translator
+        :param locale: The locale of the user
+        """
+
+        loc = Localization(locale, resources)
+        super().__init__(loc.format_value_or_translate("select-languages"), locale)
+
+class TranslatorChannelSelect(ChannelSelect):
+    """
+    Select UI to select channels for a translator
+    """
+
+    def __init__(self, locale: Locale):
+        """
+        Create a view to select channels for a translator
+        :param locale: The locale of the user
+        """
+
+        loc = Localization(locale, resources)
+        super().__init__(placeholder=loc.format_value_or_translate("select-channels"))
 
 
 class Translator(app_commands.Group):
@@ -227,15 +242,43 @@ class Translator(app_commands.Group):
 
     @app_commands.command(name=default_loc.format_value("set-channel-languages-name"),
                           description=default_loc.format_value("set-channel-languages-description"))
+    @app_commands.describe(this_channel=default_loc.format_value(
+        "set-channel-languages-this-channel-description",
+        {"set-channel-languages-this-channel-description-default": str(THIS_CHANNEL_DEFAULT)})
+    )
     @app_commands.checks.has_permissions(administrator=True)
-    async def set_channel_languages(self, interaction: Interaction):
+    async def set_channel_languages(self, interaction: Interaction, this_channel: bool = THIS_CHANNEL_DEFAULT):
         """
-        Set languages to be translated for this channel
+        Set languages to be translated for channels
         """
 
+        loc = Localization(interaction.locale, resources)
         send = await defer_response(interaction)
 
-        await send(view=await ChannelLanguageSelectView(interaction.locale).init(), ephemeral=True)
+        language_view = await TranslatorLanguageSelectView(interaction.locale).init()
+        channel_select = await TranslatorChannelSelect(interaction.locale).init()
+
+        async def on_submit(interaction: Interaction):
+            channels = [interaction.channel_id] if this_channel else [channel.id for channel in channel_select.values]
+            for channel in channels:
+                config = await get_channel(channel)
+                config.translate_to = list(language_view.selected)
+                await set_channel(config)
+
+            await interaction.response.send_message(
+                success(await loc.format_value_or_translate("languages-updated")),
+                ephemeral=True
+            )
+
+        button = await SubmitButton(interaction.locale).init()
+        button.callback = on_submit
+
+        if not this_channel:
+            language_view.add_item(channel_select)
+
+        language_view.add_item(button)
+
+        await send(view=language_view, ephemeral=True)
 
     @app_commands.command(name=default_loc.format_value("clear-languages-name"),
                           description=default_loc.format_value("clear-languages-description"))

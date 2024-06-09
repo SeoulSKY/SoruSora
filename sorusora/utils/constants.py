@@ -24,6 +24,7 @@ class ErrorCode(Enum):
     """
     Provides error codes from discord API
     """
+    MESSAGE_EMPTY = 50006
     MESSAGE_EXPIRED = 50027
     MESSAGE_TOO_LONG = 50035
 

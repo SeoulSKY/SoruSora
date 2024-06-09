@@ -6,17 +6,45 @@ classes:
     LanguageSelectView
     CommandSelect
 """
+
 import os
 from typing import Union, Optional, Type, Coroutine, Any, Iterable
 
-from discord import SelectOption, Interaction, Locale, ButtonStyle, Button
+from discord import SelectOption, Interaction, Locale, ChannelType, ButtonStyle, HTTPException
 from discord.app_commands import Command, Group
-from discord.ui import Select, View, button
+from discord.ui import Select, View, Button, button, ChannelSelect as ChannelSelectView
 
 from utils import defer_response
-from utils.constants import Limit
+from utils.constants import Limit, ErrorCode
 from utils.templates import info, success
 from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator
+
+resources = [os.path.join("utils", "ui.ftl")]
+
+
+class SubmitButton(Button):
+    """
+    Button to submit the form
+    """
+
+    def __init__(self, locale: Locale, style: ButtonStyle = ButtonStyle.green):
+        """
+        Create a submit button
+        :param style: Style of the button
+        """
+
+        self.loc = Localization(locale, resources)
+        self._style = style
+
+        super().__init__(label="Not initialized. Call init() first")
+
+    async def init(self):
+        """
+        Initialize the button
+        """
+
+        super().__init__(label=await self.loc.format_value_or_translate("submit"), style=self._style)
+        return self
 
 
 class Confirm(View):
@@ -51,7 +79,7 @@ class Confirm(View):
         Initialize the view
         """
 
-        loc = Localization(self._locale, [os.path.join("utils", "ui.ftl")])
+        loc = Localization(self._locale, resources)
 
         self.confirm.label = await loc.format_value_or_translate("confirm")
         self.cancel.label = await loc.format_value_or_translate("cancel")
@@ -91,6 +119,15 @@ class LanguageSelectView(View):
     """
 
     def __init__(self, placeholder: Coroutine[Any, Any, str], locale: Locale, max_values: int = None, **kwargs):
+        """
+        Create a language select UI
+
+        :param placeholder: Placeholder for the select UI
+        :param locale: Locale of the user
+        :param max_values: Maximum number of languages that can be selected
+        :param kwargs: Other parameters to pass to the select UI
+        """
+
         super().__init__()
 
         self._placeholder = placeholder
@@ -98,9 +135,10 @@ class LanguageSelectView(View):
         self._max_values = max_values
         self._kwargs = kwargs
 
-        self._selected = set()
+        self._selects: set[Select] = set()
+        self._selected: set[str] = set()
 
-    async def init(self):
+    async def init(self) -> "LanguageSelectView":
         """
         Initialize this select
         """
@@ -123,17 +161,27 @@ class LanguageSelectView(View):
             )
             select.callback = self.callback
             self.add_item(select)
+            self._selects.add(select)
 
         return self
 
-    async def callback(self, _: Interaction):
+    async def callback(self, interaction: Interaction):
         """
         Callback for the select
         """
 
-        select: Select
-        for select in self.children:
+        self._selected.clear()
+
+        for select in self._selects:
             self._selected.update(select.values)
+
+        try:
+            await interaction.response.send_message()
+        except HTTPException as ex:
+            if ex.code == ErrorCode.MESSAGE_EMPTY:
+                return
+
+            raise ex
 
     @property
     def selected(self) -> Iterable[str]:
@@ -151,6 +199,15 @@ class CommandSelect(Select):
 
     def __init__(self, interaction: Interaction, hidden: Optional[set[Type[Union[Command, Group]]]] = None,
                  placeholder: Coroutine[Any, Any, str] = None, **kwargs):
+        """
+        Create a command select UI
+
+        :param interaction: The interaction to get the locale from
+        :param hidden: Set of commands to hide
+        :param placeholder: Placeholder for the select UI
+        :param kwargs: Other parameters to pass to the select UI
+        """
+
         self._interaction = interaction
         self._hidden = hidden
         self._placeholder = placeholder
@@ -203,3 +260,37 @@ class CommandSelect(Select):
 
     async def callback(self, interaction: Interaction):
         raise NotImplementedError("This method should be overridden in a subclass")
+
+
+class ChannelSelect(ChannelSelectView):
+    """
+    Select UI to select channels
+    """
+
+    def __init__(self, placeholder: Coroutine[Any, Any, str] = None):
+        """
+        Create a channel select UI
+
+        :param placeholder: Placeholder for the select UI
+        """
+        self._placeholder = placeholder
+
+        super().__init__(placeholder="Not initialized. Call init() first")
+
+    async def init(self) -> "ChannelSelect":
+        """
+        Initialize the channel select UI
+        """
+        super().__init__(placeholder=await self._placeholder if self._placeholder else None,
+                         channel_types=[x for x in ChannelType if x != ChannelType.category],
+                         max_values=int(Limit.SELECT_MAX))
+        return self
+
+    async def callback(self, interaction: Interaction):
+        try:
+            await interaction.response.send_message()
+        except HTTPException as ex:
+            if ex.code == ErrorCode.MESSAGE_EMPTY:
+                return
+
+            raise ex

@@ -7,12 +7,12 @@ import json
 import os
 import threading
 
+import cv2
 import numpy as np
 from discord import app_commands, Interaction, Embed, HTTPException, Message, NotFound
 from discord.app_commands import Choice
 from discord.ext import tasks
 from discord.ext.commands import Bot
-import cv2
 from tqdm import tqdm
 
 from utils import templates, constants
