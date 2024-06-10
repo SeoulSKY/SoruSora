@@ -12,12 +12,6 @@ set-channel-languages-description = [관리자 전용] 채널 메세지를 번�
 set-channel-languages-this-channel-name = 현재채널
 set-channel-languages-this-channel-description = 채널 메세지를 번역할 언어들을 이 채널에 설정합니다. 기본값은 { $set-channel-languages-this-channel-description-default } 입니다
 
-clear-languages-name = 언어제거
-clear-languages-description = 당신이 설정한 메세지를 번역할 언어들을 제거합니다
-
-clear-channel-languages-name = 채널언어제거
-clear-channel-languages-description = [관리자 전용] 설정한 해당 채널 메세지를 번역할 언어들을 제거합니다
-
 # Select UI
 select-languages = 당신의 메세지를 번역할 언어들을 선택하세요
 select-channels = 당신의 메세지를 번역할 채널들을 선택하세요
@@ -26,8 +20,6 @@ select-channel-languages = 채널 메세지를 번역할 언어들을 선택하�
 # Successes
 languages-updated = 당신의 메세지를 번역할 언어들이 변경되었습니다
 channel-languages-updated = 채널 메세지를 번역할 언어들이 변경되었습니다
-languages-cleared = 당신의 메세지를 번역할 언어들이 제거되었습니다
-channel-languages-cleared = 채널 메세지를 번역할 언어들이 제거되었습니다
 
 # Errors
 invalid-user-settings = 당신의 언어 세팅이 잘못됐습니다. 다시 설정해주세요

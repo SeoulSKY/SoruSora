@@ -1,9 +1,18 @@
 # /translator set_channel_languages
 
-Set languages to be translated for this channel.
+Set languages to be translated for the selected channels.
 
-When this command is used, it will send a dropdown menu to this channel. You can select the languages you want to translate messages into. You can select multiple languages.
+For every message sent in the selected channels, SoruSora will translate the message into the selected languages and reply with the translations.
 
-For every message sent in this channel, SoruSora will translate the message into the selected languages and reply with the translations.
+## Usage
+
+* Use the dropdown menu to select the languages you want to translate messages into.
+* Select no languages to disable translation for the selected channels.
+* Set `this_channel` to `False` to apply the same settings to multiple channels.
+* Press the `Submit` button to save the settings.
+
+## Parameters
+
+* `this_channel` (Optional): If set to `False`, it will send an dropdown menu to select multiple channels. Default value is `True`.
 
 This command is only available for server admins.
