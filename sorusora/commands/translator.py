@@ -119,7 +119,8 @@ class Translator(app_commands.Group):
                                 src_lang: Language = None) -> None:
         async with message.channel.typing():
             text = message.content
-            source = src_lang if src_lang else Language((await asyncio.to_thread(langid.classify, text))[0])
+            if src_lang is None:
+                src_lang = Language((await asyncio.to_thread(langid.classify, text))[0])
 
             if len(message.embeds) != 0:
                 text += "\n\n"
@@ -130,7 +131,7 @@ class Translator(app_commands.Group):
                 text = text.removesuffix("\n\n")
 
             description = ""
-            async for translation in self._translator.translate_targets(text, dest_langs, source):
+            async for translation in self._translator.translate_targets(text, dest_langs, src_lang):
                 if translation.source == translation.target:
                     continue
 
