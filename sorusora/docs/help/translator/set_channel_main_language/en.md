@@ -1,6 +1,6 @@
 # /translator set_channel_main_language
 
-Set or remove the main language of the channels. The translator will set the selected language as the source language for all messages in the channels.
+Set or remove the main language of the channels. The translator will set the selected language as the source language for all messages in the channels.The translator will set the selected language as the source language for all messages in the channels.
 
 If the main language of a channel is not set, the translator will detect the language of each message and use it as the source language.
 

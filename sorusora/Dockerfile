@@ -25,4 +25,4 @@ RUN chmod +x build-protos.sh \
 
 COPY ${ROOT_PATH} .
 
-CMD ["python", "main.py"]
+CMD ["python", "src/main.py"]

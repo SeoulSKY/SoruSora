@@ -32,12 +32,14 @@ class ErrorCode(Enum):
         return self.value == other
 
 
-ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-CACHE_DIR = ROOT_DIR.parent / "cache"
-ASSETS_DIR = ROOT_DIR.parent / "assets"
-HELP_DIR = ROOT_DIR.parent / "docs" / "help"
-LOCALES_DIR = ROOT_DIR.parent / "locales"
-ABOUT_DIR = ROOT_DIR.parent / "docs" / "about"
+ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent.parent
+SRC_DIR = ROOT_DIR / "src"
+CACHE_DIR = ROOT_DIR / "cache"
+ASSETS_DIR = ROOT_DIR / "assets"
+DOCS_DIR = ROOT_DIR / "docs"
+HELP_DIR = DOCS_DIR / "help"
+LOCALES_DIR = ROOT_DIR / "locales"
+ABOUT_DIR = DOCS_DIR / "about"
 
 
 class Limit(Enum):

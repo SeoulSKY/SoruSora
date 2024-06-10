@@ -52,12 +52,11 @@
   - [Translator](#translator)
     - [/translator set\_languages](#translator-set_languages)
     - [/translator set\_channel\_languages](#translator-set_channel_languages)
-    - [/translator clear\_languages](#translator-clear_languages)
-    - [/translator clear\_channel\_languages](#translator-clear_channel_languages)
+    - [/translator set\_channel\_main\_language](#translator-set_channel_main_language)
 - [How to Set up and Run](#how-to-set-up-and-run)
   - [Setting Environment Variables](#setting-environment-variables)
   - [Description of each environment variable](#description-of-each-environment-variable)
-  - [Running with Docker and Docker Compose (Recommended)](#running-with-docker-and-docker-compose-recommended)
+  - [Running with Docker (Recommended)](#running-with-docker-recommended)
   - [Running without Docker](#running-without-docker)
 - [Architecture](#architecture)
 - [How to Contribute](#how-to-contribute)
@@ -111,19 +110,15 @@ It supports 43 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Bengali`,
 
 #### /translator set_languages
 
-Set languages to be translated for your messages.
+Set or remove the languages to be translated for your messages.
 
 #### /translator set_channel_languages
 
-Set languages to be translated for this channel. Only available for server admins.
+Set or remove the languages to be translated for the channels. Only available for server admins.
 
-#### /translator clear_languages
+#### /translator set_channel_main_language
 
-Clear languages to be translated for your messages.
-
-#### /translator clear_channel_languages
-
-Clear languages to be translated for this channel. Only available for server admins.
+Set or remove the main language for the channel. The translator will set the selected language as the source language for all messages in the channels. Only available for server admins.
 
 ## How to Set up and Run
 
@@ -141,16 +136,16 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 | CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://github.com/realcoloride/node_characterai?tab=readme-ov-file#finding-your-characters-id) to learn how to acquire it.                                                                          |
 
 
-### Running with [Docker](https://www.docker.com) and [Docker Compose](https://docs.docker.com/compose/install/) (Recommended)
+### Running with [Docker](https://www.docker.com) (Recommended)
 
 Run the following command:
 
 ```bash
 # For Production
-docker-compose pull && docker-compose up -d
+docker compose pull && docker compose up -d
 
 # For Development
-docker-compose -f docker-compose-dev.yml up --build -d
+docker compose -f docker-compose-dev.yml up --build -d
 ```
 
 ### Running without [Docker](https://www.docker.com)
@@ -200,7 +195,7 @@ chmod +x ./build-protos.sh && ./build-protos.sh
 * Run `main.py`
 
 ```bash
-pyenv exec python main.py
+pyenv exec python src/main.py
 ```
 
 * In a separate terminal, Run the node server

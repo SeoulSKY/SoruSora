@@ -1,4 +1,4 @@
-protos
+src/protos
 cache
 logs
 .idea

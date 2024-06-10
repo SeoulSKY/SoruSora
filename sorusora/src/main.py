@@ -14,15 +14,14 @@ from discord.ext.commands import Bot, MinimalHelpCommand
 from dotenv import load_dotenv
 
 from commands.movie import Movie
+from utils.constants import ROOT_DIR, SRC_DIR
 from utils.templates import forbidden
 from utils.translator import Localization, CommandTranslator
 
 load_dotenv()
 
-
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-sys.path.append(os.path.join(ROOT_DIR, "protos"))  # Add protos directory to the path
+sys.path.append(os.path.join(ROOT_DIR, "src"))  # Add the src directory to the path
+sys.path.append(os.path.join(ROOT_DIR, "src", "protos"))  # Add protos directory to the path
 
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ERROR_DIR = os.path.join(LOGS_DIR, "error")
@@ -40,6 +39,7 @@ class EmptyHelpCommand(MinimalHelpCommand):
     """
     Help command that does nothing
     """
+
     async def send_pages(self) -> None:
         pass
 
@@ -74,12 +74,13 @@ class SoruSora(Bot):
         package_names = ["commands", "context_menus"]
 
         for package_name in package_names:
-            for module_name in os.listdir(package_name):
+            for module_name in os.listdir(SRC_DIR / package_name):
                 if module_name == "__init__.py" or not module_name.endswith(".py"):
                     continue
 
-                module = import_module("." + module_name.removesuffix(".py"), package_name)
+                module = import_module(".".join([package_name, module_name.removesuffix(".py")]))
 
+                # Get the command function from the module named same as the file name
                 command = getattr(module, module_name.removesuffix(".py"), None)
                 if command is not None:
                     self.tree.add_command(command)

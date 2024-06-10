@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   sorusora:
     image: ghcr.io/seoulsky/sorusora:latest

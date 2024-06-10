@@ -13,8 +13,8 @@ from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # pylint: disable=wrong-import-position
-from mongo.user import collection as user_collection
-from mongo.channel import collection as channel_collection
+from src.mongo.user import collection as user_collection
+from src.mongo.channel import collection as channel_collection
 
 NAME_TO_CODE = GoogleTranslator().get_supported_languages(as_dict=True)
 

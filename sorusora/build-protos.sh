@@ -6,7 +6,7 @@ else
     PROTO_DIR=../protos
 fi
 
-OUT_DIR=protos
+OUT_DIR=src/protos
 
 mkdir -p "${OUT_DIR}"
 touch "${OUT_DIR}/__init__.py"
