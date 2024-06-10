@@ -37,6 +37,10 @@ class HelpSelect(CommandSelect):
         super().__init__(interaction, HIDDEN_COMMANDS, loc.format_value_or_translate("select-command"))
 
     async def callback(self, interaction: Interaction):
+        """
+        Callback for the command selection
+        """
+
         with open(get_help_dir(self.values[0], DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
             text = file.read()
 

@@ -8,6 +8,7 @@ on:
 
 env:
   BUILD_SCRIPT: build-protos.sh
+  PYLINT_SCRIPT: scripts/pylint.sh
 
 jobs:
   pylint:
@@ -33,5 +34,5 @@ jobs:
           cd $ROOT_PATH
           chmod +x ${{ env.BUILD_SCRIPT }}
           ./${{ env.BUILD_SCRIPT }}
-          pylint $(find . -name '*.py' | grep -v -E '/(scripts|protos)/')
-
+          chmod +x ${{ env.PYLINT_SCRIPT }}
+          ./${{ env.PYLINT_SCRIPT }}
