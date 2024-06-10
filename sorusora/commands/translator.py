@@ -228,7 +228,7 @@ class Translator(app_commands.Group):
                 await set_channel(config)
 
             await interaction.response.send_message(
-                success(await loc.format_value_or_translate("languages-updated")),
+                success(await loc.format_value_or_translate("channel-languages-updated")),
                 ephemeral=True
             )
 
@@ -259,7 +259,6 @@ class Translator(app_commands.Group):
 
         language_view = await TranslatorLanguageSelectView(interaction, 1).init()
         channel_select = await TranslatorChannelSelect(interaction.locale).init()
-        channel_select_callback = channel_select.callback
 
         async def on_submit(interaction: Interaction):
             selected = list(language_view.selected)
@@ -286,13 +285,11 @@ class Translator(app_commands.Group):
         button.disabled = True
         button.callback = on_submit
 
-        async def on_channel_select(select_interaction: Interaction):
-            await channel_select_callback(select_interaction)
-
+        async def on_channel_select(_: Interaction):
             button.disabled = len(channel_select.values) == 0
             await interaction.edit_original_response(view=language_view)
 
-        channel_select.callback = on_channel_select
+        channel_select.on_select = on_channel_select
 
         if not this_channel:
             language_view.add_item(channel_select)

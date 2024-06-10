@@ -9,6 +9,7 @@ fi
 OUT_DIR=protos
 
 mkdir -p "${OUT_DIR}"
+touch "${OUT_DIR}/__init__.py"
 
 EXEC=pyenv exec
 

@@ -323,3 +323,12 @@ class ChannelSelect(ChannelSelectView):
                 return
 
             raise ex
+        finally:
+            await self.on_select(interaction)
+
+    async def on_select(self, interaction: Interaction):
+        """
+        Callback when a channel is selected
+
+        :param interaction: The interaction
+        """
