@@ -23,7 +23,7 @@ from utils.templates import success, error, unknown_error, info
 from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
 from utils.ui import LanguageSelectView
 
-_ = google.protobuf.empty_pb2  # create an instance to not be removed when optimizing imports
+_ = google.protobuf.empty_pb2  # assign the value to not be removed when optimizing imports
 
 resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
@@ -52,7 +52,9 @@ class ChatLanguageSelectView(LanguageSelectView):
         super().__init__(loc.format_value_or_translate("set-language-select"), interaction.locale, max_values=1)
 
     async def callback(self, interaction: Interaction):
-        await super().callback(interaction)
+        """
+        Callback for the language selection
+        """
 
         send = await defer_response(interaction)
 

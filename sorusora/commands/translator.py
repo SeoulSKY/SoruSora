@@ -13,7 +13,7 @@ from mongo.channel import get_channel, set_channel
 from mongo.user import get_user, set_user
 from utils import defer_response, templates
 from utils.constants import ErrorCode, Limit
-from utils.templates import success
+from utils.templates import success, error
 from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator
 from utils.ui import LanguageSelectView, ChannelSelect, SubmitButton
 
@@ -29,14 +29,15 @@ class TranslatorLanguageSelectView(LanguageSelectView):
     Select UI to select available languages for a translator
     """
 
-    def __init__(self, locale: Locale):
+    def __init__(self, interaction: Interaction, max_values: int = None):
         """
         Create a view to select languages for a translator
-        :param locale: The locale of the user
+        :param interaction: The interaction of the command
+        :param max_values: Maximum number of values that can be selected
         """
 
-        loc = Localization(locale, resources)
-        super().__init__(loc.format_value_or_translate("select-languages"), locale)
+        loc = Localization(interaction.locale, resources)
+        super().__init__(interaction, loc.format_value_or_translate("select-languages"), max_values)
 
 
 class TranslatorChannelSelect(ChannelSelect):
@@ -108,14 +109,17 @@ class Translator(app_commands.Group):
                 if self._translator.is_code_supported(code):
                     languages.append(Language(code))
 
-            await self._send_translation(message, languages)
+            await self._send_translation(message, languages, Language(chan.locale) if chan.locale else None)
 
         self.bot.add_listener(on_message)
 
-    async def _send_translation(self, message: Message, dest_langs: Iterable[Language]) -> None:
+    async def _send_translation(self,
+                                message: Message,
+                                dest_langs: Iterable[Language],
+                                src_lang: Language = None) -> None:
         async with message.channel.typing():
             text = message.content
-            source = Language((await asyncio.to_thread(langid.classify, text))[0])
+            source = src_lang if src_lang else Language((await asyncio.to_thread(langid.classify, text))[0])
 
             if len(message.embeds) != 0:
                 text += "\n\n"
@@ -167,13 +171,13 @@ class Translator(app_commands.Group):
     )
     async def set_languages(self, interaction: Interaction, all_channels: bool = ALL_CHANNELS_DEFAULT):
         """
-        Set languages to be translated for your messages
+        Set or remove the languages to be translated for your messages
         """
 
         loc = Localization(interaction.locale, resources)
         send = await defer_response(interaction)
 
-        language_view = await TranslatorLanguageSelectView(interaction.locale).init()
+        language_view = await TranslatorLanguageSelectView(interaction).init()
         channel_select = await TranslatorChannelSelect(interaction.locale).init()
 
         async def on_submit(interaction: Interaction):
@@ -206,13 +210,13 @@ class Translator(app_commands.Group):
     @app_commands.checks.has_permissions(administrator=True)
     async def set_channel_languages(self, interaction: Interaction, this_channel: bool = THIS_CHANNEL_DEFAULT):
         """
-        Set languages to be translated for channels
+        Set or remove the languages to be translated for channels
         """
 
         loc = Localization(interaction.locale, resources)
         send = await defer_response(interaction)
 
-        language_view = await TranslatorLanguageSelectView(interaction.locale).init()
+        language_view = await TranslatorLanguageSelectView(interaction).init()
         channel_select = await TranslatorChannelSelect(interaction.locale).init()
 
         async def on_submit(interaction: Interaction):
@@ -237,5 +241,66 @@ class Translator(app_commands.Group):
 
         await send(view=language_view, ephemeral=True)
 
+    @app_commands.command(name=default_loc.format_value("set-channel-main-language-name"),
+                          description=default_loc.format_value("set-channel-main-language-description"))
+    @app_commands.describe(this_channel=default_loc.format_value(
+        "set-channel-main-language-this-channel-description",
+        {"set-channel-main-language-this-channel-description-default": str(THIS_CHANNEL_DEFAULT)})
+    )
+    @app_commands.checks.has_permissions(administrator=True)
+    async def set_channel_main_language(self, interaction: Interaction, this_channel: bool = THIS_CHANNEL_DEFAULT):
+        """
+        Set or remove the main language of the channels.
+        """
+
+        loc = Localization(interaction.locale, resources)
+        send = await defer_response(interaction)
+
+        language_view = await TranslatorLanguageSelectView(interaction, 1).init()
+        channel_select = await TranslatorChannelSelect(interaction.locale).init()
+        channel_select_callback = channel_select.callback
+
+        async def on_submit(interaction: Interaction):
+            selected = list(language_view.selected)
+            channels = [interaction.channel_id] if this_channel else [channel.id for channel in channel_select.values]
+
+            if len(channels) == 0:
+                await interaction.response.send_message(
+                    error(await loc.format_value_or_translate("no-channels-selected")),
+                    ephemeral=True
+                )
+                return
+
+            for channel in channels:
+                config = await get_channel(channel)
+                config.locale = selected[0] if len(selected) != 0 else None
+                await set_channel(config)
+
+            await interaction.response.send_message(
+                success(await loc.format_value_or_translate("channel-main-language-updated")),
+                ephemeral=True
+            )
+
+        button = await SubmitButton(interaction.locale).init()
+        button.disabled = True
+        button.callback = on_submit
+
+        async def on_channel_select(select_interaction: Interaction):
+            await channel_select_callback(select_interaction)
+
+            button.disabled = len(channel_select.values) == 0
+            await interaction.edit_original_response(view=language_view)
+
+        channel_select.callback = on_channel_select
+
+        if not this_channel:
+            language_view.add_item(channel_select)
+
+        language_view.add_item(button)
+
+        await send(view=language_view, ephemeral=True)
+
     set_languages.extras["set-languages-all-channels-description-default"] = str(ALL_CHANNELS_DEFAULT)
     set_channel_languages.extras["set-channel-languages-this-channel-description-default"] = str(THIS_CHANNEL_DEFAULT)
+    set_channel_main_language.extras["set-channel-main-language-this-channel-description-default"] \
+        = str(THIS_CHANNEL_DEFAULT)

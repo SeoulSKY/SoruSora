@@ -21,6 +21,8 @@ from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_trans
 
 resources = [os.path.join("utils", "ui.ftl")]
 
+NOT_INITIALIZED_MESSAGE = "Not initialized. Call init() first"
+
 
 class SubmitButton(Button):
     """
@@ -36,7 +38,7 @@ class SubmitButton(Button):
         self.loc = Localization(locale, resources)
         self._style = style
 
-        super().__init__(label="Not initialized. Call init() first")
+        super().__init__(label=NOT_INITIALIZED_MESSAGE)
 
     async def init(self):
         """
@@ -66,6 +68,9 @@ class Confirm(View):
         self._cancelled_message = info(cancelled_message)
 
         self._locale = locale
+
+        self.confirm.label = NOT_INITIALIZED_MESSAGE
+        self.cancel.label = NOT_INITIALIZED_MESSAGE
 
         self.is_confirmed = None
         """
@@ -118,24 +123,27 @@ class LanguageSelectView(View):
     Select UI to select available languages for a user
     """
 
-    def __init__(self, placeholder: Coroutine[Any, Any, str], locale: Locale, max_values: int = None, **kwargs):
+    def __init__(self,
+                 interaction: Interaction,
+                 placeholder: Coroutine[Any, Any, str],
+                 max_selections: int = None,
+                 **kwargs):
         """
         Create a language select UI
 
+        :param interaction: The interaction of the command
         :param placeholder: Placeholder for the select UI
-        :param locale: Locale of the user
-        :param max_values: Maximum number of languages that can be selected
+        :param max_selections: Maximum number of languages that can be selected
         :param kwargs: Other parameters to pass to the select UI
         """
 
         super().__init__()
 
+        self._interaction = interaction
         self._placeholder = placeholder
-        self._locale = locale
-        self._max_values = max_values
+        self._max_selections = max_selections
         self._kwargs = kwargs
 
-        self._selects: set[Select] = set()
         self._selected: set[str] = set()
 
     async def init(self) -> "LanguageSelectView":
@@ -143,7 +151,35 @@ class LanguageSelectView(View):
         Initialize this select
         """
 
-        loc = Localization(self._locale)
+        async def callback(interaction: Interaction, select: Select):
+            self._selected.clear()
+
+            for child in self.children:
+                if not isinstance(child, Select):
+                    continue
+
+                self._selected.update(child.values)
+
+            for child in self.children:
+                if not isinstance(child, Select):
+                    continue
+
+                child.disabled = self._is_max_selected() and child is not select
+
+                for option in child.options:
+                    option.default = option.value in self._selected
+
+            await self._interaction.edit_original_response(view=self)
+
+            try:
+                await interaction.response.send_message()
+            except HTTPException as ex:
+                if ex.code == ErrorCode.MESSAGE_EMPTY:
+                    return
+
+                raise ex
+
+        loc = Localization(self._interaction.locale)
 
         languages = get_translator().get_supported_languages()
         placeholder = await self._placeholder
@@ -155,33 +191,17 @@ class LanguageSelectView(View):
             options = all_options[i:i + int(Limit.SELECT_MAX)]
             select = Select(
                 placeholder=placeholder,
-                max_values=min(len(options), int(Limit.SELECT_MAX)) if self._max_values is None else self._max_values,
+                min_values=0,
+                max_values=min(len(options), int(Limit.SELECT_MAX))
+                if self._max_selections is None else self._max_selections,
                 options=options,
                 **self._kwargs
             )
-            select.callback = self.callback
+
+            select.callback = lambda interaction, s=select: callback(interaction, s)
             self.add_item(select)
-            self._selects.add(select)
 
         return self
-
-    async def callback(self, interaction: Interaction):
-        """
-        Callback for the select
-        """
-
-        self._selected.clear()
-
-        for select in self._selects:
-            self._selected.update(select.values)
-
-        try:
-            await interaction.response.send_message()
-        except HTTPException as ex:
-            if ex.code == ErrorCode.MESSAGE_EMPTY:
-                return
-
-            raise ex
 
     @property
     def selected(self) -> Iterable[str]:
@@ -190,6 +210,13 @@ class LanguageSelectView(View):
         """
 
         return self._selected
+
+    def _is_max_selected(self) -> bool:
+        """
+        Check if the maximum number of selections is reached
+        """
+
+        return self._max_selections is not None and len(self._selected) >= self._max_selections
 
 
 class CommandSelect(Select):
@@ -212,7 +239,8 @@ class CommandSelect(Select):
         self._hidden = hidden
         self._placeholder = placeholder
         self._kwargs = kwargs
-        super().__init__(placeholder="Not initialized. Call init() method first")
+
+        super().__init__(placeholder=NOT_INITIALIZED_MESSAGE)
 
     async def init(self) -> "CommandSelect":
         """
@@ -275,7 +303,7 @@ class ChannelSelect(ChannelSelectView):
         """
         self._placeholder = placeholder
 
-        super().__init__(placeholder="Not initialized. Call init() first")
+        super().__init__(placeholder=NOT_INITIALIZED_MESSAGE)
 
     async def init(self) -> "ChannelSelect":
         """
@@ -283,6 +311,7 @@ class ChannelSelect(ChannelSelectView):
         """
         super().__init__(placeholder=await self._placeholder if self._placeholder else None,
                          channel_types=[x for x in ChannelType if x != ChannelType.category],
+                         min_values=0,
                          max_values=int(Limit.SELECT_MAX))
         return self
 

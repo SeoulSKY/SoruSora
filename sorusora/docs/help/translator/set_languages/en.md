@@ -1,6 +1,6 @@
 # /translator set_languages
 
-Set languages to be translated for your messages.
+Set or remove the languages to be translated for your messages.
 
 When this command is used, it will send dropdown menus to this channel. You can select the languages you want to translate your messages into. You can select multiple languages.
 

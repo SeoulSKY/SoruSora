@@ -9,7 +9,6 @@ Functions:
     get_channel
     set_channel
 """
-
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 from mongo import db, Document, has_document, get_document, set_document
@@ -22,11 +21,12 @@ class Channel(Document):
     A wrapper class to represent channel configs in the database
     """
 
-    def __init__(self, channel_id: int = -1, translate_to: list[str] = None):
+    def __init__(self, channel_id: int = -1, translate_to: list[str] = None, locale: str = None):
         self.channel_id = channel_id
         if translate_to is None:
             translate_to = []
         self.translate_to: list[str] = translate_to
+        self.locale = locale
 
     @staticmethod
     def from_dict(source: dict) -> "Channel":
