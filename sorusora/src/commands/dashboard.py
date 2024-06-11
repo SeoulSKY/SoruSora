@@ -41,12 +41,12 @@ async def dashboard(interaction: Interaction):
     user_embed = (Embed(color=color)
                   .add_field(
                                 name=await loc.format_value_or_translate("translation-languages"),
-                                value=", ".join(languages) or None,
+                                value=", ".join(languages) or await loc.format_value_or_translate("none"),
                                 inline=False
                             )
                   .add_field(
                                 name=await loc.format_value_or_translate("translation-channels"),
-                                value=", ".join(channels) or None,
+                                value=", ".join(channels) or await loc.format_value_or_translate("none"),
                                 inline=False
                             )
                   .set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url))
@@ -69,12 +69,13 @@ async def dashboard(interaction: Interaction):
             languages = [f"`{await loc.format_value_or_translate(code)}`" for code in config.translate_to]
             languages.sort()
 
-            main_language = None if config.locale is None else f"`{await loc.format_value_or_translate(config.locale)}`"
+            main_language = await loc.format_value_or_translate("none")\
+                if config.locale is None else f"`{await loc.format_value_or_translate(config.locale)}`"
 
             embed = (Embed(color=color, description=f"<#{channel.id}>")
                      .add_field(
                                     name=await loc.format_value_or_translate("translation-languages"),
-                                    value=", ".join(languages) or None,
+                                    value=", ".join(languages) or await loc.format_value_or_translate("none"),
                                     inline=False
                                 )
                      .add_field(
