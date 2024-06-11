@@ -9,9 +9,10 @@ Functions:
     get_channel
     set_channel
 """
+
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-from mongo import db, Document, has_document, get_document, set_document
+from mongo import db, Document, has_document, get_document, set_document, get_documents
 
 collection: AsyncIOMotorCollection = db.get_collection("channel")
 
@@ -63,6 +64,17 @@ async def get_channel(channel_id: int) -> Channel:
         return Channel(channel_id)
 
     return Channel.from_dict(await get_document(collection, _get_filter(channel_id)))
+
+
+async def get_channels(channel_ids: list[int]) -> list[Channel]:
+    """
+    Get the channels from the database
+    :param channel_ids: The channel ids to get
+    :return: The channels
+    """
+
+    return [Channel.from_dict(channel) for channel in
+            await get_documents(collection,{"channel_id": {"$in": channel_ids}})]
 
 
 async def set_channel(channel: Channel):

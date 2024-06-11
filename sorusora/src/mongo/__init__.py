@@ -13,7 +13,7 @@ Functions:
     set_document
 """
 import os
-from typing import Type, TypeVar, Optional
+from typing import Type, TypeVar, Optional, Iterator
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 
@@ -73,6 +73,17 @@ async def get_document(collection: AsyncIOMotorCollection, doc_filter: dict) -> 
     """
 
     return await collection.find_one(doc_filter)
+
+
+async def get_documents(collection: AsyncIOMotorCollection, doc_filter: dict) -> Iterator[dict]:
+    """
+    Get the documents from the collection
+    :param collection: The target collection
+    :param doc_filter: The filter to get
+    :return: The documents
+    """
+
+    return await collection.find(doc_filter).to_list(length=None)
 
 
 async def set_document(collection: AsyncIOMotorCollection, doc_filter: dict, doc: dict) -> None:

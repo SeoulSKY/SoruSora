@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from src.mongo import db, has_document, get_document, set_document
+from src.mongo import db, has_document, get_document, set_document, get_documents
 
 collection = db.get_collection("test-user")
 
@@ -29,6 +29,13 @@ def setup_module():
 
 def _get_doc() -> dict:
     return {"doc_id": 777}
+
+def _get_docs() -> list[dict]:
+    return [
+        {"doc_id": 777},
+        {"doc_id": 778},
+        {"doc_id": 779},
+    ]
 
 
 @pytest.mark.asyncio
@@ -57,6 +64,23 @@ async def test_get_document():
     result.pop("_id")
 
     assert result == _get_doc()
+
+
+@pytest.mark.asyncio
+async def test_get_documents():
+    """
+    Test get_documents() function
+    """
+
+    assert await get_document(collection, _get_doc()) is None
+
+    await collection.insert_many(_get_docs())
+
+    results = await get_documents(collection, {})
+    for result in results:
+        result.pop("_id")
+
+    assert results == _get_docs()
 
 
 @pytest.mark.asyncio

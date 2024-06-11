@@ -46,6 +46,7 @@
   - [Chat](#chat)
     - [/chat set\_language](#chat-set_language)
     - [/chat clear](#chat-clear)
+  - [Dashboard](#dashboard)
   - [Dice](#dice)
   - [Help](#help)
   - [Ping](#ping)
@@ -91,6 +92,10 @@ Update the chat language to the current discord language.
 #### /chat clear
 
 Clear the chat history between you and SoruSora.
+
+### Dashboard
+
+Display the dashboard that contains configurations and statistics.
 
 ### Dice
 

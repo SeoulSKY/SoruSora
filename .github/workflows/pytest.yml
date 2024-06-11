@@ -11,6 +11,7 @@ on:
 
 env:
   BUILD_SCRIPT: build-protos.sh
+  PYTEST_SCRIPT: scripts/pytest.sh
 
 jobs:
   pytest:
@@ -61,4 +62,5 @@ jobs:
           cd $ROOT_PATH
           chmod +x ${{ env.BUILD_SCRIPT }}
           ./${{ env.BUILD_SCRIPT }}
-          pytest
+          chmod +x ${{ env.PYTEST_SCRIPT }}
+          ./${{ env.PYTEST_SCRIPT }}

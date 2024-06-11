@@ -50,7 +50,9 @@ class Limit(Enum):
     COMMAND_NAME_LEN = 32
     COMMAND_DESCRIPTION_LEN = 100
     NUM_EMBEDS_IN_MESSAGE = 10
+    NUM_EMBED_FIELDS = 25
     SELECT_MAX = 25
+    NUM_VIEWS_ITEMS = 25
 
     def __eq__(self, other):
         return self.value == other

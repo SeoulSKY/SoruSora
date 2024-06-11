@@ -282,7 +282,7 @@ class Translator(app_commands.Group):
             )
 
         button = await SubmitButton(interaction.locale).init()
-        button.disabled = True
+        button.disabled = not this_channel
         button.callback = on_submit
 
         async def on_channel_select(_: Interaction):

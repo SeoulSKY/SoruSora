@@ -530,12 +530,21 @@ class Localization:
     _translator: BaseTranslator = GoogleTranslator()
 
     def __init__(self, locale: Locale | Language, resources: list[str] = None, fallbacks: Optional[list[str]] = None):
+        """
+        Create a localization
+
+        :param locale: The locale of the localization
+        :param resources: The paths to .ftl files inside locales folder
+        :param fallbacks: The fallbacks of the language code used if the locale is not found
+        """
         self._language = Language(str(locale)) if isinstance(locale, Locale) else locale
 
-        if resources is None or len(resources) == 0:
-            resources = [self.get_resource()]
+        if resources is None:
+            resources = []
         if fallbacks is None:
             fallbacks = []
+
+        resources.append(self.get_resource())
 
         if self._language.has_territory():
             fallbacks.append(self._language.trim_territory().code)

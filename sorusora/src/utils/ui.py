@@ -12,7 +12,7 @@ from typing import Union, Optional, Type, Coroutine, Any, Iterable
 
 from discord import SelectOption, Interaction, Locale, ChannelType, ButtonStyle, HTTPException
 from discord.app_commands import Command, Group
-from discord.ui import Select, View, Button, button, ChannelSelect as ChannelSelectView
+from discord.ui import Select, View, Button, button, ChannelSelect as BaseChannelSelect
 
 from utils import defer_response
 from utils.constants import Limit, ErrorCode
@@ -118,40 +118,37 @@ class Confirm(View):
         self.clear_items()
 
 
-class LanguageSelectView(View):
+class SelectView(View):
     """
-    Select UI to select available languages for a user
+    View that contains multiple selects
     """
 
-    def __init__(self,
-                 interaction: Interaction,
-                 placeholder: Coroutine[Any, Any, str],
-                 max_selections: int = None,
-                 **kwargs):
+    def __init__(
+            self,
+            *,
+            options: list[SelectOption],
+            placeholder: str,
+            interaction: Interaction,
+            min_selections: int = 0,
+            max_selections: int = None):
         """
-        Create a language select UI
-
+        Create a view with multiple selects
+        :param options: Options for the selects
+        :param placeholder: Placeholder for the selects
         :param interaction: The interaction of the command
-        :param placeholder: Placeholder for the select UI
-        :param max_selections: Maximum number of languages that can be selected
-        :param kwargs: Other parameters to pass to the select UI
+        :param min_selections: Minimum number of selections that can be made
+        :param max_selections: Maximum number of selections that can be made
+        :raises ValueError: If there are too many options (more than Limit.SELECT_MAX * Limit.NUM_VIEWS_ITEMS)
         """
-
         super().__init__()
 
-        self._interaction = interaction
-        self._placeholder = placeholder
         self._max_selections = max_selections
-        self._kwargs = kwargs
+        self._selected = set()
 
-        self._selected: set[str] = set()
+        if len(options) > Limit.SELECT_MAX.value * Limit.NUM_VIEWS_ITEMS.value:
+            raise ValueError("Too many options")
 
-    async def init(self) -> "LanguageSelectView":
-        """
-        Initialize this select
-        """
-
-        async def callback(interaction: Interaction, select: Select):
+        async def callback(select_interaction: Interaction, select: Select):
             self._selected.clear()
 
             for child in self.children:
@@ -169,54 +166,85 @@ class LanguageSelectView(View):
                 for option in child.options:
                     option.default = option.value in self._selected
 
-            await self._interaction.edit_original_response(view=self)
+            await interaction.edit_original_response(view=self)
 
             try:
-                await interaction.response.send_message()
+                await select_interaction.response.send_message()
             except HTTPException as ex:
                 if ex.code == ErrorCode.MESSAGE_EMPTY:
                     return
 
                 raise ex
 
-        loc = Localization(self._interaction.locale)
-
-        languages = get_translator().get_supported_languages()
-        placeholder = await self._placeholder
-
-        all_options = sorted([SelectOption(label=await loc.format_value_or_translate(lang.code), value=lang.code)
-                              for lang in languages], key=lambda x: x.label.lower())
-
-        for i in range(0, len(all_options), int(Limit.SELECT_MAX)):
-            options = all_options[i:i + int(Limit.SELECT_MAX)]
+        for i in range(0, len(options), Limit.SELECT_MAX.value):
+            partial_options = options[i:i + Limit.SELECT_MAX.value]
             select = Select(
                 placeholder=placeholder,
-                min_values=0,
-                max_values=min(len(options), int(Limit.SELECT_MAX))
+                min_values=min_selections,
+                max_values=min(len(partial_options), int(Limit.SELECT_MAX))
                 if self._max_selections is None else self._max_selections,
-                options=options,
-                **self._kwargs
+                options=partial_options
             )
-
-            select.callback = lambda interaction, s=select: callback(interaction, s)
             self.add_item(select)
-
-        return self
+            select.callback = lambda si, s=select: callback(si, s)
 
     @property
     def selected(self) -> Iterable[str]:
         """
-        Get the selected languages
+        Get the selected values
         """
-
         return self._selected
 
     def _is_max_selected(self) -> bool:
         """
         Check if the maximum number of selections is reached
         """
-
         return self._max_selections is not None and len(self._selected) >= self._max_selections
+
+
+class LanguageSelectView(SelectView):
+    """
+    Select UI to select available languages for a user
+    """
+
+    def __init__(self,
+                 interaction: Interaction,
+                 placeholder: Coroutine[Any, Any, str],
+                 max_selections: int = None):
+        """
+        Create a language select UI
+
+        :param interaction: The interaction of the command
+        :param placeholder: Placeholder for the select UI
+        :param max_selections: Maximum number of languages that can be selected
+        """
+
+        super().__init__(options=[], placeholder=NOT_INITIALIZED_MESSAGE, interaction=interaction)
+
+        self._interaction = interaction
+        self._placeholder = placeholder
+        self._max_selections = max_selections
+
+    async def init(self) -> "LanguageSelectView":
+        """
+        Initialize this select
+        """
+
+        loc = Localization(self._interaction.locale)
+
+        languages = get_translator().get_supported_languages()
+
+        options = sorted([SelectOption(label=await loc.format_value_or_translate(lang.code), value=lang.code)
+                          for lang in languages], key=lambda x: x.label.lower())
+
+        super().__init__(
+            options=options,
+            placeholder=await self._placeholder,
+            interaction=self._interaction,
+            max_selections=self._max_selections
+        )
+
+        return self
 
 
 class CommandSelect(Select):
@@ -290,18 +318,25 @@ class CommandSelect(Select):
         raise NotImplementedError("This method should be overridden in a subclass")
 
 
-class ChannelSelect(ChannelSelectView):
+class ChannelSelect(BaseChannelSelect):
     """
     Select UI to select channels
     """
 
-    def __init__(self, placeholder: Coroutine[Any, Any, str] = None):
+    def __init__(self,
+                 placeholder: Coroutine[Any, Any, str] = None,
+                 min_selections: int = 0,
+                 max_selections: int = Limit.SELECT_MAX.value):
         """
         Create a channel select UI
 
         :param placeholder: Placeholder for the select UI
+        :param min_selections: Minimum number of channels that can be selected
+        :param max_selections: Maximum number of channels that can be selected
         """
         self._placeholder = placeholder
+        self._min_selections = min_selections
+        self._max_selections = max_selections
 
         super().__init__(placeholder=NOT_INITIALIZED_MESSAGE)
 
@@ -311,8 +346,8 @@ class ChannelSelect(ChannelSelectView):
         """
         super().__init__(placeholder=await self._placeholder if self._placeholder else None,
                          channel_types=[x for x in ChannelType if x != ChannelType.category],
-                         min_values=0,
-                         max_values=int(Limit.SELECT_MAX))
+                         min_values=self._min_selections,
+                         max_values=self._max_selections)
         return self
 
     async def callback(self, interaction: Interaction):
