@@ -7,24 +7,32 @@ import discord
 from discord import app_commands
 
 import utils.translator
+from utils import defer_response
 from utils.templates import error
 from utils.translator import Localization, DEFAULT_LANGUAGE, Language
 
-loc = Localization(DEFAULT_LANGUAGE, [os.path.join("context_menus", "translate_message.ftl")])
+resources = [os.path.join("context_menus", "translate_message.ftl")]
+default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
-@app_commands.context_menu(name=loc.format_value("translate-message-name"))
+@app_commands.context_menu(name=default_loc.format_value("translate-message-name"))
 async def translate_message(interaction: discord.Interaction, message: discord.Message):
     """Translate this message into your language"""
+
+    send = await defer_response(interaction)
+    loc = Localization(interaction.locale, resources)
+
     translator = utils.translator.get_translator()
     language = Language(str(interaction.locale))
 
     if not translator.is_language_supported(language):
-        await interaction.response.send_message(
-            error(await loc.format_value_or_translate("language-not-supported", {"name": language.name})),
+        await send(
+            error(await loc.format_value_or_translate(
+                "language-not-supported",
+                {"name": language.name})
+                  ),
             ephemeral=True
         )
         return
 
-
-    await interaction.followup.send(translator.translate(message.content, language), ephemeral=True)
+    await send(await translator.translate(message.content, language), ephemeral=True)
