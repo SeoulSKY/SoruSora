@@ -9,7 +9,7 @@ from discord.ui import View
 from commands.movie import Movie
 from utils import defer_response
 from utils.constants import BOT_NAME, HELP_DIR
-from utils.translator import Cache
+from utils.translator import Cache, format_localization
 from utils.translator import Localization, Language, DEFAULT_LANGUAGE
 from utils.ui import CommandSelect
 
@@ -47,6 +47,7 @@ class HelpSelect(CommandSelect):
         await interaction.response.send_message(Cache.get(Language(str(interaction.locale)), text).text, ephemeral=True)
 
 
+@format_localization(help_description_name=BOT_NAME, help_header_name=BOT_NAME)
 @app_commands.command(name=default_loc.format_value("help-name"),
                       description=default_loc.format_value("help-description",
                                                            {"help-description-name": BOT_NAME}))
@@ -97,7 +98,3 @@ async def help_(interaction: Interaction):
             text += f"* `{await interaction.translate(context_menu.name)}`\n"
 
     await send(text, view=View().add_item(await HelpSelect(interaction).init()), ephemeral=True)
-
-
-help_.extras["help-description-name"] = BOT_NAME
-help_.extras["help-header-name"] = BOT_NAME

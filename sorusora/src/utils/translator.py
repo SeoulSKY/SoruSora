@@ -15,6 +15,8 @@ Functions:
     get_translator
 """
 
+# pylint: disable=too-many-lines
+
 import asyncio
 import itertools
 import json
@@ -31,7 +33,7 @@ import discord
 from deep_translator import GoogleTranslator as Google
 from deep_translator.exceptions import TooManyRequests
 from discord import Locale, app_commands, AppCommandType
-from discord.app_commands import locale_str, TranslationContextTypes, Command
+from discord.app_commands import locale_str, TranslationContextTypes, Command, Group, ContextMenu
 from discord.ext.commands import Bot
 from fluent.runtime import FluentLocalization, FluentResourceLoader
 from tqdm import tqdm
@@ -651,6 +653,25 @@ class Localization:
         return self._loc.resource_ids
 
 
+def format_localization(**kwargs: Any):
+    """
+    Format the localization of the command
+
+    :param kwargs: The arguments for formatting
+    """
+
+    def decorator(command: Command | ContextMenu) -> Command | Group | ContextMenu:
+        if not isinstance(command, (Command, ContextMenu)):
+            raise TypeError("This decorator must be placed above @app_commands.command or @app_commands.context_menu")
+
+        for key, value in kwargs.items():
+            command.extras[key.replace("_", "-")] = value
+
+        return command
+
+    return decorator
+
+
 class CommandTranslator(discord.app_commands.Translator):
     """
     Translator for the commands
@@ -661,6 +682,17 @@ class CommandTranslator(discord.app_commands.Translator):
         self.bot = bot
 
         self._translator: BaseTranslator = GoogleTranslator()
+
+    @staticmethod
+    def _get_args(command: Command | ContextMenu) -> dict[str, Any]:
+        """
+        Get the arguments for the command
+
+        :param command: The command to get the arguments from
+        :return: The arguments for the command
+        """
+
+        return command.extras
 
     async def load(self):
         localized: set[Language] = set()
@@ -729,7 +761,8 @@ class CommandTranslator(discord.app_commands.Translator):
 
             yield command
 
-    async def _localize_about_docs(self, languages: Iterable[Language]) -> None:
+    @staticmethod
+    async def _localize_about_docs(languages: Iterable[Language]) -> None:
         # pylint: disable=import-outside-toplevel
         from commands.about import get_about_dir
 
@@ -821,7 +854,7 @@ class CommandTranslator(discord.app_commands.Translator):
         await Cache.save()
 
     async def _localize_commands(self, languages: Iterable[Language]) -> None:
-        def localize(loc: Localization, args: dict, msg_id: str, is_name: bool) -> str:
+        def _localize(loc: Localization, args: dict[str, Any], msg_id: str, is_name: bool) -> str:
             result = loc.format_value(msg_id, args)
             transformed = "".join(char for char in result
                                   if char.isalnum()).lower().replace(" ", "_") \
@@ -831,6 +864,9 @@ class CommandTranslator(discord.app_commands.Translator):
 
         for language in tqdm(languages, desc="Localizing commands", total=0, unit="language"):
             for command in self.bot.tree.walk_commands():
+                if isinstance(command, Group):
+                    continue
+
                 loc = Localization(language, [
                     os.path.join("commands",
                                  f"{command.root_parent.name if command.root_parent else command.name}.ftl"),
@@ -843,14 +879,14 @@ class CommandTranslator(discord.app_commands.Translator):
                     DEFAULT_LANGUAGE,
                     language,
                     command.name,
-                    localize(loc, command.extras, f"{command_prefix}-name", True)
+                    _localize(loc, self._get_args(command), f"{command_prefix}-name", True)
                 ))
 
                 Cache.set(Translation(
                     DEFAULT_LANGUAGE,
                     language,
                     command.description,
-                    localize(loc, command.extras, f"{command_prefix}-description", False)
+                    _localize(loc, self._get_args(command), f"{command_prefix}-description", False)
                 ))
 
                 if isinstance(command, app_commands.Group):
@@ -864,15 +900,15 @@ class CommandTranslator(discord.app_commands.Translator):
                         DEFAULT_LANGUAGE,
                         language,
                         name,
-                        localize(loc, command.extras, f"{command_prefix}-{replaced_name}-name", True)
+                        _localize(loc, self._get_args(command), f"{command_prefix}-{replaced_name}-name", True)
                     ))
 
                     Cache.set(Translation(
                         DEFAULT_LANGUAGE,
                         language,
                         description,
-                        localize(loc, command.extras, f"{command_prefix}-{replaced_name}-description",
-                                 False)
+                        _localize(loc, self._get_args(command), f"{command_prefix}-{replaced_name}-description",
+                                  False)
                     ))
 
                     for choice in choices:
@@ -880,8 +916,8 @@ class CommandTranslator(discord.app_commands.Translator):
                             DEFAULT_LANGUAGE,
                             language,
                             choice.name,
-                            choice.value if choice.name.isnumeric() else localize(loc, command.extras, choice.value,
-                                                                                  False)
+                            choice.value if choice.name.isnumeric() else _localize(loc, self._get_args(command),
+                                                                                   choice.value, False)
                         ))
 
             for context_menu in itertools.chain(self.bot.tree.walk_commands(type=AppCommandType.message),
@@ -893,14 +929,14 @@ class CommandTranslator(discord.app_commands.Translator):
                     DEFAULT_LANGUAGE,
                     language,
                     context_menu.name,
-                    localize(loc, context_menu.extras,
-                             f"{context_menu.name.lower().replace(' ', '-')}-name", False)
+                    _localize(loc, self._get_args(context_menu),
+                              f"{context_menu.name.lower().replace(' ', '-')}-name", False)
                 ))
 
         await Cache.save()
 
     async def _translate_commands(self, languages: Iterable[Language]) -> None:
-        #pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals
         """
         Translate the commands to given locales
         """

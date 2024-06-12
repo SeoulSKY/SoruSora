@@ -10,7 +10,7 @@ from discord.ui import Button
 
 from utils import defer_response
 from utils.constants import BOT_NAME, ABOUT_DIR, BUG_REPORT_URL, GITHUB_URL, INVITE_URL
-from utils.translator import Localization, DEFAULT_LANGUAGE, Language, Cache
+from utils.translator import Localization, DEFAULT_LANGUAGE, Language, Cache, format_localization
 
 resources = [os.path.join("commands", "about.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
@@ -65,6 +65,7 @@ class AboutView(discord.ui.View):
         return self
 
 
+@format_localization(about_description_name=BOT_NAME)
 @app_commands.command(name=default_loc.format_value("about-name"),
                       description=default_loc.format_value("about-description",
                                                            {"about-description-name": BOT_NAME}))
@@ -77,6 +78,3 @@ async def about(interaction: Interaction):
         text = file.read()
 
     await send(Cache.get(Language(str(interaction.locale)), text).text, view=await AboutView(interaction).init())
-
-
-about.extras["about-description-name"] = BOT_NAME

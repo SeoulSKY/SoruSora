@@ -20,7 +20,7 @@ from mongo.user import User, get_user, set_user
 from utils import defer_response
 from utils.constants import BOT_NAME, UNKNOWN_ERROR_FILENAME
 from utils.templates import success, error, unknown_error, info
-from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
+from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator, format_localization
 from utils.ui import LanguageSelectView
 
 _ = google.protobuf.empty_pb2  # assign the value to not be removed when optimizing imports
@@ -143,6 +143,7 @@ class Chat(app_commands.Group):
 
         return text
 
+    @format_localization(set_language_current_language_description_default=CURRENT_LANGUAGE_DEFAULT)
     @app_commands.command(name=default_loc.format_value("set-language-name"),
                           description=default_loc.format_value("set-language-description"))
     @app_commands.describe(
@@ -163,6 +164,7 @@ class Chat(app_commands.Group):
 
         await send(view=await ChatLanguageSelectView(interaction).init(), ephemeral=True)
 
+    @format_localization(clear_description_name=BOT_NAME)
     @app_commands.command(name=default_loc.format_value("clear-name"),
                           description=default_loc.format_value("clear-description",
                                                                {"clear-description-name": BOT_NAME}))
@@ -207,9 +209,6 @@ class Chat(app_commands.Group):
         user.chat_history_id = None
         await set_user(user)
         await interaction.followup.send(success(await loc.format_value_or_translate("deleted")), ephemeral=True)
-
-    set_language.extras["set-language-current-language-description-default"] = CURRENT_LANGUAGE_DEFAULT
-    clear.extras["clear-description-name"] = BOT_NAME
 
 
 def _get_error_log() -> File:

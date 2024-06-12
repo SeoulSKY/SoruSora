@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from utils import templates, constants
 from utils.constants import ErrorCode
-from utils.translator import Localization, DEFAULT_LANGUAGE
+from utils.translator import Localization, DEFAULT_LANGUAGE, format_localization
 
 DESKTOP_CACHE_PATH = constants.CACHE_DIR / "movie" / "desktop"
 """
@@ -158,6 +158,10 @@ class Movie(app_commands.Group):
 
         return Movie._cache[path]
 
+    @format_localization(play_fps_description_min=FPS_MIN,
+                         play_fps_description_max=FPS_MAX,
+                         play_fps_description_default=FPS_DEFAULT,
+                         play_original_speed_description_default=str(ORIGINAL_SPEED_DEFAULT))
     @app_commands.command(name=default_loc.format_value("play-name"),
                           description=default_loc.format_value("play-description"))
     @app_commands.describe(title=default_loc.format_value("play-title-description"))
@@ -248,8 +252,3 @@ class Movie(app_commands.Group):
             text += "\n"
 
         return text.removesuffix("\n")
-
-    play.extras["play-fps-description-min"] = FPS_MIN
-    play.extras["play-fps-description-max"] = FPS_MAX
-    play.extras["play-fps-description-default"] = FPS_DEFAULT
-    play.extras["play-original-speed-description-default"] = str(ORIGINAL_SPEED_DEFAULT)

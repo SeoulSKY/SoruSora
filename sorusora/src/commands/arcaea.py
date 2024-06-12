@@ -12,7 +12,7 @@ from discord.ext.commands import Bot
 
 from utils import templates, ui, defer_response
 from utils.templates import error, success, info, warning
-from utils.translator import Localization, DEFAULT_LANGUAGE
+from utils.translator import Localization, format_localization, DEFAULT_LANGUAGE
 
 LINK_PLAY_LIFESPAN_MINUTES = 30
 LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=LINK_PLAY_LIFESPAN_MINUTES)
@@ -182,6 +182,7 @@ class Arcaea(app_commands.Group):
                          description=default_loc.format_value("arcaea-description"))
         self.bot = bot
 
+    @format_localization(linkplay_description_duration=LINK_PLAY_LIFESPAN_MINUTES)
     @app_commands.command(name=default_loc.format_value("linkplay-name"),
                           description=default_loc.format_value("linkplay-description", {
                               "linkplay-description-duration": LINK_PLAY_LIFESPAN_MINUTES
@@ -218,5 +219,3 @@ class Arcaea(app_commands.Group):
         await send(embed=embed, view=await LinkPlayView(interaction.locale).init())
         message = await interaction.original_response()
         await message.delete(delay=LINK_PLAY_LIFESPAN.total_seconds())
-
-    linkplay.extras["linkplay-description-duration"] = LINK_PLAY_LIFESPAN_MINUTES

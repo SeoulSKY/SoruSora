@@ -14,7 +14,8 @@ from mongo.user import get_user, set_user
 from utils import defer_response, templates
 from utils.constants import ErrorCode, Limit
 from utils.templates import success, error
-from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator
+from utils.translator import (Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator,
+                              format_localization)
 from utils.ui import LanguageSelectView, ChannelSelect, SubmitButton
 
 resources = [os.path.join("commands", "translator.ftl")]
@@ -164,6 +165,7 @@ class Translator(app_commands.Group):
         for i in range(0, len(string), count):
             yield string[i: i + count]
 
+    @format_localization(set_languages_all_channels_description_default=ALL_CHANNELS_DEFAULT)
     @app_commands.command(name=default_loc.format_value("set-languages-name"),
                           description=default_loc.format_value("set-languages-description"))
     @app_commands.describe(all_channels=default_loc.format_value(
@@ -202,6 +204,7 @@ class Translator(app_commands.Group):
 
         await send(view=language_view, ephemeral=True)
 
+    @format_localization(set_channel_languages_this_channel_description_default=THIS_CHANNEL_DEFAULT)
     @app_commands.command(name=default_loc.format_value("set-channel-languages-name"),
                           description=default_loc.format_value("set-channel-languages-description"))
     @app_commands.describe(this_channel=default_loc.format_value(
@@ -242,6 +245,7 @@ class Translator(app_commands.Group):
 
         await send(view=language_view, ephemeral=True)
 
+    @format_localization(set_channel_main_language_this_channel_description_default=THIS_CHANNEL_DEFAULT)
     @app_commands.command(name=default_loc.format_value("set-channel-main-language-name"),
                           description=default_loc.format_value("set-channel-main-language-description"))
     @app_commands.describe(this_channel=default_loc.format_value(
@@ -297,8 +301,3 @@ class Translator(app_commands.Group):
         language_view.add_item(button)
 
         await send(view=language_view, ephemeral=True)
-
-    set_languages.extras["set-languages-all-channels-description-default"] = str(ALL_CHANNELS_DEFAULT)
-    set_channel_languages.extras["set-channel-languages-this-channel-description-default"] = str(THIS_CHANNEL_DEFAULT)
-    set_channel_main_language.extras["set-channel-main-language-this-channel-description-default"] \
-        = str(THIS_CHANNEL_DEFAULT)
