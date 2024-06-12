@@ -12,12 +12,12 @@ import numpy as np
 from discord import app_commands, Interaction, Embed, HTTPException, Message, NotFound
 from discord.app_commands import Choice
 from discord.ext import tasks
+from discord.ext.commands import Bot
 from tqdm import tqdm
 
-from commands import localization_args
 from utils import templates, constants
 from utils.constants import ErrorCode
-from utils.translator import Localization, DEFAULT_LANGUAGE
+from utils.translator import Localization, DEFAULT_LANGUAGE, format_localization
 
 DESKTOP_CACHE_PATH = constants.CACHE_DIR / "movie" / "desktop"
 """
@@ -87,9 +87,10 @@ class Movie(app_commands.Group):
     _num_playing = 0
     _lock = threading.Lock()
 
-    def __init__(self):
+    def __init__(self, bot: Bot):
         super().__init__(name=default_loc.format_value("movie-name"),
                          description=default_loc.format_value("movie-description"))
+        self.bot = bot
 
         if not os.path.exists(DESKTOP_CACHE_PATH) or not os.path.exists(MOBILE_CACHE_PATH):
             self._cache_movies()
@@ -157,10 +158,10 @@ class Movie(app_commands.Group):
 
         return Movie._cache[path]
 
-    @localization_args(play_fps_description_min=FPS_MIN,
-                       play_fps_description_max=FPS_MAX,
-                       play_fps_description_default=FPS_DEFAULT,
-                       play_original_speed_description_default=str(ORIGINAL_SPEED_DEFAULT))
+    @format_localization(play_fps_description_min=FPS_MIN,
+                         play_fps_description_max=FPS_MAX,
+                         play_fps_description_default=FPS_DEFAULT,
+                         play_original_speed_description_default=str(ORIGINAL_SPEED_DEFAULT))
     @app_commands.command(name=default_loc.format_value("play-name"),
                           description=default_loc.format_value("play-description"))
     @app_commands.describe(title=default_loc.format_value("play-title-description"))

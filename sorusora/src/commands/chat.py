@@ -2,24 +2,25 @@
 Implements a commands relate to AI chat
 """
 import asyncio
-import io
 import logging
 import os
+import io
 import traceback
 
-import google.protobuf.empty_pb2
 import grpc
-from discord import app_commands, Interaction, File
 from grpc import RpcError, StatusCode
+from discord import app_commands, Message, Interaction, File
+from discord.ext.commands import Bot
 
-from commands import localization_args, listener
-from mongo.user import User, get_user, set_user
+import google.protobuf.empty_pb2
 from protos import chatAI_pb2
 from protos.chatAI_pb2_grpc import ChatAIStub
+
+from mongo.user import User, get_user, set_user
 from utils import defer_response
 from utils.constants import BOT_NAME, UNKNOWN_ERROR_FILENAME
 from utils.templates import success, error, unknown_error, info
-from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator
+from utils.translator import Language, Localization, DEFAULT_LANGUAGE, get_translator, format_localization
 from utils.ui import LanguageSelectView
 
 _ = google.protobuf.empty_pb2  # assign the value to not be removed when optimizing imports
@@ -71,23 +72,20 @@ class Chat(app_commands.Group):
 
     CHAT_AI_URL = os.getenv("CHAT_AI_HOST", "localhost") + ":" + "50051"
 
-    def __init__(self):
+    def __init__(self, bot: Bot):
         super().__init__(name=default_loc.format_value("chat-name"),
                          description=default_loc.format_value("chat-description"))
+        self.bot = bot
         self._logger = logging.getLogger(__name__)
 
-        @listener
-        async def on_message(message):
-            """
-            Executed when a message is sent
-            """
-            # pylint: disable=import-outside-toplevel
-            from main import bot
+        self._setup_chat_listeners()
 
+    def _setup_chat_listeners(self):
+        async def on_message(message: Message):
             if message.author.bot:
                 return
-            if bot.user not in message.mentions and (
-                    message.reference is None or message.reference.resolved.author != bot):
+            if self.bot.user not in message.mentions and (
+                    message.reference is None or message.reference.resolved.author != self.bot):
                 return
 
             async with message.channel.typing():
@@ -98,7 +96,7 @@ class Chat(app_commands.Group):
                         await self._create_new_chat(user, message.author.display_name)
                         user = await get_user(message.author.id)
                     text = await self._send_message(user,
-                                                    message.content.removeprefix(bot.user.mention).strip())
+                                                    message.content.removeprefix(self.bot.user.mention).strip())
                     await message.reply(text)
                 except RpcError as ex:
                     language = Language(user.locale) if user.locale is not None else DEFAULT_LANGUAGE
@@ -120,6 +118,8 @@ class Chat(app_commands.Group):
 
                     await message.reply(await unknown_error(language), file=_get_error_log(), suppress_embeds=True)
                     raise ex
+
+        self.bot.add_listener(on_message)
 
     @staticmethod
     async def _create_new_chat(user: User, user_name: str) -> None:
@@ -143,7 +143,7 @@ class Chat(app_commands.Group):
 
         return text
 
-    @localization_args(set_language_current_language_description_default=CURRENT_LANGUAGE_DEFAULT)
+    @format_localization(set_language_current_language_description_default=CURRENT_LANGUAGE_DEFAULT)
     @app_commands.command(name=default_loc.format_value("set-language-name"),
                           description=default_loc.format_value("set-language-description"))
     @app_commands.describe(
@@ -164,7 +164,7 @@ class Chat(app_commands.Group):
 
         await send(view=await ChatLanguageSelectView(interaction).init(), ephemeral=True)
 
-    @localization_args(clear_description_name=BOT_NAME)
+    @format_localization(clear_description_name=BOT_NAME)
     @app_commands.command(name=default_loc.format_value("clear-name"),
                           description=default_loc.format_value("clear-description",
                                                                {"clear-description-name": BOT_NAME}))

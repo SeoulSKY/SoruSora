@@ -6,17 +6,16 @@ import os
 import discord
 from discord import app_commands
 
-from commands import localization_args
 from utils import defer_response
 from utils.constants import BOT_NAME
 from utils.templates import info
-from utils.translator import Localization, DEFAULT_LANGUAGE
+from utils.translator import Localization, DEFAULT_LANGUAGE, format_localization
 
 resources = [os.path.join("commands", "ping.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
-@localization_args(ping_description_name=BOT_NAME)
+@format_localization(ping_description_name=BOT_NAME)
 @app_commands.command(name=default_loc.format_value("ping-name"),
                       description=default_loc.format_value("ping-description", {"ping-description-name": BOT_NAME}))
 async def ping(interaction: discord.Interaction):

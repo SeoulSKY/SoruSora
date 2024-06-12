@@ -8,10 +8,9 @@ import discord
 from discord import app_commands, Interaction, ButtonStyle
 from discord.ui import Button
 
-from commands import localization_args
 from utils import defer_response
 from utils.constants import BOT_NAME, ABOUT_DIR, BUG_REPORT_URL, GITHUB_URL, INVITE_URL
-from utils.translator import Localization, DEFAULT_LANGUAGE, Language, Cache
+from utils.translator import Localization, DEFAULT_LANGUAGE, Language, Cache, format_localization
 
 resources = [os.path.join("commands", "about.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
@@ -66,8 +65,10 @@ class AboutView(discord.ui.View):
         return self
 
 
-@localization_args(about_description_name=BOT_NAME)
-@app_commands.command()
+@format_localization(about_description_name=BOT_NAME)
+@app_commands.command(name=default_loc.format_value("about-name"),
+                      description=default_loc.format_value("about-description",
+                                                           {"about-description-name": BOT_NAME}))
 async def about(interaction: Interaction):
     """Show information about the bot"""
 
