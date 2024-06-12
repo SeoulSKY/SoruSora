@@ -7,8 +7,8 @@ from typing import Iterable
 
 import langid
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale
-from discord.ext.commands import Bot
 
+from commands import localization_args, listener
 from mongo.channel import get_channel, set_channel
 from mongo.user import get_user, set_user
 from utils import defer_response, templates
@@ -60,58 +60,40 @@ class Translator(app_commands.Group):
     Commands related to translation
     """
 
-    def __init__(self, bot: Bot):
+    def __init__(self):
         super().__init__(name=default_loc.format_value("translator-name"),
                          description=default_loc.format_value("translator-description"))
-        self.bot = bot
-
         self._translator: BaseTranslator = get_translator()
 
-        self._setup_user_listeners()
-        self._setup_channel_listeners()
-
-    def _setup_user_listeners(self):
+        @listener
         async def on_message(message: Message):
-            usr = await get_user(message.author.id)
-            if (
-                    len(message.content.strip()) == 0 or
-                    len(usr.translate_to) == 0 or
-                    len(usr.translate_in) != 0 and message.channel.id not in usr.translate_in
-            ):
+            """
+            Executed when a message is sent to a server
+            """
+            if len(message.content.strip()) == 0:
                 return
 
-            if len(usr.translate_to) == 0:
-                return
+            src_lang = None
+            channel = await get_channel(message.channel.id)
+            if (len(channel.translate_to)) > 0:
+                src_lang = None if channel.locale is None else Language(channel.locale)
+                codes = channel.translate_to
+            else:
+                user = await get_user(message.author.id)
+                if len(user.translate_in) > 0 and message.channel.id not in user.translate_in:
+                    return
+
+                codes = user.translate_to
 
             languages = []
-            for code in usr.translate_to:
+            for code in codes:
                 if self._translator.is_code_supported(code):
                     languages.append(Language(code))
 
-            await self._send_translation(message, languages)
-
-        self.bot.add_listener(on_message)
-
-    def _setup_channel_listeners(self):
-        async def on_message(message: Message):
-            if message.author == self.bot.user:
+            if len(languages) == 0:
                 return
 
-            chan = await get_channel(message.channel.id)
-            if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
-                return
-
-            if len(chan.translate_to) == 0:
-                return
-
-            languages = []
-            for code in chan.translate_to:
-                if self._translator.is_code_supported(code):
-                    languages.append(Language(code))
-
-            await self._send_translation(message, languages, Language(chan.locale) if chan.locale else None)
-
-        self.bot.add_listener(on_message)
+            await self._send_translation(message, languages, src_lang)
 
     async def _send_translation(self,
                                 message: Message,
@@ -164,6 +146,7 @@ class Translator(app_commands.Group):
         for i in range(0, len(string), count):
             yield string[i: i + count]
 
+    @localization_args(set_languages_all_channels_description_default=str(ALL_CHANNELS_DEFAULT))
     @app_commands.command(name=default_loc.format_value("set-languages-name"),
                           description=default_loc.format_value("set-languages-description"))
     @app_commands.describe(all_channels=default_loc.format_value(
@@ -202,6 +185,7 @@ class Translator(app_commands.Group):
 
         await send(view=language_view, ephemeral=True)
 
+    @localization_args(set_channel_languages_this_channel_description_default=str(THIS_CHANNEL_DEFAULT))
     @app_commands.command(name=default_loc.format_value("set-channel-languages-name"),
                           description=default_loc.format_value("set-channel-languages-description"))
     @app_commands.describe(this_channel=default_loc.format_value(
@@ -242,8 +226,10 @@ class Translator(app_commands.Group):
 
         await send(view=language_view, ephemeral=True)
 
+    @localization_args(set_channel_main_language_this_channel_description_default=str(THIS_CHANNEL_DEFAULT))
     @app_commands.command(name=default_loc.format_value("set-channel-main-language-name"),
-                          description=default_loc.format_value("set-channel-main-language-description"))
+                          description=default_loc.format_value("set-channel-main-language-description"),
+                          )
     @app_commands.describe(this_channel=default_loc.format_value(
         "set-channel-main-language-this-channel-description",
         {"set-channel-main-language-this-channel-description-default": str(THIS_CHANNEL_DEFAULT)})
@@ -297,8 +283,3 @@ class Translator(app_commands.Group):
         language_view.add_item(button)
 
         await send(view=language_view, ephemeral=True)
-
-    set_languages.extras["set-languages-all-channels-description-default"] = str(ALL_CHANNELS_DEFAULT)
-    set_channel_languages.extras["set-channel-languages-this-channel-description-default"] = str(THIS_CHANNEL_DEFAULT)
-    set_channel_main_language.extras["set-channel-main-language-this-channel-description-default"] \
-        = str(THIS_CHANNEL_DEFAULT)

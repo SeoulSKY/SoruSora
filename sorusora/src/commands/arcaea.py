@@ -8,8 +8,8 @@ import os
 
 import discord
 from discord import app_commands, Interaction, Forbidden, Locale
-from discord.ext.commands import Bot
 
+from commands import localization_args
 from utils import templates, ui, defer_response
 from utils.templates import error, success, info, warning
 from utils.translator import Localization, DEFAULT_LANGUAGE
@@ -177,11 +177,11 @@ class Arcaea(app_commands.Group):
     Commands related to Arcaea
     """
 
-    def __init__(self, bot: Bot):
+    def __init__(self):
         super().__init__(name=default_loc.format_value("arcaea-name"),
                          description=default_loc.format_value("arcaea-description"))
-        self.bot = bot
 
+    @localization_args(linkplay_description_duration=LINK_PLAY_LIFESPAN_MINUTES)
     @app_commands.command(name=default_loc.format_value("linkplay-name"),
                           description=default_loc.format_value("linkplay-description", {
                               "linkplay-description-duration": LINK_PLAY_LIFESPAN_MINUTES
@@ -218,5 +218,3 @@ class Arcaea(app_commands.Group):
         await send(embed=embed, view=await LinkPlayView(interaction.locale).init())
         message = await interaction.original_response()
         await message.delete(delay=LINK_PLAY_LIFESPAN.total_seconds())
-
-    linkplay.extras["linkplay-description-duration"] = LINK_PLAY_LIFESPAN_MINUTES
