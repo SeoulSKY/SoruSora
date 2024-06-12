@@ -68,49 +68,34 @@ class Translator(app_commands.Group):
 
         self._translator: BaseTranslator = get_translator()
 
-        self._setup_user_listeners()
-        self._setup_channel_listeners()
+        self._setup_listeners()
 
-    def _setup_user_listeners(self):
+    def _setup_listeners(self):
         async def on_message(message: Message):
-            usr = await get_user(message.author.id)
-            if (
-                    len(message.content.strip()) == 0 or
-                    len(usr.translate_to) == 0 or
-                    len(usr.translate_in) != 0 and message.channel.id not in usr.translate_in
-            ):
+            if len(message.content.strip()) == 0 or message.author == self.bot.user:
                 return
 
-            if len(usr.translate_to) == 0:
-                return
+            channel = await get_channel(message.channel.id)
+            src_lang = None
+
+            if len(channel.translate_to) > 0:
+                codes = channel.translate_to
+                src_lang = Language(channel.locale) if channel.locale else None
+            else:
+                user = await get_user(message.author.id)
+                codes = user.translate_to \
+                    if len(user.translate_in) == 0 or message.channel.id in user.translate_in \
+                    else []
 
             languages = []
-            for code in usr.translate_to:
+            for code in codes:
                 if self._translator.is_code_supported(code):
                     languages.append(Language(code))
 
-            await self._send_translation(message, languages)
-
-        self.bot.add_listener(on_message)
-
-    def _setup_channel_listeners(self):
-        async def on_message(message: Message):
-            if message.author == self.bot.user:
+            if len(languages) == 0:
                 return
 
-            chan = await get_channel(message.channel.id)
-            if len(message.content.strip()) == 0 or len(chan.translate_to) == 0:
-                return
-
-            if len(chan.translate_to) == 0:
-                return
-
-            languages = []
-            for code in chan.translate_to:
-                if self._translator.is_code_supported(code):
-                    languages.append(Language(code))
-
-            await self._send_translation(message, languages, Language(chan.locale) if chan.locale else None)
+            await self._send_translation(message, languages, src_lang)
 
         self.bot.add_listener(on_message)
 

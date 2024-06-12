@@ -3,22 +3,36 @@ Main script where the program starts
 """
 import logging
 import os
+import sys
+from importlib import import_module
 from logging.handlers import TimedRotatingFileHandler
 
 import discord
-from discord import Interaction
+from discord import app_commands, Interaction
 from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext.commands import Bot, MinimalHelpCommand
+from dotenv import load_dotenv
 
-from commands import listeners
-from src import get_commands, IS_DEV_ENV, TEST_GUILD
-from utils.constants import ROOT_DIR
+from commands.movie import Movie
+from utils.constants import ROOT_DIR, SRC_DIR
 from utils.templates import forbidden
 from utils.translator import Localization, CommandTranslator
+
+load_dotenv()
+
+sys.path.append(os.path.join(ROOT_DIR, "src"))  # Add the src directory to the path
+sys.path.append(os.path.join(ROOT_DIR, "src", "protos"))  # Add protos directory to the path
 
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ERROR_DIR = os.path.join(LOGS_DIR, "error")
 WARNING_DIR = os.path.join(LOGS_DIR, "warning")
+
+TEST_GUILD = discord.Object(id=os.getenv("TEST_GUILD_ID")) if os.getenv("TEST_GUILD_ID") else None
+IS_DEV_ENV = TEST_GUILD is not None
+
+DEV_COMMANDS = {
+    Movie,
+}
 
 
 class EmptyHelpCommand(MinimalHelpCommand):
@@ -52,11 +66,31 @@ class SoruSora(Bot):
         super().__init__(command_prefix="s!", intents=discord.Intents.all())
 
         self.help_command = EmptyHelpCommand()
-
-        for command in get_commands():
-            self.tree.add_command(command)
+        self._add_commands()
 
         self.event(self.on_ready)
+
+    def _add_commands(self):
+        package_names = ["commands", "context_menus"]
+
+        for package_name in package_names:
+            for module_name in os.listdir(SRC_DIR / package_name):
+                if module_name == "__init__.py" or not module_name.endswith(".py"):
+                    continue
+
+                module = import_module(".".join([package_name, module_name.removesuffix(".py")]))
+
+                # Get the command function from the module named same as the file name
+                command = getattr(module, module_name.removesuffix(".py"), None)
+                if command is not None:
+                    self.tree.add_command(command)
+
+        for group_command_class in app_commands.Group.__subclasses__():
+            if group_command_class in DEV_COMMANDS and not IS_DEV_ENV:
+                continue
+
+            # noinspection PyArgumentList
+            self.tree.add_command(group_command_class(bot=self))
 
     async def setup_hook(self):
         await self.tree.set_translator(CommandTranslator(self))
@@ -75,10 +109,6 @@ class SoruSora(Bot):
         """
 
         await self.change_presence(activity=discord.CustomActivity(name="Type /help"))
-        for listener in listeners:
-            self.add_listener(listener)
-
-        listeners.clear()
 
         logging.info("Running in %s environment", "development" if IS_DEV_ENV else "production")
         logging.info("Logged in as %s (ID: %d)", self.user, self.user.id)
