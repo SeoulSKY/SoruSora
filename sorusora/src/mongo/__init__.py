@@ -13,6 +13,7 @@ Functions:
     set_document
 """
 import os
+from dataclasses import is_dataclass, asdict
 from typing import Type, TypeVar, Optional, Iterator
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
@@ -39,18 +40,27 @@ class Document:  # pylint: disable=too-few-public-methods
         :return: The new document
         """
 
-        document = child_class()
-        for key, value in source.items():
-            setattr(document, key, value)
+        # Only include keys that are actual attributes of the child class
+        valid_keys = set(child_class.__annotations__.keys())
+        filtered_source = {k: v for k, v in source.items() if k in valid_keys}
 
-        return document
+        return child_class(**filtered_source)
 
     def to_dict(self) -> dict:
         """
         Convert this document to dictionary
         :return: The dictionary
         """
-        return vars(self)
+        result = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, list):
+                result[key] = [asdict(v) if is_dataclass(v) else v for v in value]
+            elif is_dataclass(value):
+                result[key] = asdict(value)
+            else:
+                result[key] = value
+
+        return result
 
 
 async def has_document(collection: AsyncIOMotorCollection, doc_filter: dict) -> bool:

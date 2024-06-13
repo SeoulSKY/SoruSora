@@ -12,8 +12,8 @@ clear-name = clear
 clear-description = Clear the chat history between you and { $clear-description-name }
 
 # Successes
-updated = The chat language has been updated to `{ $language }`
-deleted = Deleted!
+updated = The chat history has been updated!
+deleted = The chat history has been deleted!
 
 # Errors
 no-history = You don't have any conversations with { $name }

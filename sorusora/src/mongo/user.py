@@ -9,6 +9,7 @@ Functions:
     get_user
     set_user
 """
+from dataclasses import field, dataclass
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 
@@ -17,22 +18,16 @@ from mongo import db, Document, has_document, get_document, set_document
 collection: AsyncIOMotorCollection = db.get_collection("user")
 
 
+@dataclass
 class User(Document):
     """
     A wrapper class to represent user in the database
     """
-    # pylint: disable=too-many-arguments
 
-    def __init__(self, user_id: int = -1,
-                 chat_history_id: str = None,
-                 translate_to: list[str] = None,
-                 translate_in: list[int] = None,
-                 locale: str = None):
-        self.user_id = user_id
-        self.chat_history_id = chat_history_id
-        self.translate_to: list[str] = translate_to if translate_to is not None else []
-        self.translate_in: list[str] = translate_in if translate_in is not None else []
-        self.locale = locale
+    user_id: int = -1
+    translate_to: list[str] = field(default_factory=list)
+    translate_in: list[str] = field(default_factory=list)
+    ai_token: str = None
 
     @staticmethod
     def from_dict(source: dict) -> "User":
@@ -65,10 +60,11 @@ async def get_user(user_id: int) -> User:
     :return: The user
     """
 
-    if not await has_user(user_id):
-        return User(user_id)
+    doc = await get_document(collection, _get_filter(user_id))
+    if doc is None:
+        return User(user_id=user_id)
 
-    return User.from_dict(await get_document(collection, _get_filter(user_id)))
+    return User.from_dict(doc)
 
 
 async def set_user(user: User) -> None:

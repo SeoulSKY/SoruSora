@@ -66,6 +66,7 @@ class Limit(Enum):
 
 BOT_NAME = "SoruSora"
 DATABASE_NAME = "SoruSora"
+DEVELOPER_NAME = "SeoulSKY"
 
 INVITE_URL = "https://sorusora.seoulsky.org"
 GITHUB_URL = "https://github.com/SeoulSKY/SoruSora"

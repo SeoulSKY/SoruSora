@@ -9,6 +9,7 @@ Functions:
     get_channel
     set_channel
 """
+from dataclasses import dataclass, field
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 
@@ -17,17 +18,15 @@ from mongo import db, Document, has_document, get_document, set_document, get_do
 collection: AsyncIOMotorCollection = db.get_collection("channel")
 
 
+@dataclass
 class Channel(Document):
     """
     A wrapper class to represent channel configs in the database
     """
 
-    def __init__(self, channel_id: int = -1, translate_to: list[str] = None, locale: str = None):
-        self.channel_id = channel_id
-        if translate_to is None:
-            translate_to = []
-        self.translate_to: list[str] = translate_to
-        self.locale = locale
+    channel_id: int = -1
+    translate_to: list[str] = field(default_factory=list)
+    locale: str = None
 
     @staticmethod
     def from_dict(source: dict) -> "Channel":
@@ -60,10 +59,11 @@ async def get_channel(channel_id: int) -> Channel:
     :return: The channel
     """
 
-    if not await has_channel(channel_id):
-        return Channel(channel_id)
+    doc = await get_document(collection, _get_filter(channel_id))
+    if doc is None:
+        return Channel(channel_id=channel_id)
 
-    return Channel.from_dict(await get_document(collection, _get_filter(channel_id)))
+    return Channel.from_dict(doc)
 
 
 async def get_channels(channel_ids: list[int]) -> list[Channel]:

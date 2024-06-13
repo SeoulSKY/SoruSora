@@ -11,5 +11,4 @@ tqdm==4.66.1
 motor==3.3.2
 fluent.runtime==0.4.0
 argostranslate==1.9.1
-grpcio==1.62.1
-grpcio-tools==1.62.1
+google-generativeai==0.6.0
