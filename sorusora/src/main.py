@@ -10,7 +10,7 @@ from logging.handlers import TimedRotatingFileHandler
 import discord
 from discord import app_commands, Interaction
 from discord.app_commands import AppCommandError, MissingPermissions
-from discord.ext.commands import Bot, MinimalHelpCommand
+from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
 from commands.movie import Movie
@@ -35,15 +35,6 @@ DEV_COMMANDS = {
 }
 
 
-class EmptyHelpCommand(MinimalHelpCommand):
-    """
-    Help command that does nothing
-    """
-
-    async def send_pages(self) -> None:
-        pass
-
-
 class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
     """
     Logger filter that filters only specific logging level
@@ -65,7 +56,7 @@ class SoruSora(Bot):
     def __init__(self):
         super().__init__(command_prefix="s!", intents=discord.Intents.all())
 
-        self.help_command = EmptyHelpCommand()
+        self.help_command = None
         self._add_commands()
 
         self.event(self.on_ready)
@@ -79,6 +70,10 @@ class SoruSora(Bot):
                     continue
 
                 module = import_module(".".join([package_name, module_name.removesuffix(".py")]))
+
+                setup_func = getattr(module, "setup", None)
+                if setup_func is not None:
+                    setup_func(self)
 
                 # Get the command function from the module named same as the file name
                 command = getattr(module, module_name.removesuffix(".py"), None)

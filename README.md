@@ -43,17 +43,16 @@
   - [About](#about)
   - [Arcaea](#arcaea)
     - [/arcaea linkplay](#arcaea-linkplay)
+  - [Channel](#channel)
+    - [/channel language](#channel-language)
+    - [/channel translator](#channel-translator)
   - [Chat](#chat)
-    - [/chat set\_language](#chat-set_language)
     - [/chat clear](#chat-clear)
   - [Dashboard](#dashboard)
   - [Dice](#dice)
   - [Help](#help)
   - [Ping](#ping)
   - [Translator](#translator)
-    - [/translator set\_languages](#translator-set_languages)
-    - [/translator set\_channel\_languages](#translator-set_channel_languages)
-    - [/translator set\_channel\_main\_language](#translator-set_channel_main_language)
 - [How to Set up and Run](#how-to-set-up-and-run)
   - [Setting Environment Variables](#setting-environment-variables)
   - [Description of each environment variable](#description-of-each-environment-variable)
@@ -81,13 +80,27 @@ Show the information about SoruSora
 
 Create an embed to invite people to your Link Play.
 
+### Channel
+
+#### /channel language
+
+Set or remove the main language of the channels.
+
+The translator will use the main language as the source language for all messages in the channels.
+
+#### /channel translator
+
+Set or remove a translator for channels.
+
+For every message sent in the selected channels, SoruSora will translate the message into the selected languages and reply with the translations.
+
+If the main language of the channels is not selected using `/channel language`, the language used in the message will be detected automatically.
+
+It supports 43 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
+
 ### Chat
 
 To chat with SoruSora, either mention her or reply to her.
-
-#### /chat set_language
-
-Update the chat language to the current discord language.
 
 #### /chat clear
 
@@ -111,19 +124,10 @@ Check the response time of SoruSora.
 
 ### Translator
 
+Set or remove a translator that translate all of your messages to other languages.
+
 It supports 43 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
 
-#### /translator set_languages
-
-Set or remove the languages to be translated for your messages.
-
-#### /translator set_channel_languages
-
-Set or remove the languages to be translated for the channels. Only available for server admins.
-
-#### /translator set_channel_main_language
-
-Set or remove the main language for the channel. The translator will set the selected language as the source language for all messages in the channels. Only available for server admins.
 
 ## How to Set up and Run
 

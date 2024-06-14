@@ -11,7 +11,7 @@ from typing import Iterable
 import discord
 from discord import app_commands, Message, Interaction, File, Member, RawMessageUpdateEvent
 from discord.ext.commands import Bot
-from google.api_core.exceptions import InvalidArgument
+from google.api_core.exceptions import InvalidArgument, ResourceExhausted, PermissionDenied
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold, ContentDict
 
@@ -286,10 +286,16 @@ class Chat(app_commands.Group):
             model = await self._get_model(message.author)
             session = model.start_chat(history=await self._get_history(message.author))
 
-            # TODO: handle more errors
             try:
                 response = await session.send_message_async(content)
             except InvalidArgument:
+                await message.reply("Invalid token")
+                return
+            except PermissionDenied:
+                await message.reply("Permission denied")
+                return
+            except ResourceExhausted:
+                await message.reply("Resource exhausted")
                 return
 
             return await message.reply(response.text)

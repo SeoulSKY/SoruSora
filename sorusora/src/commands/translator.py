@@ -9,20 +9,18 @@ import langid
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale
 from discord.ext.commands import Bot
 
-from mongo.channel import get_channel, set_channel
+from mongo.channel import get_channel
 from mongo.user import get_user, set_user
 from utils import defer_response, templates
 from utils.constants import ErrorCode, Limit
-from utils.templates import success, error
-from utils.translator import (Localization, Language, DEFAULT_LANGUAGE, get_translator, BaseTranslator,
-                              format_localization)
+from utils.templates import success
+from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, format_localization
 from utils.ui import LanguageSelectView, ChannelSelect, SubmitButton
 
 resources = [os.path.join("commands", "translator.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 ALL_CHANNELS_DEFAULT = True
-THIS_CHANNEL_DEFAULT = True
 
 
 class TranslatorLanguageSelectView(LanguageSelectView):
@@ -56,233 +54,129 @@ class TranslatorChannelSelect(ChannelSelect):
         super().__init__(placeholder=loc.format_value_or_translate("select-channels"))
 
 
-class Translator(app_commands.Group):
+_translator = get_translator()
+
+def setup(bot: Bot):
     """
-    Commands related to translation
+    Set up the translator commands
     """
 
-    def __init__(self, bot: Bot):
-        super().__init__(name=default_loc.format_value("translator-name"),
-                         description=default_loc.format_value("translator-description"))
-        self.bot = bot
+    async def on_message(message: Message):
+        if len(message.content.strip()) == 0 or message.author == bot.user:
+            return
 
-        self._translator: BaseTranslator = get_translator()
+        channel = await get_channel(message.channel.id)
+        src_lang = None
 
-        self._setup_listeners()
+        if len(channel.translate_to) > 0:
+            codes = channel.translate_to
+            src_lang = Language(channel.locale) if channel.locale else None
+        else:
+            user = await get_user(message.author.id)
+            codes = user.translate_to if len(user.translate_in) == 0 or message.channel.id in user.translate_in \
+                else []
 
-    def _setup_listeners(self):
-        async def on_message(message: Message):
-            if len(message.content.strip()) == 0 or message.author == self.bot.user:
-                return
+        languages = []
+        for code in codes:
+            if _translator.is_code_supported(code):
+                languages.append(Language(code))
 
-            channel = await get_channel(message.channel.id)
-            src_lang = None
+        if len(languages) == 0:
+            return
 
-            if len(channel.translate_to) > 0:
-                codes = channel.translate_to
-                src_lang = Language(channel.locale) if channel.locale else None
-            else:
-                user = await get_user(message.author.id)
-                codes = user.translate_to \
-                    if len(user.translate_in) == 0 or message.channel.id in user.translate_in \
-                    else []
+        await _send_translation(message, languages, src_lang)
 
-            languages = []
-            for code in codes:
-                if self._translator.is_code_supported(code):
-                    languages.append(Language(code))
+    bot.add_listener(on_message)
 
-            if len(languages) == 0:
-                return
 
-            await self._send_translation(message, languages, src_lang)
+async def _send_translation(message: Message,
+                            dest_langs: Iterable[Language],
+                            src_lang: Language = None) -> None:
 
-        self.bot.add_listener(on_message)
+    async with message.channel.typing():
+        text = message.content
+        if src_lang is None:
+            src_lang = Language((await asyncio.to_thread(langid.classify, text))[0])
 
-    async def _send_translation(self,
-                                message: Message,
-                                dest_langs: Iterable[Language],
-                                src_lang: Language = None) -> None:
-        async with message.channel.typing():
-            text = message.content
-            if src_lang is None:
-                src_lang = Language((await asyncio.to_thread(langid.classify, text))[0])
+        if len(message.embeds) != 0:
+            text += "\n\n"
+            for embed in message.embeds:
+                if embed.description is not None:
+                    text += embed.description + "\n\n"
 
-            if len(message.embeds) != 0:
-                text += "\n\n"
-                for embed in message.embeds:
-                    if embed.description is not None:
-                        text += embed.description + "\n\n"
+            text = text.removesuffix("\n\n")
 
-                text = text.removesuffix("\n\n")
+        description = ""
+        async for translation in _translator.translate_targets(text, dest_langs, src_lang):
+            if translation.source == translation.target:
+                continue
 
-            description = ""
-            async for translation in self._translator.translate_targets(text, dest_langs, src_lang):
-                if translation.source == translation.target:
-                    continue
+            description += f"**__{translation.target.name}__**\n{translation.text}\n\n"
 
-                description += f"**__{translation.target.name}__**\n{translation.text}\n\n"
+        description.removesuffix("\n\n")
 
-            description.removesuffix("\n\n")
+        if len(description) == 0:
+            return
 
-            if len(description) == 0:
-                return
+        embeds = []
+        for chunk in _split(description, int(Limit.EMBED_DESCRIPTION_LEN)):
+            embed = Embed(color=templates.color, description=chunk)
+            embed.set_footer(text=message.author.display_name, icon_url=message.author.display_avatar.url)
+            embeds.append(embed)
 
-            embeds = []
-            for chunk in Translator._split(description, int(Limit.EMBED_DESCRIPTION_LEN)):
-                embed = Embed(color=templates.color, description=chunk)
-                embed.set_footer(text=message.author.display_name, icon_url=message.author.display_avatar.url)
-                embeds.append(embed)
-
-            try:
-                await message.reply(embeds=embeds[0: min(len(embeds), int(Limit.NUM_EMBEDS_IN_MESSAGE))],
+        try:
+            await message.reply(embeds=embeds[0: min(len(embeds), int(Limit.NUM_EMBEDS_IN_MESSAGE))],
+                                silent=True)
+        except HTTPException as ex:
+            if ex.code == ErrorCode.MESSAGE_TOO_LONG:
+                await message.reply(templates.error("Cannot send the translated text because it is too long"),
                                     silent=True)
-            except HTTPException as ex:
-                if ex.code == ErrorCode.MESSAGE_TOO_LONG:
-                    await message.reply(templates.error("Cannot send the translated text because it is too long"),
-                                        silent=True)
-                    return
-
-                raise ex
-
-    @staticmethod
-    def _split(string: str, count: int):
-        for i in range(0, len(string), count):
-            yield string[i: i + count]
-
-    @format_localization(set_languages_all_channels_description_default=ALL_CHANNELS_DEFAULT)
-    @app_commands.command(name=default_loc.format_value("set-languages-name"),
-                          description=default_loc.format_value("set-languages-description"))
-    @app_commands.describe(all_channels=default_loc.format_value(
-        "set-languages-all-channels-description",
-        {"set-languages-all-channels-description-default": str(ALL_CHANNELS_DEFAULT)})
-    )
-    async def set_languages(self, interaction: Interaction, all_channels: bool = ALL_CHANNELS_DEFAULT):
-        """
-        Set or remove the languages to be translated for your messages
-        """
-
-        loc = Localization(interaction.locale, resources)
-        send = await defer_response(interaction)
-
-        language_view = await TranslatorLanguageSelectView(interaction).init()
-        channel_select = await TranslatorChannelSelect(interaction.locale).init()
-
-        async def on_submit(interaction: Interaction):
-            config = await get_user(interaction.user.id)
-            config.translate_to = list(language_view.selected)
-            config.translate_in = [] if all_channels else [channel.id for channel in channel_select.values]
-            await set_user(config)
-
-            await interaction.response.send_message(
-                success(await loc.format_value_or_translate("languages-updated")),
-                ephemeral=True
-            )
-
-        button = await SubmitButton(interaction.locale).init()
-        button.callback = on_submit
-
-        if not all_channels:
-            language_view.add_item(channel_select)
-
-        language_view.add_item(button)
-
-        await send(view=language_view, ephemeral=True)
-
-    @format_localization(set_channel_languages_this_channel_description_default=THIS_CHANNEL_DEFAULT)
-    @app_commands.command(name=default_loc.format_value("set-channel-languages-name"),
-                          description=default_loc.format_value("set-channel-languages-description"))
-    @app_commands.describe(this_channel=default_loc.format_value(
-        "set-channel-languages-this-channel-description",
-        {"set-channel-languages-this-channel-description-default": str(THIS_CHANNEL_DEFAULT)})
-    )
-    @app_commands.checks.has_permissions(administrator=True)
-    async def set_channel_languages(self, interaction: Interaction, this_channel: bool = THIS_CHANNEL_DEFAULT):
-        """
-        Set or remove the languages to be translated for channels
-        """
-
-        loc = Localization(interaction.locale, resources)
-        send = await defer_response(interaction)
-
-        language_view = await TranslatorLanguageSelectView(interaction).init()
-        channel_select = await TranslatorChannelSelect(interaction.locale).init()
-
-        async def on_submit(interaction: Interaction):
-            channels = [interaction.channel_id] if this_channel else [channel.id for channel in channel_select.values]
-            for channel in channels:
-                config = await get_channel(channel)
-                config.translate_to = list(language_view.selected)
-                await set_channel(config)
-
-            await interaction.response.send_message(
-                success(await loc.format_value_or_translate("channel-languages-updated")),
-                ephemeral=True
-            )
-
-        button = await SubmitButton(interaction.locale).init()
-        button.callback = on_submit
-
-        if not this_channel:
-            language_view.add_item(channel_select)
-
-        language_view.add_item(button)
-
-        await send(view=language_view, ephemeral=True)
-
-    @format_localization(set_channel_main_language_this_channel_description_default=THIS_CHANNEL_DEFAULT)
-    @app_commands.command(name=default_loc.format_value("set-channel-main-language-name"),
-                          description=default_loc.format_value("set-channel-main-language-description"))
-    @app_commands.describe(this_channel=default_loc.format_value(
-        "set-channel-main-language-this-channel-description",
-        {"set-channel-main-language-this-channel-description-default": str(THIS_CHANNEL_DEFAULT)})
-    )
-    @app_commands.checks.has_permissions(administrator=True)
-    async def set_channel_main_language(self, interaction: Interaction, this_channel: bool = THIS_CHANNEL_DEFAULT):
-        """
-        Set or remove the main language of the channels.
-        """
-
-        loc = Localization(interaction.locale, resources)
-        send = await defer_response(interaction)
-
-        language_view = await TranslatorLanguageSelectView(interaction, 1).init()
-        channel_select = await TranslatorChannelSelect(interaction.locale).init()
-
-        async def on_submit(interaction: Interaction):
-            selected = list(language_view.selected)
-            channels = [interaction.channel_id] if this_channel else [channel.id for channel in channel_select.values]
-
-            if len(channels) == 0:
-                await interaction.response.send_message(
-                    error(await loc.format_value_or_translate("no-channels-selected")),
-                    ephemeral=True
-                )
                 return
 
-            for channel in channels:
-                config = await get_channel(channel)
-                config.locale = selected[0] if len(selected) != 0 else None
-                await set_channel(config)
+            raise ex
 
-            await interaction.response.send_message(
-                success(await loc.format_value_or_translate("channel-main-language-updated")),
-                ephemeral=True
-            )
 
-        button = await SubmitButton(interaction.locale).init()
-        button.disabled = not this_channel
-        button.callback = on_submit
+def _split(string: str, count: int):
+    for i in range(0, len(string), count):
+        yield string[i: i + count]
 
-        async def on_channel_select(_: Interaction):
-            button.disabled = len(channel_select.values) == 0
-            await interaction.edit_original_response(view=language_view)
 
-        channel_select.on_select = on_channel_select
+@format_localization(translator_all_channels_description_default=str(ALL_CHANNELS_DEFAULT))
+@app_commands.command(name=default_loc.format_value("translator-name"),
+                      description=default_loc.format_value("translator-description"))
+@app_commands.describe(all_channels=default_loc.format_value(
+    "translator-all-channels-description",
+    {"translator-all-channels-description-default": str(ALL_CHANNELS_DEFAULT)})
+)
+async def translator(interaction: Interaction, all_channels: bool = ALL_CHANNELS_DEFAULT):
+    """
+    Set or remove the languages to be translated for your messages
+    """
 
-        if not this_channel:
-            language_view.add_item(channel_select)
+    loc = Localization(interaction.locale, resources)
+    send = await defer_response(interaction)
 
-        language_view.add_item(button)
+    language_view = await TranslatorLanguageSelectView(interaction).init()
+    channel_select = await TranslatorChannelSelect(interaction.locale).init()
 
-        await send(view=language_view, ephemeral=True)
+    async def on_submit(interaction: Interaction):
+        user = await get_user(interaction.user.id)
+        user.translate_to = list(language_view.selected)
+        user.translate_in = [] if all_channels else [channel.id for channel in channel_select.values]
+        await set_user(user)
+
+        # pylint: disable=duplicate-code
+        await interaction.response.send_message(
+            success(await loc.format_value_or_translate("translator-set")),
+            ephemeral=True
+        )
+
+    button = await SubmitButton(interaction.locale).init()
+    button.callback = on_submit
+
+    if not all_channels:
+        language_view.add_item(channel_select)
+
+    language_view.add_item(button)
+
+    await send(view=language_view, ephemeral=True)

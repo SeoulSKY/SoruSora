@@ -79,7 +79,7 @@ async def dashboard(interaction: Interaction):
                                     inline=False
                                 )
                      .add_field(
-                                    name=await loc.format_value_or_translate("main-language"),
+                                    name=await loc.format_value_or_translate("language"),
                                     value=main_language,
                                     inline=False
                                 ))

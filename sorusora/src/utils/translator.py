@@ -31,7 +31,7 @@ import argostranslate.translate
 import babel
 import discord
 from deep_translator import GoogleTranslator as Google
-from deep_translator.exceptions import TooManyRequests
+from deep_translator.exceptions import TranslationNotFound
 from discord import Locale, app_commands, AppCommandType
 from discord.app_commands import locale_str, TranslationContextTypes, Command, Group, ContextMenu
 from discord.ext.commands import Bot
@@ -362,28 +362,38 @@ class GoogleTranslator(BaseTranslator):
         return language.code if self.is_language_supported(language) else language.trim_territory().code
 
     async def translate(self, text: str, target: Language, source: Language = DEFAULT_LANGUAGE) -> Translation:
-        try:
-            return Translation(
-                source,
-                target,
-                text,
-                await asyncio.to_thread(
-                    Google(self._language_to_code(source), self._language_to_code(target)).translate,
-                    text
+        num_tries = 3
+
+        for _ in range(num_tries):
+            try:
+                return Translation(
+                    source,
+                    target,
+                    text,
+                    await asyncio.to_thread(
+                        Google(self._language_to_code(source), self._language_to_code(target)).translate,
+                        text
+                    )
                 )
-            )
-        except TooManyRequests:
-            return await self._fallback_translator.translate(text, target, source)
+            except TranslationNotFound:
+                continue
+
+        return await self._fallback_translator.translate(text, target, source)
 
     async def translate_texts(self, texts: Iterable[str], target: Language, source: Language = DEFAULT_LANGUAGE
                               ) -> AsyncGenerator[Translation, Any]:
+        num_tries = 3
         texts = list(texts)
-        try:
-            translations = await asyncio.to_thread(
-                Google(self._language_to_code(source), self._language_to_code(target)).translate_batch,
-                texts
-            )
-        except TooManyRequests:
+        for _ in range(num_tries):
+            try:
+                translations = await asyncio.to_thread(
+                    Google(self._language_to_code(source), self._language_to_code(target)).translate_batch,
+                    texts
+                )
+                break
+            except TranslationNotFound:
+                continue
+        else:
             async for translation in self._fallback_translator.translate_texts(texts, target, source):
                 yield translation
 
@@ -864,9 +874,6 @@ class CommandTranslator(discord.app_commands.Translator):
 
         for language in tqdm(languages, desc="Localizing commands", total=0, unit="language"):
             for command in self.bot.tree.walk_commands():
-                if isinstance(command, Group):
-                    continue
-
                 loc = Localization(language, [
                     os.path.join("commands",
                                  f"{command.root_parent.name if command.root_parent else command.name}.ftl"),
