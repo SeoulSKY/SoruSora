@@ -152,6 +152,7 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 | BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                                  |
 | TEST_GUILD_ID                        | (Optional) Find your test server id following the [guide](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-). If provided, the bot runs in development mode. |
 | AI_TOKEN                           | Token for Gemini API. You can create one [here](https://makersuite.google.com/app/apikey) for free |
+| ENCRYPTION_KEY                       | Key for encrypting and decrypting the user token |
 
 
 ### Running with [Docker](https://www.docker.com) (Recommended)
