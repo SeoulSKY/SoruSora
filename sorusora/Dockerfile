@@ -16,13 +16,6 @@ COPY ${ROOT_PATH}/requirements.txt .
 RUN pip install -r requirements.txt \
     && pip install typing-extensions
 
-COPY ${PROTO_PATH} ${PROTO_PATH}
-
-COPY ${ROOT_PATH}/build-protos.sh .
-
-RUN chmod +x build-protos.sh \
-    && ./build-protos.sh ${PROTO_PATH}
-
 COPY ${ROOT_PATH} .
 
 CMD ["python", "src/main.py"]
