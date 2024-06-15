@@ -6,12 +6,12 @@ import os
 
 from discord import app_commands, Interaction
 
-from commands import update_locale
+from commands import command
 from commands.translator import TranslatorLanguageSelectView, TranslatorChannelSelect
 from mongo.channel import set_channel, get_channel
 from utils import defer_response
 from utils.templates import success, error
-from utils.translator import format_localization, Localization, DEFAULT_LANGUAGE
+from utils.translator import Localization, DEFAULT_LANGUAGE
 from utils.ui import SubmitButton
 
 resources = [os.path.join("commands", "channel.ftl")]
@@ -32,14 +32,11 @@ class Channel(app_commands.Group):
 
         self.bot = bot
 
-    @format_localization(translator_this_description_default=str(THIS_DEFAULT))
-    @app_commands.command(name=default_loc.format_value("translator-name"),
-                          description=default_loc.format_value("translator-description"))
+    @command(translator_this_description_default=str(THIS_DEFAULT))
     @app_commands.describe(this=default_loc.format_value(
         "translator-this-description",
         {"translator-this-description-default": str(THIS_DEFAULT)})
     )
-    @update_locale()
     async def translator(self, interaction: Interaction, this: bool = THIS_DEFAULT):
         """
         Set or remove the languages to be translated for channels
@@ -73,14 +70,11 @@ class Channel(app_commands.Group):
 
         await send(view=language_view, ephemeral=True)
 
-    @format_localization(language_this_description_default=THIS_DEFAULT)
-    @app_commands.command(name=default_loc.format_value("language-name"),
-                          description=default_loc.format_value("language-description"))
+    @command(language_this_description_default=str(THIS_DEFAULT))
     @app_commands.describe(this=default_loc.format_value(
         "language-this-description",
         {"language-this-description-default": str(THIS_DEFAULT)})
     )
-    @update_locale()
     async def language(self, interaction: Interaction, this: bool = THIS_DEFAULT):
         """
         Set or remove the main language of the channels.

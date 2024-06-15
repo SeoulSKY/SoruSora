@@ -9,13 +9,13 @@ import langid
 from discord import app_commands, Interaction, Message, Embed, HTTPException, Locale
 from discord.ext.commands import Bot
 
-from commands import update_locale
+from commands import command
 from mongo.channel import get_channel
 from mongo.user import get_user, set_user
 from utils import defer_response, templates
 from utils.constants import ErrorCode, Limit
 from utils.templates import success
-from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator, format_localization
+from utils.translator import Localization, Language, DEFAULT_LANGUAGE, get_translator
 from utils.ui import LanguageSelectView, ChannelSelect, SubmitButton
 
 resources = [os.path.join("commands", "translator.ftl")]
@@ -143,14 +143,11 @@ def _split(string: str, count: int):
         yield string[i: i + count]
 
 
-@format_localization(translator_all_channels_description_default=str(ALL_CHANNELS_DEFAULT))
-@app_commands.command(name=default_loc.format_value("translator-name"),
-                      description=default_loc.format_value("translator-description"))
+@command(translator_all_channels_description_default=str(ALL_CHANNELS_DEFAULT))
 @app_commands.describe(all_channels=default_loc.format_value(
     "translator-all-channels-description",
     {"translator-all-channels-description-default": str(ALL_CHANNELS_DEFAULT)})
 )
-@update_locale()
 async def translator(interaction: Interaction, all_channels: bool = ALL_CHANNELS_DEFAULT):
     """
     Set or remove the languages to be translated for your messages

@@ -22,14 +22,14 @@ from google.generativeai.types.content_types import ContentType, to_contents
 
 import mongo
 import mongo.chat
-from commands import update_locale
+from commands import command
 from commands.help_ import get_help_dir
 from mongo.chat import get_chat, set_chat
 from mongo.user import get_user
 from utils import defer_response
 from utils.constants import BOT_NAME, DEVELOPER_NAME
 from utils.templates import success, error
-from utils.translator import Language, Localization, DEFAULT_LANGUAGE, format_localization, Cache
+from utils.translator import Language, Localization, DEFAULT_LANGUAGE, Cache
 
 resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
@@ -332,11 +332,7 @@ class Chat(app_commands.Group):
         ])
         await set_chat(chat)
 
-    @format_localization(clear_description_name=BOT_NAME)
-    @app_commands.command(name=default_loc.format_value("clear-name"),
-                          description=default_loc.format_value("clear-description",
-                                                               {"clear-description-name": BOT_NAME}))
-    @update_locale()
+    @command(clear_description_name=BOT_NAME)
     async def clear(self, interaction: Interaction):
         """
         Clear the chat history between you and this bot
@@ -350,10 +346,7 @@ class Chat(app_commands.Group):
         await set_chat(chat)
         await send(success(await loc.format_value_or_translate("deleted")), ephemeral=True)
 
-    @app_commands.command(name=default_loc.format_value("token-name"),
-                          description=default_loc.format_value("token-description"))
-    @app_commands.describe(value=default_loc.format_value("token-value-description"))
-    @update_locale()
+    @command()
     async def token(self, interaction: Interaction, value: Optional[str]):
         """
         Set the token for the chat
@@ -390,11 +383,7 @@ class Chat(app_commands.Group):
 
         await send(success(await loc.format_value_or_translate("token-set")), ephemeral=True)
 
-    @format_localization(tutorial_description_name=BOT_NAME)
-    @app_commands.command(name=default_loc.format_value("tutorial-name"),
-                          description=default_loc.format_value("tutorial-description",
-                                                               {"tutorial-description-name": BOT_NAME}))
-    @update_locale()
+    @command(tutorial_description_name=BOT_NAME)
     async def tutorial(self, interaction: Interaction):
         """
         Get the tutorial for the chat

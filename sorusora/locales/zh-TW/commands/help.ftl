@@ -3,7 +3,7 @@ help-name = 幫助
 help-description = { $help-description-name } 指令列表
 
 # Texts
-help-header = 要與 { $help-header-name } 聊天，請提及她或回覆她的訊息。
+help-header = 想要學習如何與 { $help-header-name } 對話，請使用`/聊天 用法`。
 commands = 可用指令
 context-menus = 指令選單
 context-menus-description = 您可以不用輸入任何指令，只需透過

@@ -15,10 +15,10 @@ from discord.ext import tasks
 from discord.ext.commands import Bot
 from tqdm import tqdm
 
-from commands import update_locale
+from commands import command
 from utils import templates, constants
 from utils.constants import ErrorCode
-from utils.translator import Localization, DEFAULT_LANGUAGE, format_localization
+from utils.translator import Localization, DEFAULT_LANGUAGE
 
 DESKTOP_CACHE_PATH = constants.CACHE_DIR / "movie" / "desktop"
 """
@@ -159,12 +159,10 @@ class Movie(app_commands.Group):
 
         return Movie._cache[path]
 
-    @format_localization(play_fps_description_min=FPS_MIN,
-                         play_fps_description_max=FPS_MAX,
-                         play_fps_description_default=FPS_DEFAULT,
-                         play_original_speed_description_default=str(ORIGINAL_SPEED_DEFAULT))
-    @app_commands.command(name=default_loc.format_value("play-name"),
-                          description=default_loc.format_value("play-description"))
+    @command(play_fps_description_min=str(FPS_MIN),
+             play_fps_description_max=str(FPS_MAX),
+             play_fps_description_default=str(FPS_DEFAULT),
+             play_original_speed_description_default=str(ORIGINAL_SPEED_DEFAULT))
     @app_commands.describe(title=default_loc.format_value("play-title-description"))
     @app_commands.describe(fps=default_loc.format_value("play-fps-description", {
         "play-fps-description-min": FPS_MIN,
@@ -179,7 +177,6 @@ class Movie(app_commands.Group):
         Choice(name="ULTRA B+K", value="ultra_bk")
     ])
     @app_commands.choices(fps=[Choice(name=str(i), value=i) for i in range(FPS_MIN, FPS_MAX + 1)])
-    @update_locale()
     async def play(self, interaction: Interaction,
                    title: Choice[str],
                    fps: int = FPS_DEFAULT,

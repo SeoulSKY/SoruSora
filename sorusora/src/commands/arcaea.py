@@ -10,10 +10,10 @@ import discord
 from discord import app_commands, Interaction, Forbidden, Locale
 from discord.ext.commands import Bot
 
-from commands import update_locale
+from commands import command
 from utils import templates, ui, defer_response
 from utils.templates import error, success, info, warning
-from utils.translator import Localization, format_localization, DEFAULT_LANGUAGE
+from utils.translator import Localization, DEFAULT_LANGUAGE
 
 LINK_PLAY_LIFESPAN_MINUTES = 30
 LINK_PLAY_LIFESPAN = datetime.timedelta(minutes=LINK_PLAY_LIFESPAN_MINUTES)
@@ -183,13 +183,8 @@ class Arcaea(app_commands.Group):
                          description=default_loc.format_value("arcaea-description"))
         self.bot = bot
 
-    @format_localization(linkplay_description_duration=LINK_PLAY_LIFESPAN_MINUTES)
-    @app_commands.command(name=default_loc.format_value("linkplay-name"),
-                          description=default_loc.format_value("linkplay-description", {
-                              "linkplay-description-duration": LINK_PLAY_LIFESPAN_MINUTES
-                          }))
+    @command(linkplay_description_duration=str(LINK_PLAY_LIFESPAN_MINUTES))
     @app_commands.describe(roomcode=default_loc.format_value("linkplay-roomcode-description"))
-    @update_locale()
     async def linkplay(self, interaction: Interaction, roomcode: str):
         """
         Create an embed to invite people to your Link Play

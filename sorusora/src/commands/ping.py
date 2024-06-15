@@ -4,22 +4,18 @@ Implements ping commands
 import os
 
 import discord
-from discord import app_commands
 
-from commands import update_locale
+from commands import command
 from utils import defer_response
 from utils.constants import BOT_NAME
 from utils.templates import info
-from utils.translator import Localization, DEFAULT_LANGUAGE, format_localization
+from utils.translator import Localization, DEFAULT_LANGUAGE
 
 resources = [os.path.join("commands", "ping.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
-@format_localization(ping_description_name=BOT_NAME)
-@app_commands.command(name=default_loc.format_value("ping-name"),
-                      description=default_loc.format_value("ping-description", {"ping-description-name": BOT_NAME}))
-@update_locale()
+@command(ping_description_name=BOT_NAME)
 async def ping(interaction: discord.Interaction):
     """Ping this bot"""
 

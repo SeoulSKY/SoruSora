@@ -4,9 +4,9 @@ Implements a context menu to translate messages
 import os
 
 import discord
-from discord import app_commands
 
 import utils.translator
+from context_menus import context_menu
 from utils import defer_response
 from utils.templates import error
 from utils.translator import Localization, DEFAULT_LANGUAGE, Language
@@ -15,7 +15,7 @@ resources = [os.path.join("context_menus", "translate_message.ftl")]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
-@app_commands.context_menu(name=default_loc.format_value("translate-message-name"))
+@context_menu()
 async def translate_message(interaction: discord.Interaction, message: discord.Message):
     """Translate this message into your language"""
 

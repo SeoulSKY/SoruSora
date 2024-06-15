@@ -663,25 +663,6 @@ class Localization:
         return self._loc.resource_ids
 
 
-def format_localization(**kwargs: Any):
-    """
-    Format the localization of the command
-
-    :param kwargs: The arguments for formatting
-    """
-
-    def decorator(command: Command | ContextMenu) -> Command | Group | ContextMenu:
-        if not isinstance(command, (Command, ContextMenu)):
-            raise TypeError("This decorator must be placed above @app_commands.command or @app_commands.context_menu")
-
-        for key, value in kwargs.items():
-            command.extras[key.replace("_", "-")] = value
-
-        return command
-
-    return decorator
-
-
 class CommandTranslator(discord.app_commands.Translator):
     """
     Translator for the commands
