@@ -7,6 +7,7 @@ import os
 from discord import app_commands, Interaction, Embed, ChannelType
 from discord.ui import View, ChannelSelect
 
+from commands import update_locale
 from mongo.channel import get_channel
 from mongo.user import get_user
 from utils import Localization, defer_response
@@ -23,6 +24,7 @@ default_loc = Localization(DEFAULT_LANGUAGE, resources)
     name=default_loc.format_value("dashboard-name"),
     description=default_loc.format_value("dashboard-description")
 )
+@update_locale()
 async def dashboard(interaction: Interaction):
     """
     Display the dashboard that contains the current configurations and statistics

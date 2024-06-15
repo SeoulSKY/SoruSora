@@ -15,6 +15,7 @@ from discord.ext import tasks
 from discord.ext.commands import Bot
 from tqdm import tqdm
 
+from commands import update_locale
 from utils import templates, constants
 from utils.constants import ErrorCode
 from utils.translator import Localization, DEFAULT_LANGUAGE, format_localization
@@ -178,6 +179,7 @@ class Movie(app_commands.Group):
         Choice(name="ULTRA B+K", value="ultra_bk")
     ])
     @app_commands.choices(fps=[Choice(name=str(i), value=i) for i in range(FPS_MIN, FPS_MAX + 1)])
+    @update_locale()
     async def play(self, interaction: Interaction,
                    title: Choice[str],
                    fps: int = FPS_DEFAULT,

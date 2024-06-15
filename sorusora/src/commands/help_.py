@@ -6,6 +6,7 @@ import os
 from discord import app_commands, Interaction, AppCommandType
 from discord.ui import View
 
+from commands import update_locale
 from commands.movie import Movie
 from utils import defer_response
 from utils.constants import BOT_NAME, HELP_DIR
@@ -51,6 +52,7 @@ class HelpSelect(CommandSelect):
 @app_commands.command(name=default_loc.format_value("help-name"),
                       description=default_loc.format_value("help-description",
                                                            {"help-description-name": BOT_NAME}))
+@update_locale()
 async def help_(interaction: Interaction):
     """
     Show the help message

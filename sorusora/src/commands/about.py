@@ -8,6 +8,7 @@ import discord
 from discord import app_commands, Interaction, ButtonStyle
 from discord.ui import Button
 
+from commands import update_locale
 from utils import defer_response
 from utils.constants import BOT_NAME, ABOUT_DIR, BUG_REPORT_URL, GITHUB_URL, INVITE_URL
 from utils.translator import Localization, DEFAULT_LANGUAGE, Language, Cache, format_localization
@@ -69,6 +70,7 @@ class AboutView(discord.ui.View):
 @app_commands.command(name=default_loc.format_value("about-name"),
                       description=default_loc.format_value("about-description",
                                                            {"about-description-name": BOT_NAME}))
+@update_locale()
 async def about(interaction: Interaction):
     """Show information about the bot"""
 

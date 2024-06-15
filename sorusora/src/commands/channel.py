@@ -6,6 +6,7 @@ import os
 
 from discord import app_commands, Interaction
 
+from commands import update_locale
 from commands.translator import TranslatorLanguageSelectView, TranslatorChannelSelect
 from mongo.channel import set_channel, get_channel
 from utils import defer_response
@@ -38,6 +39,7 @@ class Channel(app_commands.Group):
         "translator-this-description",
         {"translator-this-description-default": str(THIS_DEFAULT)})
     )
+    @update_locale()
     async def translator(self, interaction: Interaction, this: bool = THIS_DEFAULT):
         """
         Set or remove the languages to be translated for channels
@@ -78,6 +80,7 @@ class Channel(app_commands.Group):
         "language-this-description",
         {"language-this-description-default": str(THIS_DEFAULT)})
     )
+    @update_locale()
     async def language(self, interaction: Interaction, this: bool = THIS_DEFAULT):
         """
         Set or remove the main language of the channels.

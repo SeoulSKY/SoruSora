@@ -27,7 +27,7 @@ class User(Document):
     user_id: int = -1
     translate_to: list[str] = field(default_factory=list)
     translate_in: list[str] = field(default_factory=list)
-    ai_token: str = None
+    locale: str = None
 
     @staticmethod
     def from_dict(source: dict) -> "User":

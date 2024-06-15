@@ -400,7 +400,7 @@ class GoogleTranslator(BaseTranslator):
             return
 
         for i, translation in enumerate(translations):
-            yield Translation(source, target, texts[i], translation)
+            yield Translation(source, target, texts[i], str(translation))
 
 
 def get_translator() -> BaseTranslator:

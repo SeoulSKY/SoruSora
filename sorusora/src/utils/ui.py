@@ -324,6 +324,7 @@ class ChannelSelect(BaseChannelSelect):
     """
 
     def __init__(self,
+                 *,
                  placeholder: Coroutine[Any, Any, str] = None,
                  min_selections: int = 0,
                  max_selections: int = Limit.SELECT_MAX.value):

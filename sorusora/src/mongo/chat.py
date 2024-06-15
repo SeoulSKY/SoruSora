@@ -36,6 +36,7 @@ class Chat(Document):
 
     user_id: int = -1
     history: list[Message] = field(default_factory=list)
+    token: bytes = None
 
     @staticmethod
     def from_dict(source: dict) -> "Chat":

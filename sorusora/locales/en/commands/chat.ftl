@@ -9,13 +9,23 @@ set-language-current-language-description = Set your chat language to your curre
 set-language-select = Select your chat language
 
 clear-name = clear
-clear-description = Clear the chat history between you and { $clear-description-name }
+clear-description = Clear the entire chat history between you and { $clear-description-name }
+
+token-name = token
+token-description = Set the token for chat
+token-value-name = value
+token-value-description = The token to set
 
 # Successes
-updated = The chat history has been updated!
-deleted = The chat history has been deleted!
+updated = The chat history has been updated
+deleted = The chat history has been deleted
+token-set = The token has been set
+token-removed = The token has been removed because the argument `value` wasn't provided
 
 # Errors
-no-history = You don't have any conversations with { $name }
-timeout = Looks like { $name } has turned on the Do Not Disturb mode. Let's talk to her later
-server-unavailable = Could not connect to the server. Please try again later
+token-invalid = Given token is invalid
+token-no-longer-valid = The token you set is no longer valid. Please set a new one
+token-no-permission = Your token is valid, but you didn't set proper permissions to the token. You can update it here: { $link }
+too-many-requests = The limit of sending messages has been reached. You can either wait until tomorrow or set your own token with `/chat token`
+server-unavailable = The server might be temporarily down. Please try again later
+unknown-error = An unknown error occurred. The cause might be the invalid messages in your chat history. Try modifying them and try again

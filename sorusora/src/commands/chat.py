@@ -2,79 +2,44 @@
 Implements a commands relate to AI chat
 """
 import asyncio
+import base64
 import logging
 import os
-import io
-import traceback
-from typing import Iterable
+from typing import Iterable, Optional
 
 import discord
-from discord import app_commands, Message, Interaction, File, Member, RawMessageUpdateEvent
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from discord import app_commands, Message, Interaction, Member, RawMessageUpdateEvent
 from discord.ext.commands import Bot
-from google.api_core.exceptions import InvalidArgument, ResourceExhausted, PermissionDenied
+from google.api_core.exceptions import (InvalidArgument, ResourceExhausted, PermissionDenied, GoogleAPIError,
+                                        ServiceUnavailable)
 import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold, ContentDict
-
-import google.protobuf.empty_pb2
+from google.generativeai.types import HarmCategory, HarmBlockThreshold, PartType
+from google.generativeai.types.content_types import ContentType, to_contents
 
 import mongo
 import mongo.chat
+from commands import update_locale
 from mongo.chat import get_chat, set_chat
-from mongo.user import get_user, set_user
+from mongo.user import get_user
 from utils import defer_response
-from utils.constants import BOT_NAME, UNKNOWN_ERROR_FILENAME, DEVELOPER_NAME
-from utils.templates import success
+from utils.constants import BOT_NAME, DEVELOPER_NAME
+from utils.templates import success, error
 from utils.translator import Language, Localization, DEFAULT_LANGUAGE, format_localization
-from utils.ui import LanguageSelectView
-
-_ = google.protobuf.empty_pb2  # assign the value to not be removed when optimizing imports
 
 resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
-CURRENT_LANGUAGE_DEFAULT = True
-
-
-async def _select_language(interaction: Interaction, language: Language, send: callable):
-    user = await get_user(interaction.user.id)
-    user.locale = language.code
-    await set_user(user)
-
-    loc = Localization(interaction.locale, resources)
-
-    await send(success(await loc.format_value_or_translate("updated", {"language": language.name})),
-               ephemeral=True)
-
-
-class ChatLanguageSelectView(LanguageSelectView):
-    """
-    A view to select a language for the chat
-    """
-
-    def __init__(self, interaction: Interaction):
-        loc = Localization(interaction.locale, resources)
-        super().__init__(loc.format_value_or_translate("set-language-select"), interaction.locale, max_values=1)
-
-    async def callback(self, interaction: Interaction):
-        """
-        Callback for the language selection
-        """
-
-        send = await defer_response(interaction)
-
-        await _select_language(interaction, Language(list(self.selected)[0]), send)
-
-        self.clear_items()
-        self.stop()
+TOKEN_PERMISSION_LINK = "https://console.cloud.google.com/apis/credentials"
 
 
 class Chat(app_commands.Group):
     """
     Commands related to AI chats
     """
-    # pylint: disable=no-member
-
-    CHAT_AI_URL = os.getenv("CHAT_AI_HOST", "localhost") + ":" + "50051"
 
     def __init__(self, bot: Bot):
         super().__init__(name=default_loc.format_value("chat-name"),
@@ -82,12 +47,25 @@ class Chat(app_commands.Group):
         self.bot = bot
         self._logger = logging.getLogger(__name__)
 
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=b"salt",
+            iterations=100000,
+            backend=default_backend()
+        )
+        self._encrypter = Fernet(base64.urlsafe_b64encode(kdf.derive(os.getenv("ENCRYPTION_KEY").encode())))
+
         self._setup_chat_listener()
 
         self._lock = asyncio.Lock()
 
-    async def _get_model(self, user: discord.User | Member):
-        token = (await get_user(user.id)).ai_token or os.getenv("AI_TOKEN")
+    async def _get_model(self, user: discord.User | Member, token: str = None):
+        chat = await get_chat(user.id)
+        if token is None and chat.token is not None:
+            token = self._encrypter.decrypt(chat.token)
+        else:
+            token = token or os.getenv("AI_TOKEN")
 
         async with self._lock:
             genai.configure(api_key=token)
@@ -111,7 +89,7 @@ class Chat(app_commands.Group):
         return self.bot.user in message.mentions or \
             message.reference is not None and message.reference.resolved.author == self.bot
 
-    async def _get_history(self, user: discord.User | Member) -> Iterable[ContentDict]:
+    async def _get_history(self, user: discord.User | Member) -> Iterable[ContentType]:
         messages = []
         chat = await get_chat(user.id)
         cache = {message.id: message for message in self.bot.cached_messages if message.author in (self.bot.user, user)}
@@ -149,7 +127,7 @@ class Chat(app_commands.Group):
         for message in messages:
             history.append({
                 "role": "model" if message.author == self.bot.user else "user",
-                "parts": [self._remove_mention(message.content)]
+                "parts": await self._get_parts(message)
             })
 
         return history
@@ -166,17 +144,16 @@ class Chat(app_commands.Group):
                 f"You have dark blue cat ears. "
                 f"You have a black knee wrap on your right leg, with similarly matching black socks and black "
                 f"and white sneakers with cyan shoelaces. "
-                f"You often secretly watch {user.display_name} have a friendly conversation with another female, "
-                f"and you feel jealous because you have a positive feeling about {user.display_name}. "
-                f"Do not express your thoughts and expressions in your message, but "
-                f"act naturally as if you are texting with {user.display_name}. "
-                f"Following is an example of a conversation with you and {user.display_name} "
-                f"to merely show your way of speaking (Do not use it as a source of chat history): "
-                f"{self._get_example_conversation(user)}")
+                f"One of your hobbies is playing rhythm games and your skill is just above the average. "
+                f"You have a crush on {user.display_name}, who is the user you are chatting with. "
+                f"Following is an example of a conversation with you and someone else "
+                f"to merely help you understand your tone and personality. "
+                f"(DO NOT use the following example as a chat history between you and the user): "
+                f"{self._get_example_conversation()}")
 
-    def _get_example_conversation(self, user: discord.User | Member) -> list[dict[str, str]]:
+    def _get_example_conversation(self) -> list[dict[str, str]]:
         bot_name = self.bot.user.display_name
-        user_name = user.display_name
+        user_name = "John Doe"
 
         return [
             {bot_name: f"{user_name}, I got us a part-time job on the weekend. "
@@ -276,29 +253,75 @@ class Chat(app_commands.Group):
         self.bot.add_listener(on_raw_message_edit)
         self.bot.add_listener(on_raw_message_delete)
 
+    async def _get_parts(self, message: Message) -> list[PartType]:
+        parts: list[PartType] = []
+
+        text = self._remove_mention(message.content)
+
+        if len(text) > 0:
+            parts.append(text)
+
+        for attachment in message.attachments:
+            if not attachment.content_type.startswith("image"):
+                continue
+
+            try:
+                parts.append({
+                    "mime_type": attachment.content_type,
+                    "data": await attachment.read()
+                })
+            except (discord.Forbidden, discord.NotFound):
+                pass
+
+        return parts
+
     async def _send_message(self, message: Message) -> Message | None:
         async with message.channel.typing():
-            content = self._remove_mention(message.content)
+            parts = await self._get_parts(message)
 
-            if len(content) == 0:
+            if len(parts) == 0:
                 return
 
             model = await self._get_model(message.author)
-            session = model.start_chat(history=await self._get_history(message.author))
+            history = await self._get_history(message.author)
 
+            while True:
+                session = model.start_chat(history=history)
+                num_tokens = (await model.count_tokens_async(session.history + to_contents(parts))).total_tokens
+                if num_tokens <= genai.get_model(model.model_name).input_token_limit:
+                    break
+
+                # Remove the oldest user message and its reply
+                history = history[2:]
+
+            chat = await get_chat(message.author.id)
+
+            if len(chat.history) > len(history):
+                chat.history = chat.history[len(chat.history) - len(history):]
+                await set_chat(chat)
+
+            user = await get_user(message.author.id)
+            loc = Localization(Language(user.locale) if user.locale else DEFAULT_LANGUAGE, resources)
+
+            reply = None
             try:
-                response = await session.send_message_async(content)
+                text = (await session.send_message_async(parts)).text
+                reply = await message.reply(text)
             except InvalidArgument:
-                await message.reply("Invalid token")
-                return
+                await message.reply(error(await loc.format_value_or_translate("token-no-longer-valid")))
             except PermissionDenied:
-                await message.reply("Permission denied")
-                return
+                await message.reply(error(await loc.format_value_or_translate(
+                    "token-no-permission",
+                    {"link": TOKEN_PERMISSION_LINK})))
             except ResourceExhausted:
-                await message.reply("Resource exhausted")
-                return
+                await message.reply(error(await loc.format_value_or_translate("too-many-requests")))
+            except ServiceUnavailable:
+                await message.reply(error(await loc.format_value_or_translate("server-unavailable")))
+            except GoogleAPIError as ex:
+                self._logger.exception(ex)
+                await message.reply(error(await loc.format_value_or_translate("unknown-error")))
 
-            return await message.reply(response.text)
+            return reply or None
 
     @staticmethod
     async def _extend_history(chat: mongo.chat.Chat, messages: Iterable[Message]):
@@ -312,6 +335,7 @@ class Chat(app_commands.Group):
     @app_commands.command(name=default_loc.format_value("clear-name"),
                           description=default_loc.format_value("clear-description",
                                                                {"clear-description-name": BOT_NAME}))
+    @update_locale()
     async def clear(self, interaction: Interaction):
         """
         Clear the chat history between you and this bot
@@ -325,6 +349,42 @@ class Chat(app_commands.Group):
         await set_chat(chat)
         await send(success(await loc.format_value_or_translate("deleted")), ephemeral=True)
 
+    @app_commands.command(name=default_loc.format_value("token-name"),
+                          description=default_loc.format_value("token-description"))
+    @app_commands.describe(value=default_loc.format_value("token-value-description"))
+    @update_locale()
+    async def token(self, interaction: Interaction, value: Optional[str]):
+        """
+        Set the token for the chat
+        """
+        send = await defer_response(interaction)
+        loc = Localization(interaction.locale, resources)
 
-def _get_error_log() -> File:
-    return File(io.BytesIO(traceback.format_exc().encode("utf-8")), UNKNOWN_ERROR_FILENAME)
+        if value is None:
+            chat = await get_chat(interaction.user.id)
+            chat.token = None
+            await set_chat(chat)
+
+            await send(success(await loc.format_value_or_translate("token-removed")), ephemeral=True)
+            return
+
+        model = await self._get_model(interaction.user, value)
+        try:
+            await model.generate_content_async("Hello")
+        except InvalidArgument:
+            await send(error(await loc.format_value_or_translate("token-invalid")), ephemeral=True)
+            return
+        except PermissionDenied:
+            await send(error(await loc.format_value_or_translate(
+                "token-no-permission",
+                {"link": TOKEN_PERMISSION_LINK})), ephemeral=True)
+            return
+        except ServiceUnavailable:
+            await send(error(await loc.format_value_or_translate("server-unavailable")), ephemeral=True)
+            return
+
+        chat = await get_chat(interaction.user.id)
+        chat.token = self._encrypter.encrypt(value.encode())
+        await set_chat(chat)
+
+        await send(success(await loc.format_value_or_translate("token-set")), ephemeral=True)
