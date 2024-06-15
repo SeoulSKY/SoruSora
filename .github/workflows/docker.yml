@@ -18,16 +18,3 @@ jobs:
           context: sorusora
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-  sorusora-ai:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Build sorusora-ai
-        uses: ./.github/workflows/build-push
-        with:
-          context: sorusora-ai
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}

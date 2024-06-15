@@ -13,20 +13,6 @@ services:
       - ./sorusora/cache/algos_cache:${HOME}/.local/cache/argos-translate/
     env_file:
       - .env
-    environment:
-      - CHAT_AI_HOST=sorusora-ai
-
-  sorusora-ai:
-    build:
-      context: .
-      dockerfile: sorusora-ai/Dockerfile
-    container_name: sorusora-ai
-    volumes:
-      - ./sorusora-ai/logs:/app/logs
-    env_file:
-      - .env
-    ports:
-      - "50051:50051"
 
   mongo:
     image: mongo:7.0.5
