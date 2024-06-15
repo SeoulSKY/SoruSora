@@ -20,6 +20,9 @@ jobs:
 
     env:
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      AI_TOKEN: ${{ secrets.AI_TOKEN }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+
       ROOT_PATH: sorusora
 
     steps:
