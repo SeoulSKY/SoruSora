@@ -10,6 +10,9 @@ token-description = 채팅에 사용할 토큰을 설정합니다
 token-value-name = 값
 token-value-description = 설정할 토큰
 
+tutorial-name = 사용법
+tutorial-description = { $tutorial-description-name }와(과) 채팅하는 방법을 알려줍니다
+
 # Successes
 updated = 채팅 언어가 `{ $language }`로 변경되었습니다
 deleted = 삭제되었습니다

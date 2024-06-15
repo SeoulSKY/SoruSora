@@ -23,12 +23,13 @@ from google.generativeai.types.content_types import ContentType, to_contents
 import mongo
 import mongo.chat
 from commands import update_locale
+from commands.help_ import get_help_dir
 from mongo.chat import get_chat, set_chat
 from mongo.user import get_user
 from utils import defer_response
 from utils.constants import BOT_NAME, DEVELOPER_NAME
 from utils.templates import success, error
-from utils.translator import Language, Localization, DEFAULT_LANGUAGE, format_localization
+from utils.translator import Language, Localization, DEFAULT_LANGUAGE, format_localization, Cache
 
 resources = [os.path.join("commands", "chat.ftl"), Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
@@ -388,3 +389,18 @@ class Chat(app_commands.Group):
         await set_chat(chat)
 
         await send(success(await loc.format_value_or_translate("token-set")), ephemeral=True)
+
+    @format_localization(tutorial_description_name=BOT_NAME)
+    @app_commands.command(name=default_loc.format_value("tutorial-name"),
+                          description=default_loc.format_value("tutorial-description",
+                                                               {"tutorial-description-name": BOT_NAME}))
+    @update_locale()
+    async def tutorial(self, interaction: Interaction):
+        """
+        Get the tutorial for the chat
+        """
+
+        with open(get_help_dir(os.path.join("chat", "tutorial"), DEFAULT_LANGUAGE), "r", encoding="utf-8") as file:
+            text = file.read()
+
+        await interaction.response.send_message(Cache.get(Language(interaction.locale), text).text, ephemeral=True)

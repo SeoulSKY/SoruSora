@@ -10,6 +10,9 @@ token-description = 設置用於聊天的代幣
 token-value-name = 值
 token-value-description = 要配置的令牌
 
+tutorial-name = 用法
+tutorial-description = 教你如何與{ $tutorial-description-name }聊天
+
 # Successes
 updated = 聊天語言已更新為`{ $language }`
 deleted = 成功刪除您跟{ $name }的聊天歷史紀錄

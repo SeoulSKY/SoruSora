@@ -16,6 +16,9 @@ token-description = Set the token for chat
 token-value-name = value
 token-value-description = The token to set
 
+tutorial-name = tutorial
+tutorial-description = Teach you how to chat with { $tutorial-description-name }
+
 # Successes
 updated = The chat history has been updated
 deleted = The chat history has been deleted
