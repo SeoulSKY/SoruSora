@@ -48,6 +48,8 @@
     - [/channel translator](#channel-translator)
   - [Chat](#chat)
     - [/chat clear](#chat-clear)
+    - [/chat token](#chat-token)
+    - [/chat tutorial](#chat-tutorial)
   - [Dashboard](#dashboard)
   - [Dice](#dice)
   - [Help](#help)
@@ -106,6 +108,14 @@ To chat with SoruSora, either mention her or reply to her.
 
 Clear the chat history between you and SoruSora.
 
+#### /chat token
+
+Set the token that will be used to chat with SoruSora.
+
+#### /chat tutorial
+
+Teach you how to chat with SoruSora.
+
 ### Dashboard
 
 Display the dashboard that contains configurations and statistics.
@@ -141,8 +151,7 @@ Create `.env` file, copy and paste all contents from `.env.example` file, and fi
 |--------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | BOT_TOKEN                            | [Token](https://discord.com/developers/applications) for your own Discord bot                                                                                                                                  |
 | TEST_GUILD_ID                        | (Optional) Find your test server id following the [guide](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-). If provided, the bot runs in development mode. |
-| CAI_TOKEN                            | Token for your Character AI account. Follow the [guide](https://github.com/realcoloride/node_characterai?tab=readme-ov-file#using-an-access-token) to learn how to acquire it.                                                                               |
-| CAI_CHAR_ID                          | ID for the character in the Character AI. Follow the [guide](https://github.com/realcoloride/node_characterai?tab=readme-ov-file#finding-your-characters-id) to learn how to acquire it.                                                                          |
+| AI_TOKEN                           | Token for Gemini API. You can create one [here](https://makersuite.google.com/app/apikey) for free |
 
 
 ### Running with [Docker](https://www.docker.com) (Recommended)
