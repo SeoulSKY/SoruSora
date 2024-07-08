@@ -67,6 +67,7 @@
 ## Why you should use SoruSora over the others?
 
 * `Transparency through Open Source`: SoruSora is not only entirely free but also [open source](https://github.com/SeoulSKY/SoruSora), ensuring transparency in its operations. Users can monitor and verify that SoruSora maintains ethical practices without any hidden agendas.
+* `Privacy-first Design`: SoruSora is designed with privacy in mind. Any sensitive information is encrypted and stored securely, ensuring that user data is protected from unauthorized access.
 * `Localized to All 29 Discord Languages`: Everything including command names, descriptions, and instructions are automatically changed based on the current Discord language setting for each user. SoruSora is especially great if your server is international.
 * `Intuitive User Interface`: Designed with a focus on user experience, it features intuitive elements like slash commands, providing a more straightforward alternative to traditional message commands. Moreover, SoruSora fully utilizes widgets such as Listbox and Buttons, eliminating the need for excessive typing and adding reactions to a message.
 
