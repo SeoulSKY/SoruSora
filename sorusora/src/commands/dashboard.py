@@ -9,9 +9,10 @@ from discord.ui import View, ChannelSelect
 
 from commands import command
 from mongo.channel import get_channel
+from mongo.chat import get_chat
 from mongo.user import get_user
 from utils import Localization, defer_response
-from utils.constants import Limit
+from utils.constants import Limit, BOT_NAME
 from utils.templates import color
 from utils.translator import DEFAULT_LANGUAGE
 
@@ -30,6 +31,7 @@ async def dashboard(interaction: Interaction):
     loc = Localization(interaction.locale, resources)
 
     user = await get_user(interaction.user.id)
+    chat = await get_chat(interaction.user.id)
 
     languages = [f"`{await loc.format_value_or_translate(code)}`" for code in user.translate_to]
     languages.sort()
@@ -47,9 +49,15 @@ async def dashboard(interaction: Interaction):
                                 value=", ".join(channels) or await loc.format_value_or_translate("none"),
                                 inline=False
                             )
+                  .add_field(
+                                name=await loc.format_value_or_translate("history-length",
+                                                                         {"name": BOT_NAME}),
+                                value=len(chat.history) // 2,
+                                inline=False
+                            )
                   .set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url))
 
-    if not interaction.user.guild_permissions.administrator:
+    if not (interaction.user.guild_permissions.manage_channels and interaction.user.guild_permissions.manage_threads):
         await send(embed=user_embed, ephemeral=True)
         return
 
