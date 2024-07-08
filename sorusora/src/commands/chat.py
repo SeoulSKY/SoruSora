@@ -374,8 +374,8 @@ class Chat(app_commands.Group):
 
         text = self._remove_mention(message.content)
 
-        if len(text) > 0:
-            parts.append(text)
+        # text cannot be empty, so call the bot name if it is empty
+        parts.append(text or BOT_NAME)
 
         for attachment in message.attachments:
             if not attachment.content_type.startswith("image"):
