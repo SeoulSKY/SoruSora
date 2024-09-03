@@ -12,7 +12,6 @@ on:
 
 jobs:
   pytest:
-    environment: soru-sora
     runs-on: ubuntu-latest
 
     env:
