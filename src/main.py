@@ -21,7 +21,6 @@ from utils.translator import Localization, CommandTranslator
 load_dotenv()
 
 sys.path.append(os.path.join(ROOT_DIR, "src"))  # Add the src directory to the path
-sys.path.append(os.path.join(ROOT_DIR, "src", "protos"))  # Add protos directory to the path
 
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ERROR_DIR = os.path.join(LOGS_DIR, "error")
