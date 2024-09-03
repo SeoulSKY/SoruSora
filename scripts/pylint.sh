@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT_DIR="$(git rev-parse --show-toplevel)/sorusora"
+ROOT_DIR="$(git rev-parse --show-toplevel)"
 
 export PYTHONPATH="${PYTHONPATH}:${ROOT_DIR}/src"
 
