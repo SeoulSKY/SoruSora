@@ -10,8 +10,6 @@ services:
     env_file:
       - .env
     restart: always
-    environment:
-      - CHAT_AI_HOST=sorusora-ai
 
   mongo:
     image: mongo:7.0.5

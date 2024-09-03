@@ -8,22 +8,17 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-
-env:
-  PYTEST_SCRIPT: scripts/pytest.sh
+  workflow_dispatch:
 
 jobs:
   pytest:
     environment: soru-sora
-
     runs-on: ubuntu-latest
 
     env:
       BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
       AI_TOKEN: ${{ secrets.AI_TOKEN }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-
-      ROOT_PATH: sorusora
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -52,7 +47,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install ffmpeg libsm6 libxext6 -y
           python -m pip install --upgrade pip
-          pip install -r $ROOT_PATH/requirements.txt
+          pip install -r requirements.txt
 
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.10.0
@@ -61,6 +56,4 @@ jobs:
 
       - name: Test with pytest
         run: |
-          cd $ROOT_PATH
-          chmod +x ${{ env.PYTEST_SCRIPT }}
-          ./${{ env.PYTEST_SCRIPT }}
+          pytest tests

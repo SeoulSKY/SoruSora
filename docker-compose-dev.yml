@@ -4,7 +4,6 @@ services:
   sorusora:
     build:
       context: .
-      dockerfile: sorusora/Dockerfile
     container_name: sorusora
     volumes:
       - ./sorusora/logs:/app/logs
