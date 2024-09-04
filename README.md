@@ -9,7 +9,6 @@
 
 <div align="center">
     <img src="https://img.shields.io/badge/Python-v3.11-blue">
-    <img src="https://img.shields.io/badge/Node.js-v21.6-84ba64">
     <img src="https://img.shields.io/github/license/SeoulSKY/SoruSora">
     <img src="https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord">
     <br>
