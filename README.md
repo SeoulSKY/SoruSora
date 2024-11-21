@@ -168,7 +168,7 @@ docker compose -f docker-compose-dev.yml up --build -d
 
 ### Running without [Docker](https://www.docker.com)
 
-* Install [pyenv](https://github.com/pyenv/pyenv#installation), [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/), [FFmpeg](https://ffmpeg.org/download.html) and [protoc](https://grpc.io/docs/protoc-installation/)
+* Install [pyenv](https://github.com/pyenv/pyenv#installation), [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/) and [FFmpeg](https://ffmpeg.org/download.html)
 
 * [Start MongoDB](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/#run-mongodb-community-edition)
 
