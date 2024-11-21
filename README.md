@@ -168,7 +168,7 @@ docker compose -f docker-compose-dev.yml up --build -d
 
 ### Running without [Docker](https://www.docker.com)
 
-* Install [pyenv](https://github.com/pyenv/pyenv#installation), [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/) and [FFmpeg](https://ffmpeg.org/download.html)
+* Install [pyenv](https://github.com/pyenv/pyenv#installation), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/) and [FFmpeg](https://ffmpeg.org/download.html)
 
 * [Start MongoDB](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/#run-mongodb-community-edition)
 
@@ -196,18 +196,6 @@ pyenv exec pip install -r requirements.txt
 ```bash
 nvm install 21.6
 nvm use 21.6
-```
-
-* Install required node packages
-
-```bash
-npm install
-```
-
-* Build Protocol Buffer files
-
-```bash
-chmod +x ./build-protos.sh && ./build-protos.sh
 ```
 
 * Run `main.py`
