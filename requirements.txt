@@ -13,4 +13,4 @@ argostranslate~=1.9.1
 google-generativeai~=0.6.0
 cryptography~=42.0.8
 ytnoti~=2.1.0
-ruff~=0.6.3
+ruff~=0.8.1

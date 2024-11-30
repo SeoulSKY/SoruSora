@@ -107,8 +107,8 @@ class Chat(app_commands.Group):
     def _is_chat_message(self, message: Message) -> bool:
         return (
             self.bot.user in message.mentions
-            or message.reference is not None
-            and message.reference.resolved.author == self.bot
+            or (message.reference is not None
+            and message.reference.resolved.author == self.bot)
         )
 
     async def _get_history(self, user: discord.User | Member) -> Iterable[ContentType]:
