@@ -191,28 +191,10 @@ pyenv local sorusora
 pyenv exec pip install -r requirements.txt
 ```
 
-* Install Node.js 21.6
-
-```bash
-nvm install 21.6
-nvm use 21.6
-```
-
 * Run `main.py`
 
 ```bash
 pyenv exec python src/main.py
-```
-
-* In a separate terminal, Run the node server
-
-```bash
-# For Development
-npm run dev
-
-# For Production
-npm run build
-npm start
 ```
 
 ## Architecture

@@ -1,22 +1,20 @@
-"""
-Implements dice commands
-"""
+"""Implements dice commands."""
 
-import os
+from pathlib import Path
 from random import choice
 
 import discord
 
 from commands import command
-from utils.translator import Localization, DEFAULT_LANGUAGE
+from utils.translator import DEFAULT_LANGUAGE, Localization
 
-resources = [os.path.join("commands", "dice.ftl")]
+resources = [Path("commands") / "dice.ftl"]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
-@command()
-async def dice(interaction: discord.Interaction):
-    """Roll some dice"""
 
+@command()
+async def dice(interaction: discord.Interaction) -> None:
+    """Roll some dice."""
     await interaction.response.send_message(
-        choice([":one:", ":two:", ":three:", ":four:", ":five:", ":six:"]), silent=True
+        choice([":one:", ":two:", ":three:", ":four:", ":five:", ":six:"]), silent=True  # noqa: S311
     )

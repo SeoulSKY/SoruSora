@@ -1,7 +1,6 @@
-"""
-Implements a context menu to translate messages
-"""
-import os
+"""Implements a context menu to translate messages."""
+
+from pathlib import Path
 
 import discord
 
@@ -9,16 +8,16 @@ import utils.translator
 from context_menus import context_menu
 from utils import defer_response
 from utils.templates import error
-from utils.translator import Localization, DEFAULT_LANGUAGE, Language
+from utils.translator import DEFAULT_LANGUAGE, Language, Localization
 
-resources = [os.path.join("context_menus", "translate_message.ftl")]
+resources = [Path("context_menus") / "translate_message.ftl"]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
 @context_menu()
-async def translate_message(interaction: discord.Interaction, message: discord.Message):
-    """Translate this message into your language"""
-
+async def translate_message(interaction: discord.Interaction,
+                            message: discord.Message) -> None:
+    """Translate this message into your language."""
     send = await defer_response(interaction)
     loc = Localization(interaction.locale, resources)
 
@@ -27,11 +26,12 @@ async def translate_message(interaction: discord.Interaction, message: discord.M
 
     if not translator.is_language_supported(language):
         await send(
-            error(await loc.format_value_or_translate(
-                "language-not-supported",
-                {"name": language.name})
-                  ),
-            ephemeral=True
+            error(
+                await loc.format_value_or_translate(
+                    "language-not-supported", {"name": language.name}
+                )
+            ),
+            ephemeral=True,
         )
         return
 

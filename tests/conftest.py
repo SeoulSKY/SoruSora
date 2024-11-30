@@ -1,25 +1,19 @@
-"""
-Setup for pytest
-"""
+"""Setup for pytest."""
 
 import asyncio
-import os
 import sys
+from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-
+sys.path.insert(0, str((Path(__file__).parent / "../src").resolve()))
 load_dotenv("..")
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    """
-    Override event loop for async tests
-    """
+def event_loop() -> None:
+    """Override event loop for async tests."""
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
