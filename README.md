@@ -13,6 +13,7 @@
     <img src="https://img.shields.io/badge/SoruSora-online-green?style=flat&logo=discord">
     <br>
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/pytest.yml/badge.svg">
+    <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/ruff.yml/badge.svg">
     <br>
     <a href="https://discord.gg/kQZDJJB">
         <img src="http://invidget.switchblade.xyz/kQZDJJB">
