@@ -13,7 +13,7 @@ from utils.constants import LOCALES_DIR
 from utils.translator import DEFAULT_LANGUAGE
 
 
-def context_menu(*, nsfw: bool = False, **params: str) -> Callable[Command]:
+def context_menu(*, nsfw: bool = False, **params: str) -> Callable[[...], Command]:
     """Decorate the context menu.
 
     :param nsfw: Whether the context menu is NSFW

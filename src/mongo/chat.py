@@ -39,7 +39,7 @@ class Chat(Document):
         :param source: The source to create a new chat
         :return: The new chat config.
         """
-        return super()._from_dict(Chat, source)
+        return Document._from_dict(Chat, source)  # noqa: SLF001
 
 
 def _get_filter(user_id: int) -> dict:

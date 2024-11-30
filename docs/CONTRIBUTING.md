@@ -65,7 +65,7 @@ People _love_ thorough bug reports. I'm not even kidding.
 
 Follow [PEP 8 Guidelines](https://peps.python.org/pep-0008/), which are standard coding style guidelines for Python
 
-- You can try running `pylint` for style unification
+- You can try running `ruff check` for style unification
 
 ## Documents
 

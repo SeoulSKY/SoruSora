@@ -19,7 +19,7 @@ from utils.translator import CommandTranslator, Localization
 
 load_dotenv()
 
-sys.path.append(ROOT_DIR / "src")  # Add the src directory to the path
+sys.path.append(SRC_DIR)
 
 LOGS_DIR = ROOT_DIR / "logs"
 ERROR_DIR = LOGS_DIR / "error"
@@ -37,7 +37,7 @@ DEV_COMMANDS = {
 }
 
 
-class LevelFilter(logging.Filter):  # pylint: disable=too-few-public-methods
+class LevelFilter(logging.Filter):
     """Logger filter that filters only specific logging level."""
 
     def __init__(self, level: int) -> None:
@@ -132,8 +132,8 @@ async def on_app_command_error(interaction: Interaction,
 
 
 if __name__ == "__main__":
-    ERROR_DIR.mkdir(parents=True)
-    WARNING_DIR.mkdir(parents=True)
+    ERROR_DIR.mkdir(parents=True, exist_ok=True)
+    WARNING_DIR.mkdir(parents=True, exist_ok=True)
 
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

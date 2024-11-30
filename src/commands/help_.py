@@ -45,15 +45,16 @@ class HelpSelect(CommandSelect):
         ) as file:
             text = await file.read()
 
+        translation = await Cache.get(Language(str(interaction.locale)), text)
+
         await interaction.response.send_message(
-            Cache.get(Language(str(interaction.locale)), text).text, ephemeral=True
+            translation.text, ephemeral=True
         )
 
 
 @command(help_description_name=BOT_NAME, help_header_name=BOT_NAME)
 async def help_(interaction: Interaction) -> None:
     """Show the help message."""
-    # pylint: disable=import-outside-toplevel
     from main import bot
 
     send = await defer_response(interaction)

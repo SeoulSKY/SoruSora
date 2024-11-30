@@ -33,7 +33,7 @@ db: AsyncIOMotorDatabase = client.get_database(DATABASE_NAME)
 T = TypeVar("T", bound="Document")
 
 
-class Document:  # pylint: disable=too-few-public-methods
+class Document:
     """A wrapper class to represent documents in the database."""
 
     @staticmethod

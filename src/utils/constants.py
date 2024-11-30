@@ -30,7 +30,7 @@ class ErrorCode(Enum):
         return self.value == other
 
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 SRC_DIR = ROOT_DIR / "src"
 CACHE_DIR = ROOT_DIR / "cache"
 ASSETS_DIR = ROOT_DIR / "assets"

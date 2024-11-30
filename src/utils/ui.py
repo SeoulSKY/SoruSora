@@ -284,7 +284,7 @@ class CommandSelect(Select):
         interaction: Interaction,
         hidden: set[type[Command | Group]] | None = None,
     ) -> list[SelectOption]:
-        from main import bot  # pylint: disable=import-outside-toplevel
+        from main import bot
 
         language = Language(str(interaction.locale))
 

@@ -33,7 +33,7 @@ class User(Document):
         :param source: The source to create a new user
         :return: The new user config.
         """
-        return super()._from_dict(User, source)
+        return Document._from_dict(User, source)  # noqa: SLF001
 
 
 def _get_filter(user_id: int) -> dict:

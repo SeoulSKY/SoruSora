@@ -32,7 +32,7 @@ class Channel(Document):
         :param source: The source to create a new channel
         :return: The new channel.
         """
-        return super()._from_dict(Channel, source)
+        return Document._from_dict(Channel, source)  # noqa: SLF001
 
 
 def _get_filter(channel_id: int) -> dict:

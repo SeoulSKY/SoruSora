@@ -14,8 +14,6 @@ Functions:
     get_translator
 """
 
-# pylint: disable=too-many-lines
-
 import asyncio
 import contextlib
 import itertools
@@ -25,7 +23,6 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Generator, Iterable
 from os import PathLike
 from pathlib import Path
-from threading import Lock
 from typing import Any, ClassVar
 
 import aiofiles
@@ -494,20 +491,20 @@ class Cache:
     PATH = CACHE_DIR / "translations.json"
 
     _data: dict[str, dict[str, str]] | None = None
-    _lock = Lock()
+    _lock = asyncio.Lock()
 
     def __init__(self) -> None:
         """Initialize the cache."""
         raise TypeError("This class cannot be instantiated")
 
     @classmethod
-    def _load(cls) -> None:
-        CACHE_DIR.mkdir(parents=True)
+    async def _load(cls) -> None:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-        with cls._lock:
+        async with cls._lock:
             try:
-                with cls.PATH.open(encoding="utf-8") as file:
-                    cls._data = json.load(file)
+                async with aiofiles.open(cls.PATH, encoding="utf-8") as file:
+                    cls._data = json.loads(await file.read())
             except (FileNotFoundError, json.JSONDecodeError):
                 cls._data = {}
 
@@ -518,11 +515,12 @@ class Cache:
             return
 
         async with cls._lock, aiofiles.open(cls.PATH, "w", encoding="utf-8") as file:
-            await asyncio.to_thread(json.dump, cls._data, file)
+            await file.write(json.dumps(cls._data))
+
         cls._data = None
 
     @classmethod
-    def has(cls, language: Language, text: str) -> bool:
+    async def has(cls, language: Language, text: str) -> bool:
         """Check if the translation is in the cache.
 
         :param language: The language of the translation
@@ -530,9 +528,9 @@ class Cache:
         :return: True if the translation is in the cache
         """
         if cls._data is None:
-            cls._load()
+            await cls._load()
 
-        with cls._lock:
+        async with cls._lock:
             code = language.code
             if language.code not in cls._data:
                 code = language.trim_territory().code
@@ -540,7 +538,7 @@ class Cache:
             return code in cls._data and text in cls._data[code]
 
     @classmethod
-    def get(cls, language: Language, text: str) -> Translation:
+    async def get(cls, language: Language, text: str) -> Translation:
         """Get the translation from the cache.
 
         :param language: The language of the translation
@@ -550,10 +548,10 @@ class Cache:
         :return: The translation
         """
         if cls._data is None:
-            cls._load()
+            await cls._load()
 
         try:
-            with cls._lock:
+            async with cls._lock:
                 code = language.code
                 if language.code not in cls._data:
                     code = language.trim_territory().code
@@ -567,15 +565,15 @@ class Cache:
             ) from ex
 
     @classmethod
-    def set(cls, translation: Translation) -> None:
+    async def set(cls, translation: Translation) -> None:
         """Set the translation to the cache.
 
         :param translation: The translation to set
         """
         if cls._data is None:
-            cls._load()
+            await cls._load()
 
-        with cls._lock:
+        async with cls._lock:
             if translation.target.code not in cls._data:
                 cls._data[translation.target.code] = {}
 
@@ -584,16 +582,16 @@ class Cache:
             )
 
     @classmethod
-    def remove(cls, language: Language, text: str) -> None:
+    async def remove(cls, language: Language, text: str) -> None:
         """Remove the translation from the cache.
 
         :param language: The language of the translation
         :param text: The text to translate
         """
         if cls._data is None:
-            cls._load()
+            await cls._load()
 
-        with cls._lock:
+        async with cls._lock:
             if language.code in cls._data:
                 cls._data[language.code].pop(text, None)
 
@@ -601,7 +599,7 @@ class Cache:
 class Localization:
     """Provides localization functionality."""
 
-    _loader = FluentResourceLoader(LOCALES_DIR / "{locale}")
+    _loader = FluentResourceLoader(str(LOCALES_DIR / "{locale}"))
 
     _translator: BaseTranslator = GoogleTranslator()
 
@@ -634,7 +632,9 @@ class Localization:
             fallbacks.append(DEFAULT_LANGUAGE.code)
 
         self._loc = FluentLocalization(
-            [self._language.code, *fallbacks], resources, self._loader
+            [self._language.code, *fallbacks],
+            [str(resource) for resource in resources],
+            self._loader
         )
 
     @staticmethod
@@ -705,12 +705,12 @@ class Localization:
         loc = Localization(DEFAULT_LANGUAGE, self.resources)
         text = loc.format_value(msg_id, args)
 
-        if not Cache.has(self._language, text):
+        if not await Cache.has(self._language, text):
             translation = await self._translator.translate(text, self._language)
-            Cache.set(translation)
+            await Cache.set(translation)
             await Cache.save()
 
-        return Cache.get(self._language, text).text
+        return (await Cache.get(self._language, text)).text
 
     @property
     def locales(self) -> list[str]:
@@ -770,15 +770,15 @@ class CommandTranslator(discord.app_commands.Translator):
             await coro
 
     async def translate(
-        self, string: locale_str, locale: Locale, _: TranslationContextTypes
+        self, string: locale_str, locale: Locale, context: TranslationContextTypes  # noqa: ARG002
     ) -> str | None:
         """Translate the given string to the given locale."""
         language = Language(locale)
         if language == DEFAULT_LANGUAGE:
             return string.message
 
-        if Cache.has(language, string.message):
-            return Cache.get(language, string.message).text
+        if await Cache.has(language, string.message):
+            return (await Cache.get(language, string.message)).text
 
         logger.warning(
             "Translation of text '%s' not found for locale '%s'", string.message, locale
@@ -786,16 +786,16 @@ class CommandTranslator(discord.app_commands.Translator):
         return None
 
     async def _translate_about_docs(self, languages: Iterable[Language]) -> None:
-        # pylint: disable=import-outside-toplevel
         from commands.about import get_about_dir
 
         pbar = tqdm(desc="Translating about documents", total=0, unit="language")
-        with aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8") as file:
+        async with (aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8")
+                    as file):
             text = await file.read()
 
         targets = []
         for language in languages:
-            if not Cache.has(language, text):
+            if not await Cache.has(language, text):
                 targets.append(language)
                 pbar.total += 1
 
@@ -803,7 +803,7 @@ class CommandTranslator(discord.app_commands.Translator):
             return
 
         async for translation in self._translator.translate_targets(text, targets):
-            Cache.set(translation)
+            await Cache.set(translation)
             pbar.update()
 
         pbar.close()
@@ -811,13 +811,11 @@ class CommandTranslator(discord.app_commands.Translator):
         await Cache.save()
 
     def _get_commands(self) -> Generator[Command, Any, None]:
-        # pylint: disable=import-outside-toplevel
-        from commands.help_ import HIDDEN_COMMANDS, help_
+        from commands.help_ import HIDDEN_COMMANDS
 
         for command in self.bot.tree.walk_commands():
             if (
-                command.qualified_name == help_.qualified_name
-                or isinstance(command, app_commands.Group)
+                isinstance(command, app_commands.Group)
                 or type(command.root_parent if command.root_parent else command)
                 in HIDDEN_COMMANDS
             ):
@@ -827,65 +825,66 @@ class CommandTranslator(discord.app_commands.Translator):
 
     @staticmethod
     async def _localize_about_docs(languages: Iterable[Language]) -> None:
-        # pylint: disable=import-outside-toplevel
         from commands.about import get_about_dir
 
-        with aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8") as file:
+        async with (aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8")
+                    as file):
             default_text = await file.read()
 
         for language in tqdm(
             languages, desc="Localizing about documents", total=0, unit="language"
         ):
             try:
-                with aiofiles.open(get_about_dir(language), encoding="utf-8") as file:
+                async with (aiofiles.open(get_about_dir(language), encoding="utf-8")
+                            as file):
                     text = await file.read()
             except FileNotFoundError:
-                with aiofiles.open(
+                async with aiofiles.open(
                     get_about_dir(language.trim_territory()), encoding="utf-8"
                 ) as file:
                     text = await file.read()
 
-            if not Cache.has(language, default_text):
-                Cache.set(Translation(DEFAULT_LANGUAGE, language, default_text, text))
+            if not await Cache.has(language, default_text):
+                await Cache.set(
+                    Translation(DEFAULT_LANGUAGE, language, default_text, text)
+                )
 
         await Cache.save()
 
     async def _localize_help_docs(self, languages: Iterable[Language]) -> None:
-        # pylint: disable=import-outside-toplevel
         from commands.help_ import get_help_dir
 
         for language in tqdm(
             languages, desc="Localizing help documents", total=0, unit="language"
         ):
             for command in self._get_commands():
-                with aiofiles.open(
+                async with aiofiles.open(
                     get_help_dir(command.qualified_name, DEFAULT_LANGUAGE),
                     encoding="utf-8",
                 ) as file:
                     default_text = await file.read()
 
                 try:
-                    with aiofiles.open(
+                    async with aiofiles.open(
                         get_help_dir(command.qualified_name, language),
                         encoding="utf-8",
                     ) as file:
                         text = await file.read()
                 except FileNotFoundError:
-                    with aiofiles.open(
+                    async with aiofiles.open(
                         get_help_dir(command.qualified_name, language.trim_territory()),
                         encoding="utf-8",
                     ) as file:
                         text = await file.read()
 
-                if not Cache.has(language, default_text):
-                    Cache.set(
+                if not await Cache.has(language, default_text):
+                    await Cache.set(
                         Translation(DEFAULT_LANGUAGE, language, default_text, text)
                     )
 
         await Cache.save()
 
     async def _translate_help_docs(self, languages: Iterable[Language]) -> None:
-        # pylint: disable=import-outside-toplevel
         from commands.help_ import get_help_dir
 
         async def translate_texts(
@@ -901,13 +900,13 @@ class CommandTranslator(discord.app_commands.Translator):
             texts = []
 
             for command in self._get_commands():
-                with aiofiles.open(
+                async with aiofiles.open(
                     get_help_dir(command.qualified_name, DEFAULT_LANGUAGE),
                     encoding="utf-8",
                 ) as file:
                     text = await file.read()
 
-                if not Cache.has(language, text):
+                if not await Cache.has(language, text):
                     texts.append(text)
 
             if len(texts) == 0:
@@ -918,7 +917,7 @@ class CommandTranslator(discord.app_commands.Translator):
 
         for task in asyncio.as_completed(tasks):
             for translation in await task:
-                Cache.set(translation)
+                await Cache.set(translation)
 
             pbar.update()
 
@@ -956,7 +955,7 @@ class CommandTranslator(discord.app_commands.Translator):
 
                 command_prefix = command.name.replace("_", "-")
 
-                Cache.set(
+                await Cache.set(
                     Translation(
                         DEFAULT_LANGUAGE,
                         language,
@@ -967,7 +966,7 @@ class CommandTranslator(discord.app_commands.Translator):
                     )
                 )
 
-                Cache.set(
+                await Cache.set(
                     Translation(
                         DEFAULT_LANGUAGE,
                         language,
@@ -990,7 +989,7 @@ class CommandTranslator(discord.app_commands.Translator):
                 ]:
                     replaced_name = name.replace("_", "-")
 
-                    Cache.set(
+                    await Cache.set(
                         Translation(
                             DEFAULT_LANGUAGE,
                             language,
@@ -1004,7 +1003,7 @@ class CommandTranslator(discord.app_commands.Translator):
                         )
                     )
 
-                    Cache.set(
+                    await Cache.set(
                         Translation(
                             DEFAULT_LANGUAGE,
                             language,
@@ -1019,7 +1018,7 @@ class CommandTranslator(discord.app_commands.Translator):
                     )
 
                     for choice in choices:
-                        Cache.set(
+                        await Cache.set(
                             Translation(
                                 DEFAULT_LANGUAGE,
                                 language,
@@ -1044,7 +1043,7 @@ class CommandTranslator(discord.app_commands.Translator):
                         ".ftl"
                     ],
                 )
-                Cache.set(
+                await Cache.set(
                     Translation(
                         DEFAULT_LANGUAGE,
                         language,
@@ -1126,7 +1125,7 @@ class CommandTranslator(discord.app_commands.Translator):
             target_texts = []
             target_is_name = []
             for text, name in zip(texts, is_name, strict=False):
-                if Cache.has(language, text):
+                if await Cache.has(language, text):
                     continue
 
                 target_texts.append(text)
@@ -1144,7 +1143,7 @@ class CommandTranslator(discord.app_commands.Translator):
 
         for task in asyncio.as_completed(tasks):
             for translation in await task:
-                Cache.set(translation)
+                await Cache.set(translation)
 
             pbar.update()
 

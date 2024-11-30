@@ -78,8 +78,6 @@ default_loc = Localization(DEFAULT_LANGUAGE, [Path("commands") / "movie.ftl"])
 class Movie(app_commands.Group):
     """Commands related to Movie."""
 
-    # pylint: disable=no-member
-
     FPS_MIN = 1
     FPS_MAX = 2
     FPS_DEFAULT = 2
@@ -102,8 +100,8 @@ class Movie(app_commands.Group):
 
     @classmethod
     def _cache_movies(cls) -> None:
-        MOBILE_CACHE_PATH.mkdir(parents=True)
-        DESKTOP_CACHE_PATH.mkdir(parents=True)
+        MOBILE_CACHE_PATH.mkdir(parents=True, exist_ok=True)
+        DESKTOP_CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
         movie_names = [
             file for file in os.listdir(constants.ASSETS_DIR) if file.endswith(".mp4")
@@ -153,8 +151,8 @@ class Movie(app_commands.Group):
 
     @staticmethod
     def _get_cache_path(name: str, is_on_mobile: bool) -> str:  # noqa: FBT001
-        return MOBILE_CACHE_PATH if is_on_mobile else (
-                DESKTOP_CACHE_PATH / name + ".json")
+        path = MOBILE_CACHE_PATH if is_on_mobile else DESKTOP_CACHE_PATH
+        return str(path / name) + ".json"
 
     @staticmethod
     async def get_frames(name: str, is_on_mobile: bool) -> list[str]:  # noqa: FBT001

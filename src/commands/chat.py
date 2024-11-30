@@ -583,6 +583,8 @@ class Chat(app_commands.Group):
         ) as file:
             text = await file.read()
 
+        translation = await Cache.get(Language(interaction.locale), text)
+
         await interaction.response.send_message(
-            Cache.get(Language(interaction.locale), text).text, ephemeral=True
+            translation.text, ephemeral=True
         )

@@ -80,7 +80,9 @@ async def about(interaction: Interaction) -> None:
     async with aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8") as file:
         text = await file.read()
 
+    translation = await Cache.get(Language(str(interaction.locale)), text)
+
     await send(
-        Cache.get(Language(str(interaction.locale)), text).text,
+        translation.text,
         view=await AboutView(interaction).init(),
     )

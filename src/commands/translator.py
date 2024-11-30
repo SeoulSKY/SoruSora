@@ -172,7 +172,6 @@ async def translator(
         )
         await set_user(user)
 
-        # pylint: disable=duplicate-code
         await interaction.response.send_message(
             success(await loc.format_value_or_translate("translator-set")),
             ephemeral=True,
