@@ -161,14 +161,8 @@ class SelectView(View):
                     option.default = option.value in self._selected
 
             await interaction.edit_original_response(view=self)
-
-            try:
-                await select_interaction.response.send_message()
-            except HTTPException as ex:
-                if ex.code == ErrorCode.MESSAGE_EMPTY:
-                    return
-
-                raise
+            # End the interaction without replying
+            await select_interaction.response.defer(ephemeral=True)
 
         for i in range(0, len(options), Limit.SELECT_MAX.value):
             partial_options = options[i : i + Limit.SELECT_MAX.value]
