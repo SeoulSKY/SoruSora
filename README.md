@@ -97,7 +97,7 @@ For every message sent in the selected channels, SoruSora will translate the mes
 
 If the main language of the channels is not selected using `/channel language`, the language used in the message will be detected automatically.
 
-It supports 43 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
+It supports 45 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Basque`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `Galician`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
 
 ### Chat
 
