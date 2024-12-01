@@ -133,9 +133,9 @@ Check the response time of SoruSora.
 
 ### Translator
 
-Set or remove a translator that translate all of your messages to other languages.
+Set or remove a translator that translates all of your messages to other languages.
 
-It supports 43 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
+It supports 45 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Basque`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `Galician`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
 
 
 ## How to Set up and Run
