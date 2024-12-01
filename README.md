@@ -199,10 +199,7 @@ pyenv exec python src/main.py
 
 ## Architecture
 
-SoruSora is built with a microservices architecture, consisting of a Python and a Node.js backends. The two servers
-communicate with each other using gRPC, a high-performance, open-source universal RPC framework. Database is managed by MongoDB server. Each server runs in a separate Docker container, and they are orchestrated using Docker Compose.
-
-![Architecture](https://github.com/SeoulSKY/SoruSora/assets/48105703/bc1b2042-a14c-48c0-b968-91b881d735de)
+![Architecture](https://github.com/user-attachments/assets/f1c80e87-1476-493b-bd59-195d33ec2a0b)
 
 ## How to Contribute
 
