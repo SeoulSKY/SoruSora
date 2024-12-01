@@ -116,7 +116,7 @@ class Confirm(View):
 class SelectView(View):
     """View that contains multiple selects."""
 
-    def __init__( # noqa: C901
+    def __init__(
         self,
         *,
         options: list[SelectOption],
