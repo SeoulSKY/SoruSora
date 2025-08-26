@@ -1,32 +1,24 @@
 """Implements a commands relate to AI chat."""
 
-import asyncio
 import base64
 import contextlib
 import logging
 import os
 from collections.abc import Iterable
+from http import HTTPStatus
 from pathlib import Path
 
 import aiofiles
 import discord
-import google.generativeai as genai
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from discord import Interaction, Member, Message, RawMessageUpdateEvent, app_commands
 from discord.ext.commands import Bot
-from google.api_core.exceptions import (
-    GoogleAPIError,
-    InvalidArgument,
-    PermissionDenied,
-    ResourceExhausted,
-    ServiceUnavailable,
-)
-from google.generativeai import GenerativeModel
-from google.generativeai.types import HarmBlockThreshold, HarmCategory, PartType
-from google.generativeai.types.content_types import ContentType, to_contents
+from google import genai
+from google.genai import types
+from google.genai.errors import ClientError
 
 import mongo
 import mongo.chat
@@ -43,6 +35,10 @@ resources = [Path("commands") / "chat.ftl", Localization.get_resource()]
 default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 TOKEN_PERMISSION_LINK = "https://console.cloud.google.com/apis/credentials"  # noqa: S105
+
+AI_TOKEN = os.environ["AI_TOKEN"]
+ENCRYPTION_KEY = os.environ["ENCRYPTION_KEY"]
+MODEL="gemini-2.5-flash-lite"
 
 
 class Chat(app_commands.Group):
@@ -65,44 +61,17 @@ class Chat(app_commands.Group):
             backend=default_backend(),
         )
         self._encrypter = Fernet(
-            base64.urlsafe_b64encode(kdf.derive(os.getenv("ENCRYPTION_KEY").encode()))
+            base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY.encode()))
         )
 
         self._setup_chat_listener()
 
-        self._lock = asyncio.Lock()
-
-    async def _get_model(self,
-                         user: discord.User | Member,
-                         token: str | None = None) -> GenerativeModel:
+    async def _get_token(self, user: discord.User | Member) -> str:
         chat = await get_chat(user.id)
-        if token is None and chat.token is not None:
-            token = self._encrypter.decrypt(chat.token)
-        else:
-            token = token or os.getenv("AI_TOKEN")
+        if chat.token is not None:
+            return self._encrypter.decrypt(chat.token).decode()
 
-        async with self._lock:
-            genai.configure(api_key=token)
-            return GenerativeModel(
-                "gemini-1.5-flash",
-                {
-                    HarmCategory.HARM_CATEGORY_HARASSMENT:
-                        HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_HATE_SPEECH:
-                        HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
-                        HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
-                        HarmBlockThreshold.BLOCK_NONE,
-                },
-                {
-                    "candidate_count": 1,
-                    "stop_sequences": ["<ctrl"],
-                    "temperature": 1.0,
-                    "max_output_tokens": 8192,
-                },
-                system_instruction=self._get_instruction(user),
-            )
+        return AI_TOKEN
 
     def _is_chat_message(self, message: Message) -> bool:
         return (
@@ -111,7 +80,9 @@ class Chat(app_commands.Group):
             and message.reference.resolved.author == self.bot)
         )
 
-    async def _get_history(self, user: discord.User | Member) -> Iterable[ContentType]:
+    async def _get_history(
+        self, user: discord.User | Member
+    ) -> list[types.Content]:
         messages = []
         chat = await get_chat(user.id)
         cache = {
@@ -138,7 +109,7 @@ class Chat(app_commands.Group):
             # The chat history isn't valid. So, reset it
             chat.history = []
             await set_chat(chat)
-            return chat.history
+            return []
 
         if len(messages) < len(chat.history):
             # Make sure the last message is from the bot
@@ -150,10 +121,10 @@ class Chat(app_commands.Group):
             await set_chat(chat)
 
         return [
-            {
-                "role": "model" if message.author == self.bot.user else "user",
-                "parts": await self._get_parts(message),
-            }
+            types.Content(
+                role="model" if message.author == self.bot.user else "user",
+                parts=await self._get_parts(message)
+            )
             for message in messages
         ]
 
@@ -411,13 +382,13 @@ class Chat(app_commands.Group):
         self.bot.add_listener(on_raw_message_edit)
         self.bot.add_listener(on_raw_message_delete)
 
-    async def _get_parts(self, message: Message) -> list[PartType]:
-        parts: list[PartType] = []
+    async def _get_parts(self, message: Message) -> list[types.Part]:
+        parts: list[types.Part] = []
 
         text = self._remove_mention(message.content)
 
         # text cannot be empty, so call the bot name if it is empty
-        parts.append(text or BOT_NAME)
+        parts.append(types.Part.from_text(text=text or BOT_NAME))
 
         for attachment in message.attachments:
             if not attachment.content_type.startswith("image"):
@@ -425,10 +396,10 @@ class Chat(app_commands.Group):
 
             with contextlib.suppress(discord.Forbidden, discord.NotFound):
                 parts.append(
-                    {
-                        "mime_type": attachment.content_type,
-                        "data": await attachment.read(),
-                    }
+                    types.Part.from_bytes(
+                        data=await attachment.read(),
+                        mime_type=attachment.content_type
+                    )
                 )
 
         return parts
@@ -440,15 +411,16 @@ class Chat(app_commands.Group):
             if len(parts) == 0:
                 return None
 
-            model = await self._get_model(message.author)
+            client = genai.Client(api_key=await self._get_token(message.author))
+
             history = await self._get_history(message.author)
 
             while True:
-                session = model.start_chat(history=history)
-                num_tokens = (
-                    await model.count_tokens_async(session.history + to_contents(parts))
-                ).total_tokens
-                if num_tokens <= genai.get_model(model.model_name).input_token_limit:
+                num_tokens = (await client.aio.models.count_tokens(
+                    model=MODEL, contents=history + parts
+                )).total_tokens
+
+                if num_tokens <= client.models.get(model=MODEL).input_token_limit:
                     break
 
                 # Remove the oldest user message and its reply
@@ -467,35 +439,71 @@ class Chat(app_commands.Group):
 
             reply = None
             try:
-                text = (await session.send_message_async(parts)).text
+                text = (await client.aio.models.generate_content(
+                    model=MODEL,
+                    contents=history + parts,
+                    config=types.GenerateContentConfig(
+                        safety_settings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE
+                            ),
+                        ],
+                        candidate_count=1,
+                        stop_sequences=["<ctrl"],
+                        temperature=1.0,
+                        max_output_tokens=8192,
+                        system_instruction=self._get_instruction(message.author),
+                    )
+                )).text
                 reply = await message.reply(
                     text[: Limit.NUM_CHARACTERS_IN_MESSAGE.value]
                 )
-            except InvalidArgument:
-                await message.reply(
-                    error(await loc.format_value_or_translate("token-no-longer-valid"))
-                )
-            except PermissionDenied:
-                await message.reply(
-                    error(
-                        await loc.format_value_or_translate(
-                            "token-no-permission", {"link": TOKEN_PERMISSION_LINK}
+            except ClientError as e:
+                match e.code:
+                    case HTTPStatus.BAD_REQUEST:
+                        await message.reply(
+                            error(await loc.format_value_or_translate("token-no-longer-valid")),
                         )
-                    )
-                )
-            except ResourceExhausted:
-                await message.reply(
-                    error(await loc.format_value_or_translate("too-many-requests"))
-                )
-            except ServiceUnavailable:
-                await message.reply(
-                    error(await loc.format_value_or_translate("server-unavailable"))
-                )
-            except GoogleAPIError:
-                self._logger.exception("An error occurred")
-                await message.reply(
-                    error(await loc.format_value_or_translate("unknown-error"))
-                )
+                    case HTTPStatus.FORBIDDEN:
+                        await message.reply(
+                            error(
+                                await loc.format_value_or_translate(
+                                    "token-no-permission",
+                                    {"link": TOKEN_PERMISSION_LINK}
+                                )
+                            ),
+                        )
+                    case HTTPStatus.SERVICE_UNAVAILABLE:
+                        await message.reply(
+                            error(await loc.format_value_or_translate(
+                                "server-unavailable")),
+                        )
+                    case HTTPStatus.TOO_MANY_REQUESTS:
+                        await message.reply(
+                            error(await loc.format_value_or_translate(
+                                "too-many-requests")),
+                        )
+                    case _:
+                        await message.reply(
+                            error(await loc.format_value_or_translate("unknown-error")),
+                        )
 
             return reply or None
 
@@ -540,30 +548,41 @@ class Chat(app_commands.Group):
             )
             return
 
-        model = await self._get_model(interaction.user, value)
         try:
-            await model.generate_content_async("Hello")
-        except InvalidArgument:
-            await send(
-                error(await loc.format_value_or_translate("token-invalid")),
-                ephemeral=True,
+            await genai.Client(api_key=value).aio.models.generate_content(
+                model=MODEL, contents="Hello"
             )
-            return
-        except PermissionDenied:
-            await send(
-                error(
-                    await loc.format_value_or_translate(
-                        "token-no-permission", {"link": TOKEN_PERMISSION_LINK}
+        except ClientError as e:
+            match e.code:
+                case HTTPStatus.BAD_REQUEST:
+                    await send(
+                        error(await loc.format_value_or_translate("token-invalid")),
+                        ephemeral=True,
                     )
-                ),
-                ephemeral=True,
-            )
-            return
-        except ServiceUnavailable:
-            await send(
-                error(await loc.format_value_or_translate("server-unavailable")),
-                ephemeral=True,
-            )
+                case HTTPStatus.FORBIDDEN:
+                    await send(
+                        error(
+                            await loc.format_value_or_translate(
+                                "token-no-permission", {"link": TOKEN_PERMISSION_LINK}
+                            )
+                        ),
+                        ephemeral=True,
+                    )
+                case HTTPStatus.SERVICE_UNAVAILABLE:
+                    await send(
+                        error(await loc.format_value_or_translate("server-unavailable")),
+                        ephemeral=True,
+                    )
+                case HTTPStatus.TOO_MANY_REQUESTS:
+                    await send(
+                        error(await loc.format_value_or_translate("too-many-requests")),
+                        ephemeral=True,
+                    )
+                case _:
+                    await send(
+                        error(await loc.format_value_or_translate("unknown-error")),
+                        ephemeral=True,
+                    )
             return
 
         chat = await get_chat(interaction.user.id)

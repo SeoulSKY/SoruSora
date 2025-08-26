@@ -274,6 +274,7 @@ class ArgosTranslator(BaseTranslator):
     _CODE_ALIAS: ClassVar[dict[str, str]] = {
         "zh": "zh-CN",
         "zt": "zh-TW",
+        "pb": "pt-BR",
     }
 
     _ALIAS_TO_CODE: ClassVar[dict[str, str]] = {v: k for k, v in _CODE_ALIAS.items()}
