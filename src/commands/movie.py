@@ -129,7 +129,7 @@ class Movie(app_commands.Group):
 
                 qbar = tqdm(
                     desc=f"Caching {movie_name} for "
-                         f"{'mobile' if is_mobile else 'desktop'}",
+                    f"{'mobile' if is_mobile else 'desktop'}",
                     total=int(movie.get(cv2.CAP_PROP_FRAME_COUNT)),
                     unit="frame",
                 )
@@ -142,7 +142,7 @@ class Movie(app_commands.Group):
                     qbar.update()
 
                 with Path(
-                        cls._get_cache_path(movie_name.removesuffix(".mp4"),is_mobile)
+                    cls._get_cache_path(movie_name.removesuffix(".mp4"), is_mobile)
                 ).open("w", encoding="utf-8") as file:
                     file.write(json.dumps(buffer))
 

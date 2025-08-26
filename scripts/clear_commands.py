@@ -18,7 +18,6 @@ class TempBot(Bot):
             self.tree.clear_commands(guild=guild)
             assert len(await self.tree.sync(guild=guild)) == 0  # noqa: S101
 
-
         self.tree.clear_commands(guild=None)
         assert len(await self.tree.sync()) == 0  # noqa: S101
 

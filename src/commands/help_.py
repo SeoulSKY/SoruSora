@@ -47,9 +47,7 @@ class HelpSelect(CommandSelect):
 
         translation = await Cache.get(Language(str(interaction.locale)), text)
 
-        await interaction.response.send_message(
-            translation.text, ephemeral=True
-        )
+        await interaction.response.send_message(translation.text, ephemeral=True)
 
 
 @command(help_description_name=BOT_NAME, help_header_name=BOT_NAME)
@@ -90,8 +88,10 @@ async def help_(interaction: Interaction) -> None:
             for i, name in enumerate(translated_name):
                 translated_name[i] = await interaction.translate(name)
 
-            text += (f"* `/{' '.join(translated_name)}`: "
-                     f"{await interaction.translate(cmd.description)}\n")
+            text += (
+                f"* `/{' '.join(translated_name)}`: "
+                f"{await interaction.translate(cmd.description)}\n"
+            )
 
     text += (
         f"## {await loc.format_value_or_translate('context-menus')}\n"
@@ -99,8 +99,10 @@ async def help_(interaction: Interaction) -> None:
     )
 
     if interaction.user.is_on_mobile():
-        text += (await loc.format_value_or_translate("context-menus-description-mobile")
-                 + "\n")
+        text += (
+            await loc.format_value_or_translate("context-menus-description-mobile")
+            + "\n"
+        )
     else:
         text += (
             f"{await loc.format_value_or_translate('context-menus-description-pc')}\n"

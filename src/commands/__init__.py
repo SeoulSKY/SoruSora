@@ -15,6 +15,7 @@ from utils.translator import DEFAULT_LANGUAGE
 
 def update_locale() -> Callable[..., Callable[[Coroutine], Command]]:
     """Decorate a function to update the locale of the user."""
+
     async def predicate(interaction: Interaction) -> bool:
         user = await get_user(interaction.user.id)
         user.locale = str(interaction.locale)
@@ -24,9 +25,7 @@ def update_locale() -> Callable[..., Callable[[Coroutine], Command]]:
     return app_commands.check(predicate)
 
 
-def command(*,
-            nsfw: bool = False,
-            **params: str) -> [Callable[..., Command]]:
+def command(*, nsfw: bool = False, **params: str) -> [Callable[..., Command]]:
     """Decorate a function to create a command.
 
     :param nsfw: Whether the command is NSFW

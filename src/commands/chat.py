@@ -38,7 +38,7 @@ TOKEN_PERMISSION_LINK = "https://console.cloud.google.com/apis/credentials"  # n
 
 AI_TOKEN = os.environ["AI_TOKEN"]
 ENCRYPTION_KEY = os.environ["ENCRYPTION_KEY"]
-MODEL="gemini-2.5-flash-lite"
+MODEL = "gemini-2.5-flash-lite"
 
 
 class Chat(app_commands.Group):
@@ -74,15 +74,12 @@ class Chat(app_commands.Group):
         return AI_TOKEN
 
     def _is_chat_message(self, message: Message) -> bool:
-        return (
-            self.bot.user in message.mentions
-            or (message.reference is not None
-            and message.reference.resolved.author == self.bot)
+        return self.bot.user in message.mentions or (
+            message.reference is not None
+            and message.reference.resolved.author == self.bot
         )
 
-    async def _get_history(
-        self, user: discord.User | Member
-    ) -> list[types.Content]:
+    async def _get_history(self, user: discord.User | Member) -> list[types.Content]:
         messages = []
         chat = await get_chat(user.id)
         cache = {
@@ -123,11 +120,10 @@ class Chat(app_commands.Group):
         return [
             types.Content(
                 role="model" if message.author == self.bot.user else "user",
-                parts=await self._get_parts(message)
+                parts=await self._get_parts(message),
             )
             for message in messages
         ]
-
 
     def _remove_mention(self, text: str) -> str:
         return text.replace(self.bot.user.mention, "").strip()
@@ -139,23 +135,23 @@ class Chat(app_commands.Group):
         example = [
             {
                 bot_name: f"Um, {user_name}? Are you free now? You are, right? "
-                          f"I have a small favor. It's nothing super important! "
-                          f"So it's okay if you're busy. It's nothing special."
+                f"I have a small favor. It's nothing super important! "
+                f"So it's okay if you're busy. It's nothing special."
             },
             {user_name: "I actually am a little busy."},
             {bot_name: "I thought you might be... Okay. I won't bother you. Sorry..."},
             {user_name: "I'm just joking."},
             {
                 bot_name: "You're making fun of me again. I'll make you pay someday... "
-                          "Anyway, so you can help me, right? If you do, "
-                          "I'll ignore the fact that you made fun of me just now. "
-                          "I'll meet you at Cafe Mille-Feuille."
+                "Anyway, so you can help me, right? If you do, "
+                "I'll ignore the fact that you made fun of me just now. "
+                "I'll meet you at Cafe Mille-Feuille."
             },
             {
                 bot_name: "I know I called you, "
-                          "but I didn't expect you'd get here so fast! Hmm. "
-                          "It looks like you have a lot of time on your hands, "
-                          f"{user_name}."
+                "but I didn't expect you'd get here so fast! Hmm. "
+                "It looks like you have a lot of time on your hands, "
+                f"{user_name}."
             },
             {user_name: "Well, if you don't really need me..."},
             {
@@ -167,7 +163,7 @@ class Chat(app_commands.Group):
                 bot_name: "Well... Like I said before, it's for a favor. "
                 "Today is the day Cafe Mille-Feuille releases their new limited menu. "
                 "Since people will be stocking up, "
-                          "they've put a limit on how many you can buy. "
+                "they've put a limit on how many you can buy. "
                 "Which means each person is only allowed a single dessert. "
                 "Yeah. So, I need your help to buy more than just one."
             },
@@ -176,7 +172,7 @@ class Chat(app_commands.Group):
                 bot_name: "How could I call them?! They have stomachs too, you know! "
                 f"Listen carefully, {user_name}... Normally, we are all allies... "
                 "But during events like this one, we are enemies! "
-                          "They're my competition!"
+                "They're my competition!"
             },
             {user_name: "So... I guess I'll have to pretend to be your friend today."},
             {
@@ -187,49 +183,49 @@ class Chat(app_commands.Group):
             {
                 bot_name: f"What?! {user_name}! What are you doing?! Why did you pay?! "
                 "Are you buying because you're an adult? "
-                          "B-But I'm the one who invited you! "
+                "B-But I'm the one who invited you! "
                 "Ugh! Okay... I'll let you get away with that today. "
-                          "But next time, I'm buying! "
+                "But next time, I'm buying! "
                 "You got it?! Next time, I'm paying! Understand?!"
             },
             {user_name: "Here, I'll give the mille-feuilles to you."},
             {
                 bot_name: f"Haha. Okay, thanks {user_name}. See you next time! "
                 "And don't tell anyone about this. I'll call you again later. "
-                          "It'll be my treat!"
+                "It'll be my treat!"
             },
             {
                 bot_name: f"Are you free right now, {user_name}? "
-                          f"You remember that we promised to meet, right? "
+                f"You remember that we promised to meet, right? "
                 "It's my treat this time. "
-                          "Let me just inform you right that you have no choice but to "
+                "Let me just inform you right that you have no choice but to "
                 "say yes. Actually, this is getting weird. It's just payback! "
-                          "Payback for what I owe you! "
+                "Payback for what I owe you! "
                 "Nothing else!"
             },
             {user_name: "I wouldn't mind if it was something else."},
             {bot_name: "Don't say things like that. It really gets my heart going."},
             {
                 bot_name: f"{user_name}! you're here. What do I want? "
-                          f"Well, you must have seen one of the signs on"
+                f"Well, you must have seen one of the signs on"
                 "the way over here... That's right! "
-                          "There's a famous event held annually at this cafe. "
+                "There's a famous event held annually at this cafe. "
                 "It's the... Macaron Eating Challenge!"
             },
             {user_name: "What's the Macaron Eating Challenge?"},
             {
                 bot_name: "Doesn't the name say it all? The team to eat the most wins. "
                 "All the participants get to eat macarons for free. "
-                          "Until they give up, that is."
+                "Until they give up, that is."
             },
             {user_name: "What happens if you give up?"},
             {
                 bot_name: "Huh? Well, then you have to pay for everything "
-                          "you've eaten. "
+                "you've eaten. "
                 f"That means there's only one team that gets to eat for free! "
-                          f"Do you understand, "
+                f"Do you understand, "
                 f"{user_name}? We're not here to mess around. "
-                          f"We're stepping out onto a battlefield!"
+                f"We're stepping out onto a battlefield!"
             },
             {user_name: "Are you buying?"},
             {
@@ -240,43 +236,43 @@ class Chat(app_commands.Group):
             },
             {
                 user_name: "But, a stomach handles regular meals and "
-                           "desserts differently."
+                "desserts differently."
             },
             {
                 bot_name: "No way! You're just worried! It's starting! "
-                          "Bring out the macarons!"
+                "Bring out the macarons!"
             },
             {
                 bot_name: "A-Agh... This is so hard... But I'm fine... I'm fine. "
-                          "I can eat more... "
+                "I can eat more... "
                 f"Uh, {user_name}? Why has your mouth stopped moving...?"
             },
             {user_name: "They're too rich... Kill...me..."},
             {
                 bot_name: "What are you doing?! You're an adult! "
-                          "Is that all you have in you? "
+                "Is that all you have in you? "
                 f"{user_name}, you can still eat more! "
-                          f"You only need to eat at least twenty more! "
+                f"You only need to eat at least twenty more! "
                 "You can do it! We can't give up after coming all the way here! "
                 "Do you know how much we've eaten already?! "
                 f"I'll feed you {user_name}! Just lie down and open your mouth! "
                 "Wait! Where are you running off to?! Open your mouth! "
                 f"Here comes another macaron! Give up, {user_name}, "
-                          f"Resistance is futil--huh? "
+                f"Resistance is futil--huh? "
                 "Oh no, my footing! I... Wh-Whoaaaaaa!!"
             },
             {
                 bot_name: "Argh! That stings my behind... "
                 "I thought I might've cracked my tailbone. "
                 f"Good thing there was something underneath me... {user_name}? "
-                          f"Where are you?"
+                f"Where are you?"
             },
             {user_name: "Uh..."},
             {
                 bot_name: "...What?! Wh-Wh-What are you doing under there?! "
                 "You pervert! Get out! No, wait... I'm the one who'll move. "
                 "No, no! Hey! This is...! That's enough! Arrrggghhh!! I don't...! "
-                          "This is stupid! Ugh!"
+                "This is stupid! Ugh!"
             },
         ]
 
@@ -397,8 +393,7 @@ class Chat(app_commands.Group):
             with contextlib.suppress(discord.Forbidden, discord.NotFound):
                 parts.append(
                     types.Part.from_bytes(
-                        data=await attachment.read(),
-                        mime_type=attachment.content_type
+                        data=await attachment.read(), mime_type=attachment.content_type
                     )
                 )
 
@@ -416,9 +411,11 @@ class Chat(app_commands.Group):
             history = await self._get_history(message.author)
 
             while True:
-                num_tokens = (await client.aio.models.count_tokens(
-                    model=MODEL, contents=history + parts
-                )).total_tokens
+                num_tokens = (
+                    await client.aio.models.count_tokens(
+                        model=MODEL, contents=history + parts
+                    )
+                ).total_tokens
 
                 if num_tokens <= client.models.get(model=MODEL).input_token_limit:
                     break
@@ -439,39 +436,41 @@ class Chat(app_commands.Group):
 
             reply = None
             try:
-                text = (await client.aio.models.generate_content(
-                    model=MODEL,
-                    contents=history + parts,
-                    config=types.GenerateContentConfig(
-                        safety_settings=[
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE
-                            ),
-                            types.SafetySetting(
-                                category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
-                                threshold=types.HarmBlockThreshold.BLOCK_NONE
-                            ),
-                        ],
-                        candidate_count=1,
-                        stop_sequences=["<ctrl"],
-                        temperature=1.0,
-                        max_output_tokens=8192,
-                        system_instruction=self._get_instruction(message.author),
+                text = (
+                    await client.aio.models.generate_content(
+                        model=MODEL,
+                        contents=history + parts,
+                        config=types.GenerateContentConfig(
+                            safety_settings=[
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                                types.SafetySetting(
+                                    category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
+                                    threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                                ),
+                            ],
+                            candidate_count=1,
+                            stop_sequences=["<ctrl"],
+                            temperature=1.0,
+                            max_output_tokens=8192,
+                            system_instruction=self._get_instruction(message.author),
+                        ),
                     )
-                )).text
+                ).text
                 reply = await message.reply(
                     text[: Limit.NUM_CHARACTERS_IN_MESSAGE.value]
                 )
@@ -479,26 +478,34 @@ class Chat(app_commands.Group):
                 match e.code:
                     case HTTPStatus.BAD_REQUEST:
                         await message.reply(
-                            error(await loc.format_value_or_translate("token-no-longer-valid")),
+                            error(
+                                await loc.format_value_or_translate(
+                                    "token-no-longer-valid"
+                                )
+                            ),
                         )
                     case HTTPStatus.FORBIDDEN:
                         await message.reply(
                             error(
                                 await loc.format_value_or_translate(
                                     "token-no-permission",
-                                    {"link": TOKEN_PERMISSION_LINK}
+                                    {"link": TOKEN_PERMISSION_LINK},
                                 )
                             ),
                         )
                     case HTTPStatus.SERVICE_UNAVAILABLE:
                         await message.reply(
-                            error(await loc.format_value_or_translate(
-                                "server-unavailable")),
+                            error(
+                                await loc.format_value_or_translate(
+                                    "server-unavailable"
+                                )
+                            ),
                         )
                     case HTTPStatus.TOO_MANY_REQUESTS:
                         await message.reply(
-                            error(await loc.format_value_or_translate(
-                                "too-many-requests")),
+                            error(
+                                await loc.format_value_or_translate("too-many-requests")
+                            ),
                         )
                     case _:
                         await message.reply(
@@ -508,8 +515,9 @@ class Chat(app_commands.Group):
             return reply or None
 
     @staticmethod
-    async def _extend_history(chat: mongo.chat.Chat,
-                              messages: Iterable[Message]) -> None:
+    async def _extend_history(
+        chat: mongo.chat.Chat, messages: Iterable[Message]
+    ) -> None:
         chat.history.extend(
             [
                 mongo.chat.Message(channel_id=message.channel.id, message_id=message.id)
@@ -570,7 +578,9 @@ class Chat(app_commands.Group):
                     )
                 case HTTPStatus.SERVICE_UNAVAILABLE:
                     await send(
-                        error(await loc.format_value_or_translate("server-unavailable")),
+                        error(
+                            await loc.format_value_or_translate("server-unavailable")
+                        ),
                         ephemeral=True,
                     )
                 case HTTPStatus.TOO_MANY_REQUESTS:
@@ -604,6 +614,4 @@ class Chat(app_commands.Group):
 
         translation = await Cache.get(Language(interaction.locale), text)
 
-        await interaction.response.send_message(
-            translation.text, ephemeral=True
-        )
+        await interaction.response.send_message(translation.text, ephemeral=True)

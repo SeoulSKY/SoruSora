@@ -246,8 +246,9 @@ class BaseTranslator(ABC):
 
         :return: The translations
         """
-        tasks = [asyncio.create_task(self.translate(text, target, source)) for text in
-                 texts]
+        tasks = [
+            asyncio.create_task(self.translate(text, target, source)) for text in texts
+        ]
 
         for task in asyncio.as_completed(tasks):
             yield await task
@@ -293,9 +294,7 @@ class ArgosTranslator(BaseTranslator):
                 argostranslate.package.install_from_path(package.download())
 
             ArgosTranslator._LANGUAGES = [
-                Language(
-                    ArgosTranslator._CODE_ALIAS.get(lang.code, lang.code)
-                )
+                Language(ArgosTranslator._CODE_ALIAS.get(lang.code, lang.code))
                 for lang in argostranslate.translate.get_installed_languages()
             ]
         super().__init__(ArgosTranslator._LANGUAGES)
@@ -635,7 +634,7 @@ class Localization:
         self._loc = FluentLocalization(
             [self._language.code, *fallbacks],
             [str(resource) for resource in resources],
-            self._loader
+            self._loader,
         )
 
     @staticmethod
@@ -655,8 +654,9 @@ class Localization:
         """
         language = Language(locale)
 
-        return ((LOCALES_DIR / language.code).exists() or
-                (LOCALES_DIR / language.trim_territory().code).exists())
+        return (LOCALES_DIR / language.code).exists() or (
+            LOCALES_DIR / language.trim_territory().code
+        ).exists()
 
     @property
     def language(self) -> Language:
@@ -771,7 +771,10 @@ class CommandTranslator(discord.app_commands.Translator):
             await coro
 
     async def translate(
-        self, string: locale_str, locale: Locale, context: TranslationContextTypes  # noqa: ARG002
+        self,
+        string: locale_str,
+        locale: Locale,
+        context: TranslationContextTypes,  # noqa: ARG002
     ) -> str | None:
         """Translate the given string to the given locale."""
         language = Language(locale)
@@ -790,8 +793,9 @@ class CommandTranslator(discord.app_commands.Translator):
         from commands.about import get_about_dir
 
         pbar = tqdm(desc="Translating about documents", total=0, unit="language")
-        async with (aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8")
-                    as file):
+        async with aiofiles.open(
+            get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8"
+        ) as file:
             text = await file.read()
 
         targets = []
@@ -828,16 +832,18 @@ class CommandTranslator(discord.app_commands.Translator):
     async def _localize_about_docs(languages: Iterable[Language]) -> None:
         from commands.about import get_about_dir
 
-        async with (aiofiles.open(get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8")
-                    as file):
+        async with aiofiles.open(
+            get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8"
+        ) as file:
             default_text = await file.read()
 
         for language in tqdm(
             languages, desc="Localizing about documents", total=0, unit="language"
         ):
             try:
-                async with (aiofiles.open(get_about_dir(language), encoding="utf-8")
-                            as file):
+                async with aiofiles.open(
+                    get_about_dir(language), encoding="utf-8"
+                ) as file:
                     text = await file.read()
             except FileNotFoundError:
                 async with aiofiles.open(
@@ -891,9 +897,12 @@ class CommandTranslator(discord.app_commands.Translator):
         async def translate_texts(
             texts: list[str], language: Language
         ) -> list[Translation]:
-            return [translation async for translation in
-                            self._translator.translate_texts(texts, language)]
-
+            return [
+                translation
+                async for translation in self._translator.translate_texts(
+                    texts, language
+                )
+            ]
 
         tasks = []
         pbar = tqdm(desc="Translating help documents", total=0, unit="language")
@@ -928,7 +937,10 @@ class CommandTranslator(discord.app_commands.Translator):
 
     async def _localize_commands(self, languages: Iterable[Language]) -> None:
         def _localize(
-            loc: Localization, args: dict[str, Any], msg_id: str, is_name: bool  # noqa: FBT001
+            loc: Localization,
+            args: dict[str, Any],
+            msg_id: str,
+            is_name: bool,  # noqa: FBT001
         ) -> str:
             result = loc.format_value(msg_id, args)
             transformed = (
@@ -962,7 +974,10 @@ class CommandTranslator(discord.app_commands.Translator):
                         language,
                         command.name,
                         _localize(
-                            loc, self._get_args(command), f"{command_prefix}-name", True  # noqa: FBT003
+                            loc,
+                            self._get_args(command),
+                            f"{command_prefix}-name",
+                            True,  # noqa: FBT003
                         ),
                     )
                 )
@@ -1027,7 +1042,10 @@ class CommandTranslator(discord.app_commands.Translator):
                                 choice.value
                                 if choice.name.isnumeric()
                                 else _localize(
-                                    loc, self._get_args(command), choice.value, False  # noqa: FBT003
+                                    loc,
+                                    self._get_args(command),
+                                    choice.value,
+                                    False,  # noqa: FBT003
                                 ),
                             )
                         )
@@ -1039,8 +1057,8 @@ class CommandTranslator(discord.app_commands.Translator):
                 loc = Localization(
                     language,
                     [
-                        Path("context_menus") /
-                        f"{context_menu.name.lower().replace(' ', '_')}"
+                        Path("context_menus")
+                        / f"{context_menu.name.lower().replace(' ', '_')}"
                         ".ftl"
                     ],
                 )

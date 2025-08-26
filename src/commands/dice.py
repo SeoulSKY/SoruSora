@@ -16,5 +16,6 @@ default_loc = Localization(DEFAULT_LANGUAGE, resources)
 async def dice(interaction: discord.Interaction) -> None:
     """Roll some dice."""
     await interaction.response.send_message(
-        choice([":one:", ":two:", ":three:", ":four:", ":five:", ":six:"]), silent=True  # noqa: S311
+        choice([":one:", ":two:", ":three:", ":four:", ":five:", ":six:"]),  # noqa: S311
+        silent=True,
     )

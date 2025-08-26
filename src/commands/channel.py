@@ -37,9 +37,9 @@ class Channel(app_commands.Group):
             {"translator-this-description-default": str(THIS_DEFAULT)},
         )
     )
-    async def translator(self,
-                         interaction: Interaction,
-                         this: bool = THIS_DEFAULT) -> None:  # noqa: FBT001
+    async def translator(
+        self, interaction: Interaction, this: bool = THIS_DEFAULT  # noqa: FBT001
+    ) -> None:
         """Set or remove the languages to be translated for channels."""
         loc = Localization(interaction.locale, resources)
         send = await defer_response(interaction)
@@ -80,9 +80,9 @@ class Channel(app_commands.Group):
             {"language-this-description-default": str(THIS_DEFAULT)},
         )
     )
-    async def language(self,
-                       interaction: Interaction,
-                       this: bool = THIS_DEFAULT) -> None:  # noqa: FBT001
+    async def language(
+        self, interaction: Interaction, this: bool = THIS_DEFAULT  # noqa: FBT001
+    ) -> None:
         """Set or remove the main language of the channels."""
         loc = Localization(interaction.locale, resources)
         send = await defer_response(interaction)

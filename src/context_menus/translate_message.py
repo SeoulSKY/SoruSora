@@ -15,8 +15,9 @@ default_loc = Localization(DEFAULT_LANGUAGE, resources)
 
 
 @context_menu()
-async def translate_message(interaction: discord.Interaction,
-                            message: discord.Message) -> None:
+async def translate_message(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
     """Translate this message into your language."""
     send = await defer_response(interaction)
     loc = Localization(interaction.locale, resources)

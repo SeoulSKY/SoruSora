@@ -74,8 +74,9 @@ def setup(bot: Bot) -> None:
                 else []
             )
 
-        languages = [Language(code) for code in codes if
-                     _translator.is_code_supported(code)]
+        languages = [
+            Language(code) for code in codes if _translator.is_code_supported(code)
+        ]
 
         if len(languages) == 0:
             return
@@ -155,7 +156,8 @@ def _split(string: str, count: int) -> Generator[str, Any, None]:
     )
 )
 async def translator(
-    interaction: Interaction, all_channels: bool = ALL_CHANNELS_DEFAULT  # noqa: FBT001
+    interaction: Interaction,
+    all_channels: bool = ALL_CHANNELS_DEFAULT,  # noqa: FBT001
 ) -> None:
     """Set or remove the languages to be translated for your messages."""
     loc = Localization(interaction.locale, resources)

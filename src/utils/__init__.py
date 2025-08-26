@@ -1,4 +1,5 @@
 """Contains utility functions."""
+
 from collections.abc import Sequence
 from typing import Any
 
@@ -21,7 +22,6 @@ async def defer_response(interaction: Interaction):  # noqa: ANN201
         await interaction.response.defer()
         send_func = interaction.followup.send
 
-
     async def send(  # noqa: PLR0913
         content: Any | None = None,  # noqa: ANN401
         *,
@@ -37,18 +37,19 @@ async def defer_response(interaction: Interaction):  # noqa: ANN201
         silent: bool = False,
         delete_after: float | None = None,
     ) -> None:
-        await send_func(content,
-                        embed=embed,
-                        embeds=embeds,
-                        file=file,
-                        files=files,
-                        view=view,
-                        tts=tts,
-                        ephemeral=ephemeral,
-                        allowed_mentions=allowed_mentions,
-                        suppress_embeds=suppress_embeds,
-                        silent=silent,
-                        delete_after=delete_after,
-                        )
+        await send_func(
+            content,
+            embed=embed,
+            embeds=embeds,
+            file=file,
+            files=files,
+            view=view,
+            tts=tts,
+            ephemeral=ephemeral,
+            allowed_mentions=allowed_mentions,
+            suppress_embeds=suppress_embeds,
+            silent=silent,
+            delete_after=delete_after,
+        )
 
     return send

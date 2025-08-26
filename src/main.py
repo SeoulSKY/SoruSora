@@ -118,8 +118,9 @@ bot = SoruSora()
 
 
 @bot.tree.error
-async def on_app_command_error(interaction: Interaction,
-                               error: AppCommandError) -> None:
+async def on_app_command_error(
+    interaction: Interaction, error: AppCommandError
+) -> None:
     """Execute when an exception is raised while running app commands."""
     if not isinstance(error, MissingPermissions):
         raise error
