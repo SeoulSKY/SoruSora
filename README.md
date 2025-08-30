@@ -135,7 +135,7 @@ Check the response time of SoruSora.
 
 Set or remove a translator that translates all of your messages to other languages.
 
-It supports 45 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Basque`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `Galician`, `German`, `Greek`, `Hebrew`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
+It supports 45 languages, namely `Albanian`, `Arabic`, `Azerbaijani`, `Basque`, `Bengali`, `Bulgarian`, `Catalan`, `Chinese (Simplified)`, `Chinese (Traditional)`, `Czech`, `Danish`, `Dutch`, `English`, `Esperanto`, `Estonian`, `Filipino`, `Finnish`, `French`, `Galician`, `German`, `Greek`, `Hindi`, `Hungarian`, `Indonesian`, `Irish`, `Italian`, `Japanese`, `Korean`, `Kyrgyz`, `Latvian`, `Lithuanian`, `Malay`, `Norwegian (Bokmal)`, `Persian`, `Polish`, `Portuguese`, `Romanian`, `Russian`, `Slovak`, `Slovenian`, `Spanish`, `Swedish`, `Thai`, `Turkish` and `Ukrainian`.
 
 
 ## How to Set up and Run
@@ -168,33 +168,25 @@ docker compose -f docker-compose-dev.yml up --build -d
 
 ### Running without [Docker](https://www.docker.com)
 
-* Install [pyenv](https://github.com/pyenv/pyenv#installation), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/) and [FFmpeg](https://ffmpeg.org/download.html)
+* Install [uv](https://docs.astral.sh/uv/getting-started/installation/), [MongoDB](https://www.mongodb.com/docs/manual/administration/install-community/) and [FFmpeg](https://ffmpeg.org/download.html)
 
 * [Start MongoDB](https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/#run-mongodb-community-edition)
 
-* Install Python 3.11.7
+* Install Python 3.11
 
 ```bash
-pyenv install 3.11.7
+uv python install 3.11
 ```
 
-* Setup and activate the virtual environment
-
+* Pin the Python version
 ```bash
-pyenv virtualenv 3.11.7 sorusora
-pyenv local sorusora
-```
-
-* Install required Python packages
-
-```bash
-pyenv exec pip install -r requirements.txt
+uv python pin 3.11
 ```
 
 * Run `main.py`
 
 ```bash
-pyenv exec python src/main.py
+uv run src/main.py
 ```
 
 ## Architecture
