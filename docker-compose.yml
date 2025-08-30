@@ -9,7 +9,7 @@ services:
       - .cache/algos_cache:${HOME}/.local/cache/argos-translate/
     env_file:
       - .env
-    restart: always
+    restart: unless-stopped
 
   mongo:
     image: mongo:7.0.5
@@ -18,7 +18,7 @@ services:
       - "27017:27017"
     volumes:
       - ~/mongoDB:/data/db
-    restart: always
+    restart: unless-stopped
 
   nginx:
     image: nginx:1.27.1
@@ -28,14 +28,4 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    restart: always
-
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=300
-    restart: always
+    restart: unless-stopped
