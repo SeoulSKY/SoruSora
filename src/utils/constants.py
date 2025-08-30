@@ -29,6 +29,10 @@ class ErrorCode(Enum):
         """Check if other is equal to this error code."""
         return self.value == other
 
+    def __hash__(self) -> int:
+        """Return the hash of this error code."""
+        return hash(self.value)
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 SRC_DIR = ROOT_DIR / "src"
@@ -63,6 +67,10 @@ class Limit(Enum):
     def __int__(self) -> int:
         """Convert this limit to integer."""
         return self.value
+
+    def __hash__(self) -> int:
+        """Return the hash of this limit."""
+        return hash(self.value)
 
 
 BOT_NAME = "SoruSora"

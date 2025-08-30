@@ -790,7 +790,7 @@ class CommandTranslator(discord.app_commands.Translator):
         return None
 
     async def _translate_about_docs(self, languages: Iterable[Language]) -> None:
-        from commands.about import get_about_dir
+        from commands.about import get_about_dir  # noqa: PLC0415
 
         pbar = tqdm(desc="Translating about documents", total=0, unit="language")
         async with aiofiles.open(
@@ -816,7 +816,7 @@ class CommandTranslator(discord.app_commands.Translator):
         await Cache.save()
 
     def _get_commands(self) -> Generator[Command, Any, None]:
-        from commands.help_ import HIDDEN_COMMANDS
+        from commands.help_ import HIDDEN_COMMANDS  # noqa: PLC0415
 
         for command in self.bot.tree.walk_commands():
             if (
@@ -830,7 +830,7 @@ class CommandTranslator(discord.app_commands.Translator):
 
     @staticmethod
     async def _localize_about_docs(languages: Iterable[Language]) -> None:
-        from commands.about import get_about_dir
+        from commands.about import get_about_dir  # noqa: PLC0415
 
         async with aiofiles.open(
             get_about_dir(DEFAULT_LANGUAGE), encoding="utf-8"
@@ -859,7 +859,7 @@ class CommandTranslator(discord.app_commands.Translator):
         await Cache.save()
 
     async def _localize_help_docs(self, languages: Iterable[Language]) -> None:
-        from commands.help_ import get_help_dir
+        from commands.help_ import get_help_dir  # noqa: PLC0415
 
         for language in tqdm(
             languages, desc="Localizing help documents", total=0, unit="language"
@@ -892,7 +892,7 @@ class CommandTranslator(discord.app_commands.Translator):
         await Cache.save()
 
     async def _translate_help_docs(self, languages: Iterable[Language]) -> None:
-        from commands.help_ import get_help_dir
+        from commands.help_ import get_help_dir  # noqa: PLC0415
 
         async def translate_texts(
             texts: list[str], language: Language

@@ -24,6 +24,7 @@ id = Indonesian
 it = Italian
 ja = Japanese
 ko = Korean
+ky = Kyrgyz
 li = Limburgish
 lt = Lithuanian
 lv = Latvian

@@ -53,7 +53,7 @@ class HelpSelect(CommandSelect):
 @command(help_description_name=BOT_NAME, help_header_name=BOT_NAME)
 async def help_(interaction: Interaction) -> None:
     """Show the help message."""
-    from main import bot
+    from main import bot  # noqa: PLC0415
 
     send = await defer_response(interaction)
 

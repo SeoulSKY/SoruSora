@@ -1,6 +1,5 @@
 """Contains the decorators that are used in the commands."""
 
-import os
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 
@@ -38,8 +37,8 @@ def command(*, nsfw: bool = False, **params: str) -> [Callable[..., Command]]:
     loc = Localization(
         DEFAULT_LANGUAGE,
         [
-            Path("commands") / name
-            for name in os.listdir(LOCALES_DIR / DEFAULT_LANGUAGE.code / "commands")
+            Path("commands") / path.name
+            for path in (LOCALES_DIR / DEFAULT_LANGUAGE.code / "commands").iterdir()
         ],
     )
 

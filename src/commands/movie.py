@@ -3,7 +3,6 @@
 import itertools
 import json
 import math
-import os
 import threading
 from pathlib import Path
 from typing import ClassVar
@@ -104,7 +103,8 @@ class Movie(app_commands.Group):
         DESKTOP_CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
         movie_names = [
-            file for file in os.listdir(constants.ASSETS_DIR) if file.endswith(".mp4")
+            file.name for file in constants.ASSETS_DIR.iterdir()
+            if file.suffix == ".mp4"
         ]
         for is_mobile in (True, False):
             for movie_name in movie_names:

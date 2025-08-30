@@ -278,7 +278,7 @@ class CommandSelect(Select):
         interaction: Interaction,
         hidden: set[type[Command | Group]] | None = None,
     ) -> list[SelectOption]:
-        from main import bot
+        from main import bot  # noqa: PLC0415
 
         language = Language(str(interaction.locale))
 

@@ -170,7 +170,7 @@ async def translator(
         user = await get_user(interaction.user.id)
         user.translate_to = list(language_view.selected)
         user.translate_in = (
-            [] if all_channels else [channel.id for channel in channel_select.values]  # noqa: PD011
+            [] if all_channels else [channel.id for channel in channel_select.values]
         )
         await set_user(user)
 

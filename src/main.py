@@ -57,6 +57,8 @@ class SoruSora(Bot):
         """Initialize SoruSora bot."""
         super().__init__(command_prefix="s!", intents=discord.Intents.all())
 
+        self.logger = logging.getLogger(__name__)
+
         self.help_command = None
         self._add_commands()
 
@@ -66,12 +68,14 @@ class SoruSora(Bot):
         package_names = ["commands", "context_menus"]
 
         for package_name in package_names:
-            for module_name in os.listdir(SRC_DIR / package_name):
-                if module_name == "__init__.py" or not module_name.endswith(".py"):
+            for module_path in (SRC_DIR / package_name).iterdir():
+                if module_path.name == "__init__.py" or not module_path.name.endswith(
+                    ".py"
+                ):
                     continue
 
                 module = import_module(
-                    ".".join([package_name, module_name.removesuffix(".py")])
+                    ".".join([package_name, module_path.name.removesuffix(".py")])
                 )
 
                 setup_func = getattr(module, "setup", None)
@@ -79,7 +83,7 @@ class SoruSora(Bot):
                     setup_func(self)
 
                 # Get the command function from the module named same as the file name
-                command = getattr(module, module_name.removesuffix(".py"), None)
+                command = getattr(module, module_path.name.removesuffix(".py"), None)
                 if command is not None:
                     self.tree.add_command(command)
 
@@ -99,19 +103,21 @@ class SoruSora(Bot):
             synced_commands = [
                 command.name for command in await self.tree.sync(guild=TEST_GUILD)
             ]
-            logging.info("Synced commands to the test guild: %s", str(synced_commands))
+            self.logger.info(
+                "Synced commands to the test guild: %s", str(synced_commands)
+            )
         else:
             synced_commands = [command.name for command in await self.tree.sync()]
-            logging.info("Synced commands to all guilds: %s", str(synced_commands))
+            self.logger.info("Synced commands to all guilds: %s", str(synced_commands))
 
     async def on_ready(self) -> None:
         """Execute when the bot becomes ready."""
         await self.change_presence(activity=discord.CustomActivity(name="Type /help"))
 
-        logging.info(
+        self.logger.info(
             "Running in %s environment", "development" if IS_DEV_ENV else "production"
         )
-        logging.info("Logged in as %s (ID: %d)", self.user, self.user.id)
+        self.logger.info("Logged in as %s (ID: %d)", self.user, self.user.id)
 
 
 bot = SoruSora()

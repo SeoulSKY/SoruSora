@@ -1,6 +1,5 @@
 """Implements decorators for context menus."""
 
-import os
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 
@@ -26,10 +25,10 @@ def context_menu(*, nsfw: bool = False, **params: str) -> Callable[[...], Comman
     loc = Localization(
         DEFAULT_LANGUAGE,
         [
-            Path("context_menus") / name
-            for name in os.listdir(
+            Path("context_menus") / path.name
+            for path in (
                 LOCALES_DIR / DEFAULT_LANGUAGE.code / "context_menus"
-            )
+            ).iterdir()
         ],
     )
 

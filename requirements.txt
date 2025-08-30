@@ -1,3 +1,4 @@
+aiofiles~=24.1.0
 deep-translator~=1.11.4
 discord.py~=2.3.2
 langid~=1.1.6
@@ -11,5 +12,5 @@ motor~=3.6.0
 fluent.runtime~=0.4.0
 argostranslate~=1.9.1
 cryptography~=42.0.8
-ruff~=0.8.1
+ruff~=0.12.10
 google-genai[aiohttp]~=1.31.0

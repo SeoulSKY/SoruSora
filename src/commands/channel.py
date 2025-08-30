@@ -38,7 +38,9 @@ class Channel(app_commands.Group):
         )
     )
     async def translator(
-        self, interaction: Interaction, this: bool = THIS_DEFAULT  # noqa: FBT001
+        self,
+        interaction: Interaction,
+        this: bool = THIS_DEFAULT,  # noqa: FBT001
     ) -> None:
         """Set or remove the languages to be translated for channels."""
         loc = Localization(interaction.locale, resources)
@@ -51,7 +53,7 @@ class Channel(app_commands.Group):
             channels = (
                 [interaction.channel_id]
                 if this
-                else [channel.id for channel in channel_select.values]  # noqa: PD011
+                else [channel.id for channel in channel_select.values]
             )
             for channel in channels:
                 config = await get_channel(channel)
@@ -81,7 +83,9 @@ class Channel(app_commands.Group):
         )
     )
     async def language(
-        self, interaction: Interaction, this: bool = THIS_DEFAULT  # noqa: FBT001
+        self,
+        interaction: Interaction,
+        this: bool = THIS_DEFAULT,  # noqa: FBT001
     ) -> None:
         """Set or remove the main language of the channels."""
         loc = Localization(interaction.locale, resources)
@@ -95,7 +99,7 @@ class Channel(app_commands.Group):
             channels = (
                 [interaction.channel_id]
                 if this
-                else [channel.id for channel in channel_select.values]  # noqa: PD011
+                else [channel.id for channel in channel_select.values]
             )
 
             if len(channels) == 0:

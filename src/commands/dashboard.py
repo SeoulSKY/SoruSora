@@ -75,7 +75,7 @@ async def dashboard(interaction: Interaction) -> None:
 
     async def callback(select_interaction: Interaction) -> None:
         embeds = []
-        for channel in channel_select.values:  # noqa: PD011
+        for channel in channel_select.values:
             config = await get_channel(channel.id)
 
             languages = [
