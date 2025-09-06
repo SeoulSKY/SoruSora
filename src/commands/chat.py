@@ -337,24 +337,16 @@ class Chat(app_commands.Group):
             )
 
         async def truncate_history(payload: RawMessageUpdateEvent, send: bool) -> None:  # noqa: FBT001
-            if payload.cached_message is not None:
-                message = payload.cached_message
-            else:
-                message = await self._fetch_message(
-                    payload.channel_id, payload.message_id
-                )
-                if message is None:
-                    return
-
             # Try with the efficient check first
-            if not self._is_chat_message(message):
+            if not self._is_chat_message(payload.message):
                 return
 
-            chat = await get_chat(message.author.id)
+            chat = await get_chat(payload.message.author.id)
             try:
                 index = chat.history.index(
                     mongo.chat.Message(
-                        channel_id=message.channel.id, message_id=message.id
+                        channel_id=payload.message.channel.id,
+                        message_id=payload.message.id,
                     )
                 )
             except ValueError:
@@ -363,11 +355,11 @@ class Chat(app_commands.Group):
             chat.history = chat.history[:index]
 
             if send:
-                reply = await self._send_message(message)
+                reply = await self._send_message(payload.message)
                 if reply is None:
                     return
 
-                await Chat._extend_history(chat, [message, reply])
+                await Chat._extend_history(chat, [payload.message, reply])
                 return
 
             await set_chat(chat)
