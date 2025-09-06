@@ -33,7 +33,11 @@ TEST_GUILD = (
 )
 IS_DEV_ENV = TEST_GUILD is not None
 
-sentry_sdk.init(dsn=os.environ["SENTRY_DSN"], environment="development" if IS_DEV_ENV else "production", send_default_pii=True)
+sentry_sdk.init(
+    dsn=os.environ["SENTRY_DSN"],
+    environment="development" if IS_DEV_ENV else "production",
+    send_default_pii=True,
+)
 
 
 DEV_COMMANDS = {
@@ -134,12 +138,14 @@ async def on_app_command_error(
     """Execute when an exception is raised while running app commands."""
     if not isinstance(error, MissingPermissions):
         with sentry_sdk.new_scope() as scope:
-            scope.set_user({
-                "id": interaction.user.id,
-                "name": interaction.user.name,
-                "discriminator": interaction.user.discriminator,
-                "global_name": interaction.user.global_name,
-            })
+            scope.set_user(
+                {
+                    "id": interaction.user.id,
+                    "name": interaction.user.name,
+                    "discriminator": interaction.user.discriminator,
+                    "global_name": interaction.user.global_name,
+                }
+            )
             scope.set_tag("server_id", interaction.guild_id)
             scope.set_tag("server_name", interaction.guild.name)
 

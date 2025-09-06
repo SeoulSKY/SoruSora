@@ -103,7 +103,8 @@ class Movie(app_commands.Group):
         DESKTOP_CACHE_PATH.mkdir(parents=True, exist_ok=True)
 
         movie_names = [
-            file.name for file in constants.ASSETS_DIR.iterdir()
+            file.name
+            for file in constants.ASSETS_DIR.iterdir()
             if file.suffix == ".mp4"
         ]
         for is_mobile in (True, False):
