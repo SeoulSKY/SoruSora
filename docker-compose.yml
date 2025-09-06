@@ -3,10 +3,10 @@ services:
     image: ghcr.io/seoulsky/sorusora:latest
     container_name: sorusora
     volumes:
-      - .logs:/app/logs
-      - .cache:/app/cache
-      - .cache/algos_packages:${HOME}/.local/share/argos-translate/packages/
-      - .cache/algos_cache:${HOME}/.local/cache/argos-translate/
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ./cache/algos_packages:${HOME}/.local/share/argos-translate/packages/
+      - ./cache/algos_cache:${HOME}/.local/cache/argos-translate/
     env_file:
       - .env
     restart: unless-stopped
@@ -18,14 +18,4 @@ services:
       - "27017:27017"
     volumes:
       - ~/mongoDB:/data/db
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:1.27.1
-    container_name: nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
