@@ -4,7 +4,7 @@
 </div>
 
 <blockquote align="center">
-    AI-Powered Versatile Discord Bot - AI chat, Translator and more with a user-friendly and fully localized interface!
+    AI-Powered Versatile Discord Bot - AI companion, translator and more with a user-friendly and fully localized interface!
 </blockquote>
 
 <div align="center">
