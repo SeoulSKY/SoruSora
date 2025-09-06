@@ -28,4 +28,4 @@ if __name__ == "__main__":
     assert load_dotenv()  # noqa: S101
 
     bot = TempBot(command_prefix="!", intents=discord.Intents.all())
-    bot.run(os.getenv("BOT_TOKEN"))
+    bot.run(os.environ["BOT_TOKEN"])

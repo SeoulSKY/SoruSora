@@ -74,8 +74,12 @@ class Chat(app_commands.Group):
         return AI_TOKEN
 
     def _is_chat_message(self, message: Message) -> bool:
-        return self.bot.user in message.mentions or (
+        if self.bot.user in message.mentions:
+            return True
+
+        return (
             message.reference is not None
+            and message.reference.resolved is Message
             and message.reference.resolved.author == self.bot
         )
 
@@ -387,7 +391,10 @@ class Chat(app_commands.Group):
         parts.append(types.Part.from_text(text=text or BOT_NAME))
 
         for attachment in message.attachments:
-            if not attachment.content_type.startswith("image"):
+            if (
+                attachment.content_type is None
+                or not attachment.content_type.startswith("image")
+            ):
                 continue
 
             with contextlib.suppress(discord.Forbidden, discord.NotFound):
@@ -417,7 +424,13 @@ class Chat(app_commands.Group):
                     )
                 ).total_tokens
 
-                if num_tokens <= client.models.get(model=MODEL).input_token_limit:
+                token_limit = client.models.get(model=MODEL).input_token_limit
+
+                if (
+                    num_tokens is None
+                    or token_limit is None
+                    or num_tokens <= token_limit
+                ):
                     break
 
                 # Remove the oldest user message and its reply
@@ -471,9 +484,14 @@ class Chat(app_commands.Group):
                         ),
                     )
                 ).text
-                reply = await message.reply(
-                    text[: Limit.NUM_CHARACTERS_IN_MESSAGE.value]
+
+                content = (
+                    "No content"
+                    if text is None
+                    else text[: Limit.NUM_CHARACTERS_IN_MESSAGE.value]
                 )
+
+                reply = await message.reply(content)
             except ClientError as e:
                 match e.code:
                     case HTTPStatus.BAD_REQUEST:

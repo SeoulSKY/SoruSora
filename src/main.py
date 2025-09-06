@@ -27,7 +27,7 @@ ERROR_DIR = LOGS_DIR / "error"
 WARNING_DIR = LOGS_DIR / "warning"
 
 TEST_GUILD = (
-    discord.Object(id=os.getenv("TEST_GUILD_ID"))
+    discord.Object(id=os.environ["TEST_GUILD_ID"])
     if os.getenv("TEST_GUILD_ID")
     else None
 )
@@ -103,7 +103,7 @@ class SoruSora(Bot):
                 continue
 
             # noinspection PyArgumentList
-            self.tree.add_command(group_command_class(bot=self))
+            self.tree.add_command(group_command_class(bot=self))  # ty: ignore[unknown-argument]
 
     async def setup_hook(self) -> None:
         """Set up the SoruSora."""
@@ -150,7 +150,9 @@ async def on_app_command_error(
                 }
             )
             scope.set_tag("server_id", interaction.guild_id)
-            scope.set_tag("server_name", interaction.guild.name)
+
+            if interaction.guild is not None:
+                scope.set_tag("server_name", interaction.guild.name)
 
             scope.capture_exception(error)
             raise error
@@ -185,7 +187,7 @@ if __name__ == "__main__":
     logger.addHandler(warning_handler)
 
     bot.run(
-        os.getenv("BOT_TOKEN"),
+        os.environ["BOT_TOKEN"],
         log_handler=logging.StreamHandler(),
         log_level=logging.INFO,
         root_logger=True,
