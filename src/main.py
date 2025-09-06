@@ -63,7 +63,10 @@ class SoruSora(Bot):
 
     def __init__(self) -> None:
         """Initialize SoruSora bot."""
-        super().__init__(command_prefix="s!", intents=discord.Intents.all())
+        intents = discord.Intents.all()
+        intents.presences = False
+        intents.members = False
+        super().__init__(command_prefix="s!", intents=intents)
 
         self.logger = logging.getLogger(__name__)
 
