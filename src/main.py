@@ -7,6 +7,7 @@ from importlib import import_module
 from logging.handlers import TimedRotatingFileHandler
 
 import discord
+import sentry_sdk
 from discord import Interaction, app_commands
 from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext.commands import Bot
@@ -31,6 +32,9 @@ TEST_GUILD = (
     else None
 )
 IS_DEV_ENV = TEST_GUILD is not None
+
+sentry_sdk.init(dsn=os.environ["SENTRY_DSN"], environment="development" if IS_DEV_ENV else "production", send_default_pii=True)
+
 
 DEV_COMMANDS = {
     Movie,
@@ -129,7 +133,18 @@ async def on_app_command_error(
 ) -> None:
     """Execute when an exception is raised while running app commands."""
     if not isinstance(error, MissingPermissions):
-        raise error
+        with sentry_sdk.new_scope() as scope:
+            scope.set_user({
+                "id": interaction.user.id,
+                "name": interaction.user.name,
+                "discriminator": interaction.user.discriminator,
+                "global_name": interaction.user.global_name,
+            })
+            scope.set_tag("server_id", interaction.guild_id)
+            scope.set_tag("server_name", interaction.guild.name)
+
+            scope.capture_exception(error)
+            raise error
 
     loc = Localization(interaction.locale, ["main.ftl"])
     await interaction.response.send_message(

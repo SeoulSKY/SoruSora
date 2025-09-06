@@ -19,6 +19,7 @@ dependencies = [
     "argostranslate>=1.9.1",
     "cryptography>=42.0.8",
     "google-genai[aiohttp]>=1.31.0",
+    "sentry-sdk>=2.37.0",
 ]
 
 [tool.uv]
