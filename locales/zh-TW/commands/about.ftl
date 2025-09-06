@@ -8,3 +8,5 @@ github = GitHub
 bug-report = 提交Bug
 contribute = 貢獻
 developer = 關於開發者
+terms-of-service = 服務條款
+privacy-policy = 隱私政策

@@ -8,3 +8,5 @@ github = GitHub
 bug-report = Bug Report
 contribute = Contribute
 developer = Developer
+terms-of-service = Terms of Service
+privacy-policy = Privacy Policy

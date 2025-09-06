@@ -64,6 +64,16 @@ class AboutView(discord.ui.View):
                 style=ButtonStyle.link,
                 url="https://www.seoulsky.org",
             ),
+            Button(
+                label=await loc.format_value_or_translate("terms-of-service"),
+                style=ButtonStyle.link,
+                url="https://github.com/SeoulSKY/SoruSora/blob/main/TERMS_OF_SERVICE.md",
+            ),
+            Button(
+                label=await loc.format_value_or_translate("privacy-policy"),
+                style=ButtonStyle.link,
+                url="https://github.com/SeoulSKY/SoruSora/blob/main/PRIVACY_POLICY.md",
+            )
         ]
 
         for button in buttons:
