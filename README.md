@@ -14,8 +14,8 @@
     <br>
     <img src="https://github.com/SeoulSKY/SoruSora/actions/workflows/ruff.yml/badge.svg">
     <br>
-    <a href="https://discord.gg/kQZDJJB">
-        <img src="http://invidget.switchblade.xyz/kQZDJJB">
+    <a href="https://discord.gg/qvCdWEtqgB">
+        <img src="http://invidget.switchblade.xyz/qvCdWEtqgB">
     </a>
 </div>
 
